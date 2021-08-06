@@ -16,8 +16,8 @@
     "admob": {
         "publisher": "",
         "banner": "",
-        "interstitial": "",
-        "largebanner": "",
+        "interstitial": "ca-app-pub-3940256099942544/6300978111",
+        "largebanner": "ca-app-pub-3940256099942544/6300978111",
         "mediumrectangle": ""
     },
     "startapp": {
