@@ -1,0 +1,192 @@
+﻿{
+  "Json_Data": [
+    {
+      "HouseAds_package": "com.kiloo.subwaysurf",
+      "HouseAds_title": "Subway Surfers 35",
+      "HouseAds_discripton": "Help Jake, Tricky & Fresh escape from the grumpy Inspector and his dog!",
+      "HouseAds_image": "https://i.imgur.com/XZHOjBO.jpg",
+      "HouseAds_icon": "https://i.imgur.com/P6eHtK0.jpg",
+      "Admob_interstitial": "ca-app-pub-9774479084153061/4510081022",
+      "Admob_banner": "ca-app-pub-9774479084153061/7304192649",
+      "Admob_native": "ca-app-pub-9774479084153061/74953370186",
+      "Admob_250": "ca-app-pub-9774479084153061/7304192649",
+      "Mopub_interstitial": "cb0b1bcae741402eb86acd9fa424b741",
+      "Mopub_banner": "f5d529d183384561b71de20c6fa87410",
+      "Unity_id": "4230145",
+      "Unity_banner_Placement": "Banner_Android",
+      "Unity_interstitial_Placement": "Interstitial_Android",
+      "Appodeal_id": "64667490771d9114c79aa0b54bfe4bf9e4ea344032074a99",
+      "Startapp_id": "206033676",
+      "Active_Ad_network": "mopub admob",
+      "Ad__1__Interstitial": "mopub",
+      "Ad__2__Interstitial": "mopub",
+      "Ad__3__Interstitial": "mopub",
+      "Ad__4__Interstitial": "mopub",
+      "Ad__X__Banner": "mopub",
+      "Ad__X__Native": "admob",
+      "Ad__X__Rectangle": "admob",
+      "Test_mode_unity": "no",
+      "Test_mode_appodeal": "no",
+      "Debug_mode_facebook": "no",
+      "Show_help_toast": "no",
+      "ClicksTo_showAd": "1",
+      "Active_PackageName": "com.documentsbyreadlguide.mediacalendarguideforandroidnew2",
+      "OnBack_ClicksTo_showAd": "2",
+      "Ad_format_fi_activity_1": "rectangle",
+      "Ad_format_fi_detail_1": "rectangle",
+      "Ad_format_fi_detail_2": "rectangle",
+      "Ad_format_fi_detail_3": "rectangle",
+      "Enable_backgroundAds": "no",
+      "App_suspended": "no",
+      "NewApp_package": "com.facebook.lite",
+      "NewApp_title": "App update!",
+      "NewApp_message": "please update to new version!",
+      "Gdpr_activate": "no",
+      "Gdpr_id": "pub-3940256099942544",
+      "Cpa_activate": "no",
+      "Cpa_text": "Claim Your Free Diamonds Here",
+      "Cpa_image": "https://i.imgur.com/gw4iV9Q.png",
+      "Cpa_url": "https://www.google.com/",
+      "Json_Checker": "dont_change_this"
+    }
+  ],
+  "MoreApps": [
+    {
+      "package": "com.guiadewetransfermobileapp.prowetransferforandroidnew2",
+      "name": "Wetransfer For Android-File Transfer",
+      "icon": "https://play-lh.googleusercontent.com/PGD4Op29lkLowXZgrtwTInqjvYJHPJ_gXRqi3_jhekyPsVJuqD6WiObqivuAp8GjwF2v=s180",
+      "stars": "3"
+    },
+    {
+      "package": "com.tipstocatown_city.hospitalfreetoca.kitchen_world_bocaON4",
+      "name": "Toca Life world 2",
+      "icon": "https://play-lh.googleusercontent.com/f6ZFQrVboH1neUnM0S5bemgPLGSCN6k-mQtsk8I4b7eNLl831DRXLp_IDka1dgcnCA=s180",
+      "stars": "4"
+    }
+  ],
+  "wallpapers": [
+    {
+      "id": "1",
+      "name": "Documents By Readdle Clue",
+      "image": "https://coolgame.website/Readdle/image/1.jpg"
+    },
+    {
+      "id": "2",
+      "name": "Documents By Readdle Clue",
+      "image": "https://coolgame.website/Readdle/image/2.jpg"
+    },
+    {
+      "id": "3",
+      "name": "Documents By Readdle Clue",
+      "image": "https://coolgame.website/Readdle/image/3.jpg"
+    },
+    {
+      "id": "4",
+      "name": "Documents By Readdle Clue",
+      "image": "https://coolgame.website/Readdle/image/1.jpg"
+    },
+    {
+      "id": "5",
+      "name": "Documents By Readdle Clue",
+      "image": "https://coolgame.website/Readdle/image/2.jpg"
+    }
+  ],
+  "GuideContent": [
+    {
+      "title": "◆Files Editor & Manager by readdle tips◆",
+      "text": "The Documents app is hugely popular on the iTunes Apps Store but do you really know about the different things you can do with this versatile app. For starters, Documents is a document viewer but if you are only using the app for reading your PDFs, you’ve only scratched the surface. Here’re a list of things that you can do with Documents on your iPad or iPhone.",
+      "text2": "If your computer and iOS device are connected to the same Wi-Fi network, you can quickly transfer files of any type wirelessly between the computer and iOS device without any limitations.",
+      "text3": "Open the Documents app, enable Wi-Fi Drive under Settings and enter the provided IP address (or Bonjour name) in your computer’s browser.",
+      "likes": "7.9k",
+      "dislikes": "918",
+      "icon": "https://play-lh.googleusercontent.com/ptWAMdhxupinxJCcOTrTm-xsTVmkdPz3bIufBDWSWrWE-lh5dL24gYML9zN_saPyvlY=s180",
+      "image": "https://coolgame.website/Readdle/image/1.jpg",
+      "image2": "https://coolgame.website/Readdle/image/1.jpg",
+      "image3": "https://coolgame.website/Readdle/image/1.jpg"
+    },
+    {
+      "title": "How to install Documents by Readdle Helper-on Windows PC using NoxPlayer",
+      "text": "Download & Install NoxPlayer at: http://bignox.com. The installation is easy to carry out.\nDrag the apk file to Nox and drop it. The File Manager will show up",
+      "text2": "Click the Open XXX Folder button under the file sign that turns blue.",
+      "text3": "Then you will be able to install the apk you just download from your computer to Nox or move/copy the file to other locations in Nox.",
+      "likes": "2.5k",
+      "dislikes": "724",
+      "icon": "https://play-lh.googleusercontent.com/ptWAMdhxupinxJCcOTrTm-xsTVmkdPz3bIufBDWSWrWE-lh5dL24gYML9zN_saPyvlY=s180",
+      "image": "https://coolgame.website/Readdle/image/2.jpg",
+      "image2": "https://coolgame.website/Readdle/image/2.jpg",
+      "image3": "https://coolgame.website/Readdle/image/2.jpg"
+    },
+    {
+      "title": "Manage your files in the cloud",
+      "text": "Documents by Readdle is an iPad app that lets you view and manage files from multiple cloud drive services.",
+      "text2": "If you use Dropbox, Box, iCloud, and Google Drive, it can be a bit of a pain to keep them all in sync.",
+      "text3": "Documents by Readdle make it easy to manage files from these different services. You can view, download, and upload files to each service.",
+      "likes": "3.1k",
+      "dislikes": "120",
+      "icon": "https://play-lh.googleusercontent.com/ptWAMdhxupinxJCcOTrTm-xsTVmkdPz3bIufBDWSWrWE-lh5dL24gYML9zN_saPyvlY=s180",
+      "image": "https://coolgame.website/Readdle/image/1.jpg",
+      "image2": "https://coolgame.website/Readdle/image/1.jpg",
+      "image3": "https://coolgame.website/Readdle/image/1.jpg"
+    },
+    {
+      "title": "How to upload files from iPhone or iPad to Dropbox:",
+      "text": "Open your Dropbox storage in Documents. You can access in under the Connections section on your iPhone or right on the sidebar on your iPad",
+      "text2": "Tap the purple plus button at the bottom right.",
+      "text3": "Under Upload From, select where to add the files from. For example, you can upload photos from iPhone to Dropbox right from your Camera Roll.",
+      "likes": "1.6k",
+      "dislikes": "243",
+      "icon": "https://play-lh.googleusercontent.com/ptWAMdhxupinxJCcOTrTm-xsTVmkdPz3bIufBDWSWrWE-lh5dL24gYML9zN_saPyvlY=s180",
+      "image": "https://coolgame.website/Readdle/image/1.jpg",
+      "image2": "https://coolgame.website/Readdle/image/1.jpg",
+      "image3": "https://coolgame.website/Readdle/image/1.jpg"
+    },
+    {
+      "title": "How to download from Google Drive to iPhone and iPad",
+      "text": "Our Documents app lets you quickly download videos from Google Drive to iPhone or save any other files you may need to have offline",
+      "text2": "On your iPhone, tap Connections at the bottom. On iPad, tap Add Connection on the sidebar.\nSelect Google Drive.\nSign in with your credentials.\nNow, you can work with your Google Drive right from Documents. Your cloud storage is available under Connections on your iPhone or directly on the sidebar on your iPad.",
+      "text3": "Once you've opened your storage, tap Select at the top right",
+      "likes": "1.2k",
+      "dislikes": "95",
+      "icon": "https://play-lh.googleusercontent.com/ptWAMdhxupinxJCcOTrTm-xsTVmkdPz3bIufBDWSWrWE-lh5dL24gYML9zN_saPyvlY=s180",
+      "image": "https://coolgame.website/Readdle/image/1.jpg",
+      "image2": "https://coolgame.website/Readdle/image/1.jpg",
+      "image3": "https://coolgame.website/Readdle/image/1.jpg"
+    },
+    {
+      "title": "connect other cloud storages to Documents",
+      "text": "The Documents app also works with OneDrive, Box, SharePoint, Yandex.Disk, and any other storage which supports the WebDAV/FTP/SFTP protocol connection.",
+      "text2": "Here's how to add a cloud service to Documents:\nOn your iPhone, tap Connections. On iPad, select Add Connection on the sidebar.\nSelect the service you'd like to add.",
+      "text3": "The added service is available under Connections on your iPhone or directly on the sidebar on your iPad.\nOnce you've connected all your cloud services to Documents, you can take full advantage of this powerful file manager",
+      "likes": "7.2k",
+      "dislikes": "354",
+      "icon": "https://play-lh.googleusercontent.com/ptWAMdhxupinxJCcOTrTm-xsTVmkdPz3bIufBDWSWrWE-lh5dL24gYML9zN_saPyvlY=s180",
+      "image": "https://coolgame.website/Readdle/image/1.jpg",
+      "image2": "https://coolgame.website/Readdle/image/1.jpg",
+      "image3": "https://coolgame.website/Readdle/image/1.jpg"
+    },
+    {
+      "title": "Here's how to access files on your iPhone:",
+      "text": "Open Documents and tap the purple plus button.\nHere, you get a lot of options: You can create a new file or import existing ones from Files, Photos, any cloud storage, or even your computer",
+      "text2": "Feel free to explore different options to get all the files you need on your iPhone.",
+      "text3": "There is an alternative way to import your files to Documents. When you open a file in any app (e.g. Mail or Messages), just tap the standard Share button and select Documents from the list of suggested apps.",
+      "likes": "2.1k",
+      "dislikes": "264",
+      "icon": "https://play-lh.googleusercontent.com/ptWAMdhxupinxJCcOTrTm-xsTVmkdPz3bIufBDWSWrWE-lh5dL24gYML9zN_saPyvlY=s180",
+      "image": "https://coolgame.website/Readdle/image/1.jpg",
+      "image2": "https://coolgame.website/Readdle/image/1.jpg",
+      "image3": "https://coolgame.website/Readdle/image/1.jpg"
+    },
+    {
+      "title": "manage the song queue",
+      "text": " To check the song queue, tap Next Track at the bottom of the player. You can rearrange the songs order with a simple drag & drop.",
+      "text2": "If you want to remove a song from your queue, just swipe it from right to left",
+      "text3": "To browse more audio files from your device, go to the Library tab at the top of the music player. You can find and play songs stored in Documents or even stream music from your connected cloud services",
+      "likes": "6.2k",
+      "dislikes": "376",
+      "icon": "https://play-lh.googleusercontent.com/ptWAMdhxupinxJCcOTrTm-xsTVmkdPz3bIufBDWSWrWE-lh5dL24gYML9zN_saPyvlY=s180",
+      "image": "https://coolgame.website/Readdle/image/1.jpg",
+      "image2": "https://coolgame.website/Readdle/image/1.jpg",
+      "image3": "https://coolgame.website/Readdle/image/1.jpg"
+    }
+  ]
+}
