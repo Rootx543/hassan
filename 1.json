@@ -22,9 +22,9 @@
     },
     {
       "Name": "startapp",
-      "Banner": "ca-app-pub-9670679874471381/7021668064",
-      "Interstitial": "ca-app-pub-9670679874471381/1789522685",
-      "Native": "ca-app-pub-9670679874471381/5227857201",
+      "Banner": "7021668064",
+      "Interstitial": "1789522685",
+      "Native": "5227857201",
       "Percentage": "0"
     }
   ],
