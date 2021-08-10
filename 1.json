@@ -18,11 +18,11 @@
     {
       "Name": "Iron",
       "AppId": "1009aafe1",
-      "Percentage": "100"
+      "Percentage": ""
     },
     {
       "Name": "startapp",
-      "AppId": "207885505",
+      "AppId": "",
       "Percentage": "0"
     }
   ],
