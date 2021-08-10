@@ -18,14 +18,14 @@
     {
       "Name": "Iron",
       "AppId": "1009aafe1",
-      "Percentage": "0"
+      "Percentage": "100"
     },
     {
       "Name": "startapp",
       "Banner": "ca-app-pub-9670679874471381/7021668064",
       "Interstitial": "ca-app-pub-9670679874471381/1789522685",
       "Native": "ca-app-pub-9670679874471381/5227857201",
-      "Percentage": "100"
+      "Percentage": "0"
     }
   ],
   "GuideContent": [
