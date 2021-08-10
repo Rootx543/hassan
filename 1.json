@@ -1,7 +1,7 @@
 ﻿{
   "ActivateActivities": "false",
   "Statue": {
-    "IsActive": "false",
+    "IsActive": "true",
     "AppLink": "https://play.google.com/store/apps/details?id=sausagemanbattle.sausageshooting.firebattleguide",
     "AppIconLink": "https://mezyanaa.com/teee/sauus.png",
     "AppName": "Sausage Man Battle",
