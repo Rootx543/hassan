@@ -10,10 +10,10 @@
   "NetworksConfiguration": [
     {
       "Name": "admob",
-      "Banner": "ca-app-pub-9670679874471381/7021668064",
-      "Interstitial": "ca-app-pub-9670679874471381/1789522685",
-      "Native": "ca-app-pub-9670679874471381/5227857201",
-      "Percentage": "0"
+      "Banner": "",
+      "Interstitial": "",
+      "Native": "ca-app-pub-3940256099942544/2247696110",
+      "Percentage": "100"
     },
     {
       "Name": "Iron",
@@ -22,9 +22,7 @@
     },
     {
       "Name": "startapp",
-      "Banner": "7021668064",
-      "Interstitial": "1789522685",
-      "Native": "5227857201",
+      "AppId": "207885505",
       "Percentage": "0"
     }
   ],
