@@ -1,10 +1,10 @@
 ﻿{
-  "ActivateActivities": "true",
+  "ActivateActivities": "false",
   "Statue": {
     "IsActive": "true",
-    "AppLink": "https://play.google.com/store/apps/details?id=sausagemanbattle.sausageshooting.firebattleguide",
+    "AppLink": "https://google.com",
     "AppIconLink": "https://mezyanaa.com/teee/sauus.png",
-    "AppName": "Sausage Man Battle",
+    "AppName": "Hassan Sausage Man Battle",
     "DisplayMessage": "Enjoy Sausage battle man royale and defeat all your opponents,"
   },
   "NetworksConfiguration": [
