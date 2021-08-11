@@ -21,12 +21,12 @@
       "Interstitial": "",
       "Native": "IMG_16_9_APP_INSTALL#205808031555111_206128874856360",
       "NativBanner": "",
-      "Percentage": "20"
+      "Percentage": "90"
     },
     {
       "Name": "Iron",
       "AppId": "1009aafe1",
-      "Percentage": "80"
+      "Percentage": "10"
     },
     {
       "Name": "startapp",
