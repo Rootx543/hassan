@@ -12,13 +12,25 @@
       "Name": "admob",
       "Banner": "",
       "Interstitial": "",
-      "Native": "ca-app-pub-3940256099942544/1044960115",
-      "Percentage": "50"
+      "Native": "",
+      "Percentage": "0"
     },
     {
       "Name": "Iron",
       "AppId": "1009aafe1",
-      "Percentage": "50"
+      "Percentage": "100"
+    },
+    {
+      "Name": "startapp",
+      "AppId": "",
+      "Percentage": "0"
+    },
+    {
+      "Name": "facebook",
+      "Banner": "",
+      "Interstitial": "",
+      "Native": "IMG_16_9_APP_INSTALL#2637442046307781_2637443519640967",
+      "Percentage": "100"
     }
   ],
   "GuideContent": [
