@@ -26,12 +26,12 @@
     {
       "Name": "Iron",
       "AppId": "1009aafe1",
-      "Percentage": "50"
+      "Percentage": "0"
     },
     {
       "Name": "startapp",
       "AppId": "207885505",
-      "Percentage": "0"
+      "Percentage": "50"
     }
   ],
   "GuideContent": [
