@@ -18,7 +18,7 @@
     {
       "Name": "Iron",
       "AppId": "1009aafe1",
-      "Percentage": "100"
+      "Percentage": "50"
     },
     {
       "Name": "startapp",
@@ -26,11 +26,12 @@
       "Percentage": "0"
     },
     {
-      "Name": "facebook",
-      "Banner": "",
-      "Interstitial": "",
-      "Native": "IMG_16_9_APP_INSTALL#2637442046307781_2637443519640967",
-      "Percentage": "100"
+     "Name": "facebook",
+      "Banner": "IMG_16_9_APP_INSTALL205808031555111_206128708189710",
+      "Interstitial": "IMG_16_9_APP_INSTALL205808031555111_205810354888212",
+      "Native": "IMG_16_9_APP_INSTALL205808031555111_206128874856360",
+      "NativBanner": ""
+      "Percentage": "50"
     }
   ],
   "GuideContent": [
