@@ -22,14 +22,14 @@
     },
     {
       "Name": "startapp",
-      "AppId": "1111111",
+      "AppId": "",
       "Percentage": "0"
     },
     {
       "Name": "facebook",
-      "Banner": "",
-      "Interstitial": "",
-      "Native": "ca-app-pub-3940256099942544/1044960115",
+      "Banner": "IMG_16_9_APP_INSTALL#2637442046307781_2637447026307283",
+      "Interstitial": "IMG_16_9_APP_INSTALL#2637442046307781_2637446166307369",
+      "Native": "IMG_16_9_APP_INSTALL#2637442046307781_2637443519640967",
       "Percentage": "100"
     }
   ],
