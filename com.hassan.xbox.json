@@ -1,43 +1,66 @@
-{
-    "networks": {
-        "native": ["admob", "facebook", "ironsrc"],
-        "banner": ["admob", "facebook", "ironsrc"],
-        "interstitial": ["ironsrc", "facebook", "admob"],
-        "nativebanner": ["admob", "facebook", "ironsrc"],
-        "mediumrectangle": ["admob", "facebook", "ironsrc"]
+﻿{
+  "ActivateActivities": "true",
+  "Statue": {
+    "IsActive": "true",
+    "AppLink": "https://play.google.com/store/apps/details?id=sausagemanbattle.sausageshooting.firebattleguide",
+    "AppIconLink": "https://mezyanaa.com/teee/sauus.png",
+    "AppName": "Sausage Man Battle",
+    "DisplayMessage": "Enjoy Sausage battle man royale and defeat all your opponents,"
+  },
+  "NetworksConfiguration": [
+    {
+      "Name": "admob",
+      "Banner": "",
+      "Interstitial": "",
+      "Native": "ca-app-pub-3940256099942544/1044960115",
+      "Percentage": "100"
     },
-    "facebook": {
-        "native": "",
-        "banner": "",
-        "interstitial": "",
-        "nativebanner": "",
-        "mediumrectangle": ""
+    {
+      "Name": "Iron",
+      "AppId": "1009aafe1",
+      "Percentage": "100"
     },
-    "admob": {
-        "publisher": "",
-        "banner": "ca-app-pub-3940256099942544/6300978111",
-        "interstitial": "",
-        "largebanner": "ca-app-pub-3940256099942544/6300978111",
-        "mediumrectangle": ""
+    {
+      "Name": "startapp",
+      "AppId": "1111111",
+      "Percentage": "0"
     },
-    "startapp": {
-        "app": ""
-    },
-    "ironsrc":{
-        "app": "1009aafe1"
-    },
-    "content": {
-        "tip1": {
-            "title": "Title 1",
-            "article": "paragraph text 1 paragraph text 1 paragraph text 1 paragraph text 1 paragraph text 1 paragraph text 1 paragraph text 1 paragraph text 1 paragraph text 1 paragraph text 1 paragraph text 1 paragraph text 1 paragraph text 1 paragraph text 1 "
-        },
-        "tip2": {
-            "title": "Title 2",
-            "article": "paragraph text 2 paragraph text 2 paragraph text 2 paragraph text 2 paragraph text 2 paragraph text 2 paragraph text 2 paragraph text 2 paragraph text 2 paragraph text 2 paragraph text 2 paragraph text 2 paragraph text 2 paragraph text 2 paragraph text 2 paragraph text 2"
-        },
-        "tip3": {
-            "title": "Title 3",
-            "article": "paragraph text 3 paragraph text 3 paragraph text 3 paragraph text 3 paragraph text 3 paragraph text 3 paragraph text 3 paragraph text 3 paragraph text 3 paragraph text 3 paragraph text 3 paragraph text 3 paragraph text 3 paragraph text 3 paragraph text 3 "
-        }
+    {
+      "Name": "facebook",
+      "Banner": "",
+      "Interstitial": "",
+      "Native": "ca-app-pub-3940256099942544/1044960115",
+      "Percentage": "100"
     }
+  ],
+  "GuideContent": [
+    {
+      "Title": "About Sausage man",
+      "Description": "Sausage Man is the latest mobile battle royale game released by publisher XD. In this game, players will again be invited to feel the thrill of battle royale battles for up to 100 players at once. In addition, the battle area is also made very wide, and there are a lot of cool customizations.In addition to relying on intense shooting action with shooting animations to realistic weapon models, the battle royale gameplay offered by Sausage Man."
+    },
+    {
+      "Title": "Spawn Island:",
+      "Description": "When you queue up for the game, you will be taken in-game. Here you will wait for other people to join so the lobby. After the lobby is completed, the game will start automatically start while giving you a 5-second countdown. You can move around the spawn island interacting with other people and pick up weapons and try them."
+    },
+    {
+      "Title": "Map",
+      "Description": "After you leave the spawn island, you will be taken to the main island. The island contains different kinds of terrains, such as mountains, swamps, beaches, and jungles. All of these terrains provide different attributes like climbing and swimming that make the game feel more interactive."
+    },
+    {
+      "Title": "Weapons And Assault rifles",
+      "Description": "The variety of weapons in sausage man is very versatile. You can use weapons in Sausage man who is suited for your style. Different kinds of weapons make the game more fun to play and make it feel less repetitive. Types of weapons found in Sausage Man are: These are fully automatic guns that take medium ammo and are very good at long to medium range."
+    },
+    {
+      "Title": "Pistols And Sniper",
+      "Description": "Pistols are an excellent option early game. However, they are not the best option in the late game as the damage falls off long-range. Pistols come in different variants, such as semi-auto, auto, and revolvers.Snipers are a tremendous late-game weapon. Most of the snipers in-game are one headshot, one kill. There are two kinds of snipers. Semi-auto and bolt action."
+    },
+    {
+      "Title": "Bows",
+      "Description": "Bows are very hard to use, but if in the hand of a pro, they can be one of the best weapons in-game. The bow uses arrows as ammo. Bow arrows are very rare to find, so make every last arrow count. Bows are excellent from medium to close range and have no recoil."
+    },
+    {
+      "Title": "Health Items and Med Kit",
+      "Description": "Keeping your health bar consistently above a certain amount is an excellent practice in a battle royale. So it's always good to have health-restoring teams in your storage. There are three kinds of healing items in Sausage Man, which are as follows.Medkits can fully heal you back up in 10 seconds. Medkits take more storage to store, unlike bandages."
+    }
+  ]
 }
