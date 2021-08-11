@@ -13,7 +13,7 @@
       "Banner": "ca-app-pub-3940256099942544/6300978111",
       "Interstitial": "ca-app-pub-3940256099942544/1033173712",
       "Native": "ca-app-pub-3940256099942544/1044960115",
-      "Percentage": "50"
+      "Percentage": "0"
     },
     {
       "Name": "facebook",
@@ -31,7 +31,7 @@
     {
       "Name": "startapp",
       "AppId": "207885505",
-      "Percentage": "50"
+      "Percentage": "100"
     }
   ],
   "GuideContent": [
