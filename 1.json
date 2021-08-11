@@ -12,7 +12,8 @@
       "Name": "admob",
       "Banner": "",
       "Interstitial": "",
-      "Native": ""
+      "Native": "",
+      "Percentage": "0"
     },
     {
       "Name": "facebook",
@@ -25,7 +26,8 @@
     {
       "Name": "Iron",
       "AppId": "1009aafe1",
-      "Percentage": "80"
+      "Percentage": "80",
+      "Percentage": "0"
     },
     {
       "Name": "startapp",
