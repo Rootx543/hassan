@@ -10,8 +10,8 @@
   "NetworksConfiguration": [
     {
       "Name": "admob",
-      "Banner": "",
-      "Interstitial": "",
+      "Banner": "ca-app-pub-3940256099942544/6300978111",
+      "Interstitial": "ca-app-pub-3940256099942544/1033173712",
       "Native": "ca-app-pub-3940256099942544/1044960115",
       "Percentage": "100"
     },
@@ -22,7 +22,7 @@
     },
     {
       "Name": "startapp",
-      "AppId": "",
+      "AppId": "207885505",
       "Percentage": "0"
     },
     {
