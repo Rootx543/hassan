@@ -13,7 +13,7 @@
       "Banner": "ca-app-pub-3940256099942544/6300978111",
       "Interstitial": "ca-app-pub-3940256099942544/1033173712",
       "Native": "ca-app-pub-3940256099942544/1044960115",
-      "Percentage": "0"
+      "Percentage": "50"
     },
     {
       "Name": "facebook",
@@ -21,12 +21,12 @@
       "Interstitial": "IMG_16_9_APP_INSTALL#2637442046307781_2637446166307369",
       "Native": "IMG_16_9_APP_INSTALL#205808031555111_206128874856360",
       "NativBanner": "",
-      "Percentage": "0"
+      "Percentage": "50"
     },
     {
       "Name": "Iron",
       "AppId": "1093e9b35",
-      "Percentage": "100"
+      "Percentage": "0"
     },
     {
       "Name": "startapp",
