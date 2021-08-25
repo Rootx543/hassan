@@ -12,11 +12,11 @@
       "unity_banner": "Banner_Android",
       "unity_inter": "Interstitial_Android",
       "unity_test": false,
-      "unity_gameID": "4205499",
+      "unity_gameID": "3499180",
       "Adcolo_Appid": "app2f427b45b09d4419b3",
       "Adcolo_Banner": "vz7a623ec0ee654719a0",
       "Adcolo_Interstitial": "vz0261b108d48b46a582",
-      "admo_or_face": "Admob",
+      "admo_or_face": "unity",
       "button_url": "https://play.google.com/store/apps/details?id=com.and.wareternal"
     }
   ]
