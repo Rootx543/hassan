@@ -13,7 +13,7 @@
       "admob_unit_id": "ca-app-pub-2187964410852657~4800723043"
     },
     "ironsource": {
-      "ironsource_app_key": ""
+      "ironsource_app_key": "1093e9b35"
     },
     "facebook": {
       "facebook_banner_id": "800577577269601_800578273936198",
