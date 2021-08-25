@@ -12,8 +12,8 @@
       "admob_rewarded_id": "",
       "admob_unit_id": "ca-app-pub-2187964410852657~4800723043"
     },
-    "appodeal": {
-      "appodeal_app_key": ""
+    "ironsource": {
+      "ironsource_app_key": ""
     },
     "facebook": {
       "facebook_banner_id": "800577577269601_800578273936198",
@@ -21,8 +21,8 @@
       "facebook_native_id": "800577577269601_800579020602790",
       "facebook_native_banner_id": ""
     },
-    "mode_ads_banner": "facebook",
-    "mode_ads_interstitial": "facebook",
+    "mode_ads_banner": "ironsource",
+    "mode_ads_interstitial": "ironsource",
     "mode_ads_interstitial_mix": "0",
     "mode_ads_native_enabled": true,
     "mode_ads_rewarded": "admob",
