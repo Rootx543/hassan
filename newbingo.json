@@ -28,12 +28,12 @@
       "Appodeal_id": "xxxxxxxxxxxxxxx",
       "Startapp_id": "207885505",
 
-      "Active_Ad_network": "IronSource",
+      "Active_Ad_network": "Startapp",
 
-      "Ad__1__Interstitial": "IronSource",
-      "Ad__2__Interstitial": "IronSource",
-      "Ad__3__Interstitial": "IronSource",
-      "Ad__4__Interstitial": "IronSource",
+      "Ad__1__Interstitial": "unity",
+      "Ad__2__Interstitial": "unity",
+      "Ad__3__Interstitial": "unity",
+      "Ad__4__Interstitial": "unity",
 
       "Ad__X__Banner": "Ironsource",
       "Ad__X__Native": "startapp",
