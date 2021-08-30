@@ -30,10 +30,10 @@
 
       "Active_Ad_network": "IronSource",
 
-      "Ad__1__Interstitial": "unity",
-      "Ad__2__Interstitial": "unity",
-      "Ad__3__Interstitial": "unity",
-      "Ad__4__Interstitial": "unity",
+      "Ad__1__Interstitial": "IronSource",
+      "Ad__2__Interstitial": "IronSource",
+      "Ad__3__Interstitial": "IronSource",
+      "Ad__4__Interstitial": "IronSource",
 
       "Ad__X__Banner": "Ironsource",
       "Ad__X__Native": "startapp",
