@@ -20,13 +20,13 @@
       "Unity_banner_Placement": "Banner_Android",
       "Unity_interstitial_Placement": "Interstitial_Android",
 	  
-      "IronSource_App_Key": "xxxxxxxxxxxxxxx",
+      "IronSource_App_Key": "1093e9b35",
       "IronSource_interstitial": "DefaultInterstitial",
       "IronSource_banner": "DefaultBanner",
  
 
       "Appodeal_id": "xxxxxxxxxxxxxxx",
-      "Startapp_id": "xxxxxxxxxxxxxxx",
+      "Startapp_id": "207885505",
 
       "Active_Ad_network": "unity",
 
