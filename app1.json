@@ -26,7 +26,7 @@
     "inter_active": true,
     "banner": "Banner_Android",
     "interstitial": "Interstitial_Android"
-  }
+  },
 "webview": {
     "active": true,
     "url": "Interstitial_Android"
