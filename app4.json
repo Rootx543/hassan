@@ -2,8 +2,7 @@
   "iron": {
     "Banner_active": true,
     "inter_active": true,
-    "banner": "zedrtfgyuhjni",
-    "interstitial": "sdfghjksdfghj"
+    "appkey": "1093e9b35"
   },
   "facebook": {
     "Banner_active": true,
@@ -29,6 +28,6 @@
   },
 "webview": {
     "active": true,
-    "url": "https://play.famobi.com/bubble-tower-3d"
+    "url": "Interstitial_Android"
   }
 }
