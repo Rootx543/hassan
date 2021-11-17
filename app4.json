@@ -2,12 +2,12 @@
   "iron": {
     "Banner_active": true,
     "inter_active": true,
-    "appkey": "1093e9b35"
+    "appkey": "1204f3345"
   },
   "facebook": {
     "Banner_active": false,
     "inter_active": true,
-    "native_active": true,
+    "native_active": false,
     "banner": "IMG_16_9_APP_INSTALL#YOUR_PLACEMENT_ID",
     "interstitial": "IMG_16_9_APP_INSTALL#YOUR_PLACEMENT_ID",
     "native": "IMG_16_9_APP_INSTALL#YOUR_PLACEMENT_ID"
