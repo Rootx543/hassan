@@ -2,8 +2,7 @@
   "iron": {
     "Banner_active": true,
     "inter_active": true,
-    "banner": "zedrtfgyuhjni",
-    "interstitial": "sdfghjksdfghj"
+    "appkey": "1093e9b35"
   },
   "facebook": {
     "Banner_active": true,
@@ -26,9 +25,5 @@
     "inter_active": true,
     "banner": "Banner_Android",
     "interstitial": "Interstitial_Android"
-  },
-"webview": {
-    "active": true,
-    "url": "Interstitial_Android"
   }
 }
