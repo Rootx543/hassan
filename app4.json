@@ -1,7 +1,7 @@
 {
   "iron": {
-    "Banner_active": true,
-    "inter_active": false,
+    "Banner_active": false,
+    "inter_active": true,
     "appkey": "1093e9b35"
   },
   "facebook": {
@@ -13,7 +13,7 @@
     "native": "IMG_16_9_APP_INSTALL#YOUR_PLACEMENT_ID"
   },
   "admob": {
-    "Banner_active": false,
+    "Banner_active": true,
     "inter_active": false,
     "native_active": false,
     "banner": "ca-app-pub-3940256099942544/6300978111",
@@ -22,7 +22,7 @@
   },
   "unity": {
     "Banner_active": false,
-    "inter_active": true,
+    "inter_active": false,
     "key": "4458995",
     "banner": "Banner_Android",
     "interstitial": "Interstitial_Android"
