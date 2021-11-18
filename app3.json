@@ -21,7 +21,7 @@
     "native": "ca-app-pub-3940256099942544/2247696110"
   },
   "unity": {
-    "Banner_active": true,
+    "Banner_active": false,
     "inter_active": true,
     "key": "1234567",
     "banner": "Banner_Android",
