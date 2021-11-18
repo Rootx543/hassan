@@ -15,7 +15,7 @@
   "admob": {
     "Banner_active": false,
     "inter_active": false,
-    "native_active": true,
+    "native_active": false,
     "banner": "ca-app-pub-3940256099942544/6300978111",
     "interstitial": "ca-app-pub-3940256099942544/1033173712",
     "native": "ca-app-pub-3940256099942544/2247696110"
