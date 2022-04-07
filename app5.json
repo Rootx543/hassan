@@ -1,6 +1,6 @@
 {
   "iron": {
-    "Banner_active": true,
+    "Banner_active": false,
     "appkey": "1093e9b35"
   },
   "facebook": {
@@ -8,7 +8,7 @@
     "banner": "IMG_16_9_APP_INSTALL#YOUR_PLACEMENT_ID"
   },
   "admob": {
-    "Banner_active": false,
+    "Banner_active": true,
     "banner": "ca-app-pub-3940256099942544/6300978111"
   },
   "unity": {
