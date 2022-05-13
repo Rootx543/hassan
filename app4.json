@@ -7,7 +7,7 @@
   "facebook": {
     "Banner_active": false,
     "inter_active": false,
-    "native_active": false,
+    "native_active": true,
     "banner": "IMG_16_9_APP_INSTALL#YOUR_PLACEMENT_ID",
     "interstitial": "IMG_16_9_APP_INSTALL#YOUR_PLACEMENT_ID",
     "native": "IMG_16_9_APP_INSTALL#YOUR_PLACEMENT_ID"
@@ -22,7 +22,7 @@
   },
   "unity": {
     "Banner_active": false,
-    "inter_active": false,
+    "inter_active": true,
     "key": "4458995",
     "banner": "Banner_Android",
     "interstitial": "Interstitial_Android"
