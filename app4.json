@@ -1,16 +1,16 @@
 {
   "iron": {
-    "Banner_active": true,
+    "Banner_active": false,
     "inter_active": false,
     "appkey": "1093e9b35"
   },
   "facebook": {
-    "Banner_active": false,
-    "inter_active": false,
+    "Banner_active": true,
+    "inter_active": true,
     "native_active": true,
-    "banner": "IMG_16_9_APP_INSTALL#YOUR_PLACEMENT_ID",
-    "interstitial": "IMG_16_9_APP_INSTALL#YOUR_PLACEMENT_ID",
-    "native": "IMG_16_9_APP_INSTALL#YOUR_PLACEMENT_ID"
+    "banner": "451506216739862_453503866540097",
+    "interstitial": "451506216739862_453503919873425",
+    "native": "451506216739862_453503996540084"
   },
   "admob": {
     "Banner_active": false,
