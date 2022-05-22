@@ -5,7 +5,7 @@
     "appkey": "1093e9b35"
   },
   "facebook": {
-    "Banner_active": true,
+    "Banner_active": false,
     "inter_active": true,
     "native_active": true,
     "banner": "451506216739862_453503866540097",
@@ -13,7 +13,7 @@
     "native": "451506216739862_453503996540084"
   },
   "admob": {
-    "Banner_active": false,
+    "Banner_active": true,
     "inter_active": false,
     "native_active": false,
     "banner": "ca-app-pub-3940256099942544/6300978111",
