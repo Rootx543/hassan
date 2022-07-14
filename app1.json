@@ -6,7 +6,7 @@
   },
   "facebook": {
     "Banner_active": false,
-    "inter_active": true,
+    "inter_active": false,
     "native_active": true,
     "banner": "451506216739862_453503866540097",
     "interstitial": "451506216739862_453503919873425",
@@ -22,8 +22,8 @@
   },
   "unity": {
     "Banner_active": false,
-    "inter_active": false,
-    "key": "4287445",
+    "inter_active": true,
+    "key": "4840389",
     "banner": "Banner_Android",
     "interstitial": "Interstitial_Android"
   }
