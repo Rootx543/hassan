@@ -1,0 +1,8 @@
+{
+  "match": {
+    "home_team": "Real Madrid",
+    "away_team": "Barcelona",
+    "score": "2-1",
+    "time": "45:00"
+  }
+}
