@@ -1,0 +1,19 @@
+{
+  "matches": [
+    {
+      "homeTeam": "Barcelona",
+      "awayTeam": "Real Madrid",
+      "link": "https://www.example.com/matches/barcelona-vs-real-madrid"
+    },
+    {
+      "homeTeam": "Paris Saint-Germain",
+      "awayTeam": "Bayern Munich",
+      "link": "https://www.example.com/matches/psg-vs-bayern-munich"
+    },
+    {
+      "homeTeam": "Liverpool",
+      "awayTeam": "Juventus",
+      "link": "https://www.example.com/matches/liverpool-vs-juventus"
+    }
+  ]
+}
