@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+  <title>HTML to Text Converter</title>
+</head>
+<body>
+  <h1>HTML to Text Converter</h1>
+  <form id="form" enctype="multipart/form-data">
+    <input type="file" id="fileInput" accept=".html" multiple>
+    <button type="submit" id="convertButton">Convert</button>
+  </form>
+  <pre id="output"></pre>
+  <button id="downloadButton" disabled>Download</button>
+  <script>
+    const form = document.getElementById('form');
+    const fileInput = document.getElementById('fileInput');
+    const convertButton = document.getElementById('convertButton');
+    const output = document.getElementById('output');
+    const downloadButton = document.getElementById('downloadButton');
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+
+      if (!fileInput.files.length) {
+        alert('Please select one or more files to convert');
+        return;
+      }
+
+      convertButton.disabled = true;
+      downloadButton.disabled = true;
+
+      const texts = {};
+      let fileNumber = 0;
+
+      for (const file of fileInput.files) {
+        fileNumber++;
+        const reader = new FileReader();
+        reader.onload = () => {
+          texts[fileNumber] = reader.result.replace(/<[^>]*>/g, '');
+
+          if (file === fileInput.files[fileInput.files.length - 1]) {
+            output.textContent = Object.values(texts).join('\n');
+            downloadButton.disabled = false;
+          }
+        };
+        reader.readAsText(file);
+      }
+    });
+
+    downloadButton.addEventListener('click', () => {
+      for (const fileNumber in texts) {
+        const text = texts[fileNumber];
+        const blob = new Blob([text], {type: 'text/plain'});
+        const anchor = document.createElement('a');
+        anchor.href = URL.createObjectURL(blob);
+        anchor.download = `text-${fileNumber}.txt`;
+        document.body.appendChild(anchor);
+        anchor.click();
+      }
+    });
+  </script>
+</body>
+</html>
+
