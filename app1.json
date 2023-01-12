@@ -1,7 +1,7 @@
 {
   "iron": {
     "Banner_active": false,
-    "inter_active": true,
+    "inter_active": false,
     "appkey": "15ed3e64d"
   },
   "facebook": {
@@ -22,8 +22,8 @@
   },
   "unity": {
     "Banner_active": false,
-    "inter_active": false,
-    "key": "4840389",
+    "inter_active": true,
+    "key": "4757157",
     "banner": "Banner_Android",
     "interstitial": "Interstitial_Android"
   }
