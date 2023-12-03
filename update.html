@@ -1,64 +1,184 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
+
 <head>
-  <title>HTML to Text Converter</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness App</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #3494E6, #EC6EAD);
+            color: #fff;
+        }
+
+        .container {
+            max-width: 400px;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        input,
+        select,
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+        }
+
+        p {
+            color: #333;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
+
 <body>
-  <h1>HTML to Text Converter</h1>
-  <form id="form" enctype="multipart/form-data">
-    <input type="file" id="fileInput" accept=".html" multiple>
-    <button type="submit" id="convertButton">Convert</button>
-  </form>
-  <pre id="output"></pre>
-  <button id="downloadButton" disabled>Download</button>
-  <script>
-    const form = document.getElementById('form');
-    const fileInput = document.getElementById('fileInput');
-    const convertButton = document.getElementById('convertButton');
-    const output = document.getElementById('output');
-    const downloadButton = document.getElementById('downloadButton');
+    <div class="container">
+        <h1>Fitness App</h1>
 
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
+        <label for="height">Height (cm):</label>
+        <input type="number" id="height">
 
-      if (!fileInput.files.length) {
-        alert('Please select one or more files to convert');
-        return;
-      }
+        <label for="gender">Gender:</label>
+        <select id="gender">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+        </select>
 
-      convertButton.disabled = true;
-      downloadButton.disabled = true;
+        <button onclick="calculateIdealWeight()">Calculate Ideal Weight</button>
 
-      const texts = {};
-      let fileNumber = 0;
+        <p id="idealWeightResult"></p>
 
-      for (const file of fileInput.files) {
-        fileNumber++;
-        const reader = new FileReader();
-        reader.onload = () => {
-          texts[fileNumber] = reader.result.replace(/<[^>]*>/g, '');
+        <hr>
 
-          if (file === fileInput.files[fileInput.files.length - 1]) {
-            output.textContent = Object.values(texts).join('\n');
-            downloadButton.disabled = false;
-          }
-        };
-        reader.readAsText(file);
-      }
-    });
+        <label for="age">Age:</label>
+        <input type="number" id="age">
 
-    downloadButton.addEventListener('click', () => {
-      for (const fileNumber in texts) {
-        const text = texts[fileNumber];
-        const blob = new Blob([text], {type: 'text/plain'});
-        const anchor = document.createElement('a');
-        anchor.href = URL.createObjectURL(blob);
-        anchor.download = `text-${fileNumber}.txt`;
-        document.body.appendChild(anchor);
-        anchor.click();
-      }
-    });
-  </script>
+        <label for="weight">Weight (kg):</label>
+        <input type="number" id="weight">
+
+        <button onclick="calculateCalories()">Calculate Daily Calories</button>
+
+        <p id="caloriesResult"></p>
+
+        <hr>
+
+        <label for="bmiHeight">Height (m):</label>
+        <input type="number" id="bmiHeight">
+
+        <label for="bmiWeight">Weight (kg):</label>
+        <input type="number" id="bmiWeight">
+
+        <button onclick="calculateBMI()">Calculate BMI</button>
+
+        <p id="bmiResult"></p>
+
+        <hr>
+
+        <label for="caloriesConsumed">Calories Consumed:</label>
+        <input type="number" id="caloriesConsumed" placeholder="Enter calories consumed">
+
+        <button onclick="calculateCalorieBalance()">Check Calorie Balance</button>
+
+        <p id="calorieBalanceResult"></p>
+    </div>
+
+    <script>
+        function calculateIdealWeight() {
+            const height = parseFloat(document.getElementById('height').value);
+            const gender = document.getElementById('gender').value;
+
+            let idealWeight;
+
+            if (!isNaN(height)) {
+                if (gender === 'male') {
+                    idealWeight = (height - 100) * 0.9;
+                } else {
+                    idealWeight = (height - 100) * 0.85;
+                }
+
+                document.getElementById('idealWeightResult').innerText = 'Ideal Weight: ' + idealWeight.toFixed(2) + ' kg';
+            } else {
+                document.getElementById('idealWeightResult').innerText = 'Please enter a valid height.';
+            }
+        }
+
+        function calculateCalories() {
+            const age = parseFloat(document.getElementById('age').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            const height = parseFloat(document.getElementById('height').value);
+
+            if (!isNaN(age) && !isNaN(weight) && !isNaN(height)) {
+                const calories = 10 * weight + 6.25 * height - 5 * age + 5;
+
+                document.getElementById('caloriesResult').innerText = 'Daily Calories: ' + calories.toFixed(2);
+            } else {
+                document.getElementById('caloriesResult').innerText = 'Please enter valid values for age, weight, and height.';
+            }
+        }
+
+        function calculateBMI() {
+            const bmiHeight = parseFloat(document.getElementById('bmiHeight').value);
+            const bmiWeight = parseFloat(document.getElementById('bmiWeight').value);
+
+            if (!isNaN(bmiHeight) && !isNaN(bmiWeight) && bmiHeight > 0 && bmiWeight > 0) {
+                const bmi = bmiWeight / (bmiHeight * bmiHeight);
+
+                document.getElementById('bmiResult').innerText = 'BMI: ' + bmi.toFixed(2);
+            } else {
+                document.getElementById('bmiResult').innerText = 'Please enter valid values for height and weight.';
+            }
+        }
+
+        function calculateCalorieBalance() {
+            const caloriesConsumed = parseFloat(document.getElementById('caloriesConsumed').value);
+
+            if (!isNaN(caloriesConsumed)) {
+                const dailyCalories = parseFloat(document.getElementById('caloriesResult').innerText.split(':')[1]);
+
+                const calorieBalance = caloriesConsumed - dailyCalories;
+
+                if (calorieBalance > 0) {
+                    document.getElementById('calorieBalanceResult').innerText = 'Calorie Surplus: ' + calorieBalance.toFixed(2);
+                } else if (calorieBalance < 0) {
+                    document.getElementById('calorieBalanceResult').innerText = 'Calorie Deficit: ' + Math.abs(calorieBalance).toFixed(2);
+                } else {
+                    document.getElementById('calorieBalanceResult').innerText = 'Calories Balanced';
+                }
+            } else {
+                document.getElementById('calorieBalanceResult').innerText = 'Please enter valid calories consumed.';
+            }
+        }
+    </script>
 </body>
-</html>
 
+</html>
