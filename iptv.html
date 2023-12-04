@@ -5,61 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IPTV Checker</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            text-align: center;
-        }
-
-        h1 {
-            color: #333;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 10px;
-            color: #555;
-        }
-
-        input {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-            margin-bottom: 20px;
-        }
-
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #45a049;
-        }
-
-        #result {
-            margin-top: 20px;
-            color: #333;
-        }
-
-        #adBlockMessage {
-            display: none;
-            background-color: #FFEB3B;
-            color: #333;
-            font-weight: bold;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 20px;
-        }
-
-        #adBlockMessage a {
-            color: #333;
-            text-decoration: underline;
-        }
+        /* Your existing styles here */
     </style>
     <!-- Include BlockAdBlock library -->
     <script src="https://cdn.jsdelivr.net/npm/blockadblock@3.6.0/dist/blockadblock.js"></script>
@@ -68,8 +14,9 @@
     <h1>IPTV URL Checker</h1>
     <label for="iptvUrl">Enter IPTV URL:</label>
     <input type="text" id="iptvUrl" placeholder="http://example.com/playlist.m3u8">
-    <button onclick="checkIPTV()">Check</button>
+    <button onclick="checkAndDisplayExpiration()">Check & Display Expiration</button>
     <p id="result"></p>
+    <p id="expiration"></p>
 
     <div id="adBlockMessage">
         <p>Please disable your ad blocker to use this service. If you need assistance, check our <a href="#">help page</a>.</p>
@@ -78,27 +25,7 @@
     <script>
         // Function to check if an ad blocker is active using BlockAdBlock library
         function checkAdBlocker() {
-            var detected = false;
-            var alertDiv = document.getElementById('adBlockMessage');
-
-            // Instantiate BlockAdBlock
-            var bab = new BlockAdBlock({
-                checkOnLoad: true,
-                resetOnEnd: true
-            });
-
-            // Check if an ad blocker is detected
-            bab.onDetected(function() {
-                detected = true;
-                alertDiv.style.display = 'block';
-            });
-
-            // Check again if an ad blocker is still present
-            bab.onNotDetected(function() {
-                if (detected) {
-                    alertDiv.style.display = 'none';
-                }
-            });
+            // ... (unchanged)
         }
 
         // Check for ad blockers on page load
@@ -106,32 +33,37 @@
             checkAdBlocker();
         };
 
-        // Function to check IPTV URL
-        function checkIPTV() {
+        // Function to check and display IPTV URL expiration
+        function checkAndDisplayExpiration() {
             var urlInput = document.getElementById('iptvUrl').value;
             var resultElement = document.getElementById('result');
+            var expirationElement = document.getElementById('expiration');
 
             if (urlInput.trim() === '') {
                 resultElement.textContent = 'Please enter a valid IPTV URL.';
+                expirationElement.textContent = '';
                 return;
             }
 
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', urlInput, true);
+            // Extract expiration date from the URL (replace this logic with your actual implementation)
+            var expirationDate = extractExpirationDate(urlInput);
 
-            xhr.onload = function () {
-                if (xhr.status == 200) {
-                    resultElement.textContent = 'IPTV URL is working!';
-                } else {
-                    resultElement.textContent = 'IPTV URL is not working. Status code: ' + xhr.status;
-                }
-            };
+            if (expirationDate) {
+                resultElement.textContent = 'IPTV URL is valid.';
+                expirationElement.textContent = 'Expiration Date: ' + expirationDate;
+            } else {
+                resultElement.textContent = 'Invalid IPTV URL.';
+                expirationElement.textContent = '';
+            }
+        }
 
-            xhr.onerror = function () {
-                resultElement.textContent = 'Error checking IPTV URL.';
-            };
-
-            xhr.send();
+        // Function to extract expiration date from the URL (replace this logic)
+        function extractExpirationDate(url) {
+            // Example: if expiration date is part of the URL, extract it
+            // Modify this logic based on your actual URL structure
+            // This is just a placeholder/example
+            var match = url.match(/expiration=(\d{4}-\d{2}-\d{2})/);
+            return match ? match[1] : null;
         }
     </script>
 </body>
