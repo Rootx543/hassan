@@ -61,6 +61,8 @@
             text-decoration: underline;
         }
     </style>
+    <!-- Include BlockAdBlock library -->
+    <script src="https://cdn.jsdelivr.net/npm/blockadblock@3.6.0/dist/blockadblock.js"></script>
 </head>
 <body>
     <h1>IPTV URL Checker</h1>
@@ -74,24 +76,29 @@
     </div>
 
     <script>
-        // Function to check if an ad blocker is active
+        // Function to check if an ad blocker is active using BlockAdBlock library
         function checkAdBlocker() {
-            var adBlockerDetected = false;
-            var testAd = document.createElement('div');
-            testAd.innerHTML = '&nbsp;';
-            testAd.className = 'adsbox';
+            var detected = false;
+            var alertDiv = document.getElementById('adBlockMessage');
 
-            document.body.appendChild(testAd);
-            window.setTimeout(function () {
-                if (testAd.offsetHeight === 0) {
-                    adBlockerDetected = true;
-                }
-                testAd.remove();
+            // Instantiate BlockAdBlock
+            var bab = new BlockAdBlock({
+                checkOnLoad: true,
+                resetOnEnd: true
+            });
 
-                if (adBlockerDetected) {
-                    document.getElementById('adBlockMessage').style.display = 'block';
+            // Check if an ad blocker is detected
+            bab.onDetected(function() {
+                detected = true;
+                alertDiv.style.display = 'block';
+            });
+
+            // Check again if an ad blocker is still present
+            bab.onNotDetected(function() {
+                if (detected) {
+                    alertDiv.style.display = 'none';
                 }
-            }, 100);
+            });
         }
 
         // Check for ad blockers on page load
