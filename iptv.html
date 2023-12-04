@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPTV Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #result {
+            margin-top: 20px;
+            color: #333;
+        }
+
+        #adBlockMessage {
+            display: none;
+            background-color: #FFEB3B;
+            color: #333;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        #adBlockMessage a {
+            color: #333;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>IPTV URL Checker</h1>
+    <label for="iptvUrl">Enter IPTV URL:</label>
+    <input type="text" id="iptvUrl" placeholder="http://example.com/playlist.m3u8">
+    <button onclick="checkIPTV()">Check</button>
+    <p id="result"></p>
+
+    <div id="adBlockMessage">
+        <p>Please disable your ad blocker to use this service. If you need assistance, check our <a href="#">help page</a>.</p>
+    </div>
+
+    <script>
+        // Function to check if an ad blocker is active
+        function checkAdBlocker() {
+            var adBlockerDetected = false;
+            var testAd = document.createElement('div');
+            testAd.innerHTML = '&nbsp;';
+            testAd.className = 'adsbox';
+
+            document.body.appendChild(testAd);
+            window.setTimeout(function () {
+                if (testAd.offsetHeight === 0) {
+                    adBlockerDetected = true;
+                }
+                testAd.remove();
+
+                if (adBlockerDetected) {
+                    document.getElementById('adBlockMessage').style.display = 'block';
+                }
+            }, 100);
+        }
+
+        // Check for ad blockers on page load
+        window.onload = function () {
+            checkAdBlocker();
+        };
+
+        // Function to check IPTV URL
+        function checkIPTV() {
+            var urlInput = document.getElementById('iptvUrl').value;
+            var resultElement = document.getElementById('result');
+
+            if (urlInput.trim() === '') {
+                resultElement.textContent = 'Please enter a valid IPTV URL.';
+                return;
+            }
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', urlInput, true);
+
+            xhr.onload = function () {
+                if (xhr.status == 200) {
+                    resultElement.textContent = 'IPTV URL is working!';
+                } else {
+                    resultElement.textContent = 'IPTV URL is not working. Status code: ' + xhr.status;
+                }
+            };
+
+            xhr.onerror = function () {
+                resultElement.textContent = 'Error checking IPTV URL.';
+            };
+
+            xhr.send();
+        }
+    </script>
+</body>
+</html>
