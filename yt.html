@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Channel Info (Unofficial)</title>
+</head>
+<body>
+    <h1>Your YouTube Channel Info</h1>
+    <label for="channelUrl">Enter your YouTube Channel URL:</label>
+    <input type="text" id="channelUrl" placeholder="e.g., https://www.youtube.com/c/YourChannel" />
+    <button onclick="getChannelInfo()">Get Info</button>
+    <div id="videos"></div>
+
+    <script>
+        function getChannelInfo() {
+            const channelUrl = document.getElementById('channelUrl').value;
+            const apiUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(channelUrl)}`;
+
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(data.contents, 'text/html');
+                    const entries = xmlDoc.querySelectorAll('h3');
+
+                    const videosContainer = document.getElementById('videos');
+                    videosContainer.innerHTML = '';
+
+                    entries.forEach(entry => {
+                        const videoTitle = entry.textContent.trim();
+                        const videoElement = document.createElement('p');
+                        videoElement.textContent = videoTitle;
+                        videosContainer.appendChild(videoElement);
+                    });
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+    </script>
+</body>
+</html>
