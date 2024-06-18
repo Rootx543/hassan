@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Address to Google Maps</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        .duplicate-sign {
+            color: red;
+        }
+        form {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        form input {
+            flex: 1;
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        form button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        form button:hover {
+            background-color: #218838;
+        }
+        #address-list {
+            margin-top: 20px;
+        }
+        .address-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 10px 0;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .address-item.clicked {
+            background-color: #d4edda;
+        }
+        .address-item span {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .address-item button {
+            background: none;
+            border: none;
+            color: #007bff;
+            cursor: pointer;
+            padding: 0;
+            font: inherit;
+        }
+        .address-item button:hover {
+            text-decoration: underline;
+        }
+        input[type="file"] {
+            display: block;
+            margin: 20px auto;
+            text-align: center;
+        }
+        .highlight {
+            color: red;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+        .controls input {
+            flex: 1;
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .controls select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Add Addresses<span class="duplicate-sign"></span></h1>
+        <form id="address-form">
+            <input type="text" id="address-input" placeholder="Enter address" required>
+            <button type="submit">Add Address</button>
+        </form>
+        
+        <h2>Import Addresses from CSV</h2>
+        <input type="file" id="csv-file-input" accept=".csv">
+        
+        <div class="controls">
+            <input type="text" id="filter-input" placeholder="Filter addresses">
+            <select id="sort-select">
+                <option value="none">Sort by</option>
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+                <option value="count-asc">Count (ascending)</option>
+                <option value="count-desc">Count (descending)</option>
+            </select>
+        </div>
+
+        <h2>Addresses</h2>
+        <div id="address-list"></div>
+    </div>
+
+    <script>
+        let addressCount = 0;
+        const addressOccurrences = {};
+        const secondWordOccurrences = {};
+
+        document.getElementById('address-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const addressInput = document.getElementById('address-input');
+            const address = addressInput.value.trim();
+            if (address) {
+                addAddress(address);
+                addressInput.value = '';
+                updateAddressList();
+            }
+        });
+
+        document.getElementById('csv-file-input').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const text = e.target.result;
+                    const addresses = parseCSV(text);
+                    addresses.forEach(addAddress);
+                    updateAddressList();
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        document.getElementById('filter-input').addEventListener('input', function() {
+            updateAddressList();
+        });
+
+        document.getElementById('sort-select').addEventListener('change', function() {
+            updateAddressList();
+        });
+
+        function parseCSV(text) {
+            const lines = text.split('\n').map(line => line.trim());
+            return lines.slice(1).filter(line => line);
+        }
+
+        function addAddress(address) {
+            const existingAddresses = Object.keys(addressOccurrences);
+            if (existingAddresses.includes(address)) {
+                addressOccurrences[address]++;
+            } else {
+                addressCount++;
+                addressOccurrences[address] = 1;
+            }
+            updateSecondWordOccurrences(address);
+        }
+
+        function updateSecondWordOccurrences(address) {
+            const words = address.split(' ');
+            if (words[1]) {
+                const normalizedWord = words[1].toLowerCase();
+                if (secondWordOccurrences[normalizedWord]) {
+                    secondWordOccurrences[normalizedWord]++;
+                } else {
+                    secondWordOccurrences[normalizedWord] = 1;
+                }
+            }
+        }
+
+        function getColor(word) {
+            const colors = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3'];
+            const index = Object.keys(secondWordOccurrences).indexOf(word.toLowerCase()) % colors.length;
+            return colors[index];
+        }
+
+        function highlightWords(address) {
+            const words = address.split(' ');
+            if (words.length > 1 && secondWordOccurrences[words[1].toLowerCase()] > 1) {
+                words[1] = `<span class="highlight" style="color: ${getColor(words[1])}">${words[1]}</span>`;
+            }
+            return words.join(' ');
+        }
+
+        function updateAddressList() {
+            const filterValue = document.getElementById('filter-input').value.toLowerCase();
+            const sortValue = document.getElementById('sort-select').value;
+
+            const addressList = document.getElementById('address-list');
+            addressList.innerHTML = '';
+
+            let addresses = Object.keys(addressOccurrences).filter(address => address.toLowerCase().includes(filterValue));
+
+            if (sortValue === 'name-asc') {
+                addresses.sort();
+            } else if (sortValue === 'name-desc') {
+                addresses.sort().reverse();
+            } else if (sortValue === 'count-asc') {
+                addresses.sort((a, b) => addressOccurrences[a] - addressOccurrences[b]);
+            } else if (sortValue === 'count-desc') {
+                addresses.sort((a, b) => addressOccurrences[b] - addressOccurrences[a]);
+            }
+
+            addresses.forEach((address, index) => {
+                const addressItem = document.createElement('div');
+                addressItem.className = 'address-item';
+                addressItem.innerHTML = `
+                    <span>${index + 1}.</span>
+                    <button>${highlightWords(address)}</button>
+                    <span class="occurrences">${addressOccurrences[address] > 1 ? ` (${addressOccurrences[address]}x)` : ''}</span>
+                `;
+                addressItem.querySelector('button').addEventListener('click', () => openInGoogleMaps(address, addressItem));
+                addressList.appendChild(addressItem);
+            });
+
+            updateDuplicateSign();
+        }
+
+        function openInGoogleMaps(address, addressItem) {
+            const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+            window.open(url, '_blank');
+            addressItem.classList.add('clicked');
+        }
+
+        function updateDuplicateSign() {
+            const sign = document.querySelector('.duplicate-sign');
+            const duplicateCount = Object.values(addressOccurrences).filter(count => count > 1).length;
+            sign.textContent = duplicateCount > 0 ? ` (${duplicateCount}x Duplicate)` : '';
+        }
+    </script>
+</body>
+</html>
