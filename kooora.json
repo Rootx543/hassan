@@ -59,8 +59,9 @@
   ],
   "popup": {
     "showPopup": true,
-    "message": "هناك تحديث جديد متوفر للتطبيق. الرجاء التحديث للاستمرار في استخدامه بشكل صحيح.",
-    "updateLink": "https://www.sirotna3so.com",
-    "messageDismissed": false
+    "messageDismissed": false,
+    "popupTitle": "تحديث متوفر",
+    "popupMessage": "هناك تحديث جديد متاح للتطبيق. يرجى تثبيت MX Player لمشاهدة الفيديوهات بشكل صحيح.",
+    "popupLink": "https://www.sirotna3so.com"
   }
 }
