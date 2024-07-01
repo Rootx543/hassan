@@ -58,7 +58,7 @@
     }
   ],
   "popup": {
-    "showPopup": false,
+    "showPopup": true,
     "message": "هناك تحديث جديد متوفر للتطبيق. الرجاء التحديث للاستمرار في استخدامه بشكل صحيح.",
     "updateLink": "https://www.sirotna3so.com",
     "messageDismissed": false
