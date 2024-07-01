@@ -58,9 +58,9 @@
     }
   ],
   "popup": {
-    "showPopup": true,
-    "title": "تحديث متوفر",
-    "message": "يجب عليك تثبيت تطبيق MX Player لمشاهدة الفيديو",
-    "link": "https://www.sirotna3so.com"
+    "showPopup": false,
+    "message": "هناك تحديث جديد متوفر للتطبيق. الرجاء التحديث للاستمرار في استخدامه بشكل صحيح.",
+    "updateLink": "https://www.sirotna3so.com",
+    "messageDismissed": false
   }
 }
