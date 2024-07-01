@@ -1,20 +1,30 @@
 {
-    "matches": [
-        {
-            "team1": "Real Madrid",
-            "team2": "Fc Barcelona",
-            "time": "08:00 PM",
-            "url": "https://alaraby.cdn.octivid.com/alaraby2n/smil:alaraby2n.stream.smil/chunklist.m3u8",
-            "team1Logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRj7kHgyd9GHcPpVcJ8FMmOjOQVk6JyHMq3Rw&s",
-            "team2Logo": "https://cdn.bleacherreport.net/images/team_logos/328x328/real_madrid.png"
-        },
-        {
-            "team1": "Al-Wehdat",
-            "team2": "Al-Sadd",
-            "time": "08:15 PM",
-            "url": "https://alaraby.cdn.octivid.com/alaraby2n/smil:alaraby2n.stream.smil/chunklist.m3u8",
-            "team1Logo": "https://cdn.bleacherreport.net/images/team_logos/328x328/real_madrid.png",
-            "team2Logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRj7kHgyd9GHcPpVcJ8FMmOjOQVk6JyHMq3Rw&s"
-        }
-    ]
+  "matches": [
+    {
+      "team1": "Madrid",
+      "team1Country": "Country A",
+      "team1Logo": "https://cdn.bleacherreport.net/images/team_logos/328x328/real_madrid.png",
+      "team2": "Fc Barcelona",
+      "team2Country": "Country B",
+      "team2Logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRj7kHgyd9GHcPpVcJ8FMmOjOQVk6JyHMq3Rw&s",
+      "competition": "League XYZ",
+      "isLive": true,
+      "score": "2 - 1",
+      "time": "15:00 UTC",
+      "videoLink": "http://7b30f9aa.tvclub.xyz/iptv/SGME6W4L2A6MNZ/6131/index.m3u8"
+    },
+    {
+      "team1": "Madrid",
+      "team1Country": "Country A",
+      "team1Logo": "https://cdn.bleacherreport.net/images/team_logos/328x328/real_madrid.png",
+      "team2": "Fc Barcelona",
+      "team2Country": "Country B",
+      "team2Logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRj7kHgyd9GHcPpVcJ8FMmOjOQVk6JyHMq3Rw&s",
+      "competition": "League XYZ",
+      "isLive": true,
+      "score": "2 - 1",
+      "time": "15:00 UTC",
+      "videoLink": "http://7b30f9aa.tvclub.xyz/iptv/SGME6W4L2A6MNZ/6131/index.m3u8"
+    }
+  ]
 }
