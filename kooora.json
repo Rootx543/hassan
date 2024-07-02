@@ -58,7 +58,7 @@
     }
   ],
   "popup": {
-    "showPopup": true,
+    "showPopup": false,
     "messageDismissed": true,
     "popupTitle": "تحديث متوفر",
     "popupMessage": "هناك تحديث جديد متاح للتطبيق. يرجى تثبيت MX Player لمشاهدة الفيديوهات بشكل صحيح.",
