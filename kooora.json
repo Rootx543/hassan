@@ -2,66 +2,85 @@
   "matches": [
     {
       "id": "1",
-      "team1": "حافية كوناكري",
-      "team2": "الوداد الرياضي",
-      "team1Logo": "https://cdn.bleacherreport.net/images/team_logos/328x328/real_madrid.png",
-      "team2Logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRj7kHgyd9GHcPpVcJ8FMmOjOQVk6JyHMq3Rw&s",
-      "team1Country": "غينيا",
-      "team2Country": "المغرب",
-      "competition": "دوري أبطال أفريقيا",
+      "team1": "الأهلي",
+      "team2": "الزمالك",
+      "team1Logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRj7kHgyd9GHcPpVcJ8FMmOjOQVk6JyHMq3Rw&s",
+      "team2Logo": "https://cdn.freebiesupply.com/logos/thumbs/2x/real-madrid-c-f-logo.png",
+      "team1Country": "مصر",
+      "team2Country": "مصر",
+      "competition": "الدوري المصري الممتاز",
       "isLive": true,
       "score": null,
-      "time": "19:00",
-      "videoLink": "https://example.com/live/match1"
+      "time": "20:00",
+      "videoLink": "https://alaraby.cdn.octivid.com/alaraby2n/smil:alaraby2n.stream.smil/chunklist.m3u8"
     },
     {
       "id": "2",
-      "team1": "النجم الساحلي",
-      "team2": "الجيش الملكي",
+      "team1": "الهلال",
+      "team2": "النصر",
+      "team1Logo": "https://cdn.freebiesupply.com/logos/thumbs/2x/real-madrid-c-f-logo.png",
+      "team2Logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRj7kHgyd9GHcPpVcJ8FMmOjOQVk6JyHMq3Rw&s",
+      "team1Country": "السعودية",
+      "team2Country": "السعودية",
+      "competition": "دوري روشن السعودي",
+      "isLive": false,
+      "score": "2 - 1",
+      "time": "انتهت",
+      "videoLink": "https://alaraby.cdn.octivid.com/alaraby2n/smil:alaraby2n.stream.smil/chunklist.m3u8"
+    },
+    {
+      "id": "3",
+      "team1": "الترجي",
+      "team2": "الوداد",
       "team1Logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRj7kHgyd9GHcPpVcJ8FMmOjOQVk6JyHMq3Rw&s",
-      "team2Logo": "https://cdn.bleacherreport.net/images/team_logos/328x328/real_madrid.png",
+      "team2Logo": "https://cdn.freebiesupply.com/logos/thumbs/2x/real-madrid-c-f-logo.png",
       "team1Country": "تونس",
       "team2Country": "المغرب",
       "competition": "دوري أبطال أفريقيا",
       "isLive": true,
       "score": null,
       "time": "21:00",
-      "videoLink": "https://example.com/live/match2"
-    },
-    {
-      "id": "3",
-      "team1": "جيرونا",
-      "team2": "ريال مدريد",
-      "team1Logo": "https://cdn.bleacherreport.net/images/team_logos/328x328/real_madrid.png",
-      "team2Logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRj7kHgyd9GHcPpVcJ8FMmOjOQVk6JyHMq3Rw&s",
-      "team1Country": "إسبانيا",
-      "team2Country": "إسبانيا",
-      "competition": "الدوري الإسباني",
-      "isLive": false,
-      "score": "null",
-      "time": "انتهت",
-      "videoLink": "https://example.com/highlights/match3"
+      "videoLink": "https://example.com/live/match3"
     },
     {
       "id": "4",
-      "team1": "ليفربول",
-      "team2": "توتنهام",
-      "team1Logo": "https://cdn.bleacherreport.net/images/team_logos/328x328/real_madrid.png",
-      "team2Logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRj7kHgyd9GHcPpVcJ8FMmOjOQVk6JyHMq3Rw&s",
-      "team1Country": "إنجلترا",
-      "team2Country": "إنجلترا",
-      "competition": "الدوري الإنجليزي",
+      "team1": "الريان",
+      "team2": "السد",
+      "team1Logo": "https://example.com/rayyan_logo.png",
+      "team2Logo": "https://example.com/alsadd_logo.png",
+      "team1Country": "قطر",
+      "team2Country": "قطر",
+      "competition": "دوري نجوم QNB",
       "isLive": false,
-      "score": "null",
+      "score": "0 - 3",
       "time": "انتهت",
       "videoLink": "https://example.com/highlights/match4"
+    },
+    {
+      "id": "5",
+      "team1": "الاتحاد",
+      "team2": "الشباب",
+      "team1Logo": "https://example.com/ittihad_logo.png",
+      "team2Logo": "https://example.com/shabab_logo.png",
+      "team1Country": "السعودية",
+      "team2Country": "السعودية",
+      "competition": "دوري روشن السعودي",
+      "isLive": false,
+      "score": null,
+      "time": "غداً 19:30",
+      "videoLink": "https://example.com/upcoming/match5"
     }
   ],
-  "popup": {
+  "updatePopup": {
     "showPopup": false,
-    "messageDismissed": false,
     "popupTitle": "تحديث متوفر",
     "popupMessage": "هناك تحديث جديد متاح للتطبيق. يرجى تثبيت MX Player لمشاهدة الفيديوهات بشكل صحيح.",
-    "popupLink": "https://www.sirotna3so.com"
+    "popupLink": "https://play.google.com/store/apps/details?id=com.mxtech.videoplayer.ad"
+  },
+  "messagePopup": {
+    "showPopup": true,
+    "popupTitle": "رسالة مهمة",
+    "popupMessage": "مرحبًا بكم في تطبيق مباريات كرة القدم الجديد! نتمنى لكم تجربة ممتعة ومفيدة.",
+    "popupLink": ""
   }
 }
