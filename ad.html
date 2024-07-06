@@ -124,33 +124,6 @@
             }
         }
 
-        // Embed the manifest content
-        const manifestContent = {
-            "name": "Address to CSV Converter",
-            "short_name": "Address Converter",
-            "start_url": ".",
-            "display": "standalone",
-            "background_color": "#ffffff",
-            "theme_color": "#4CAF50",
-            "icons": [
-                {
-                    "src": "icon-192x192.png",
-                    "sizes": "192x192",
-                    "type": "image/png"
-                },
-                {
-                    "src": "icon-512x512.png",
-                    "sizes": "512x512",
-                    "type": "image/png"
-                }
-            ]
-        };
-
-        const manifestBlob = new Blob([JSON.stringify(manifestContent)], { type: 'application/json' });
-        const manifestURL = URL.createObjectURL(manifestBlob);
-        document.querySelector('link[rel="manifest"]').setAttribute('href', manifestURL);
-
-        // Register service worker dynamically
         if ('serviceWorker' in navigator) {
             const serviceWorkerScript = `
                 self.addEventListener('install', event => {
@@ -176,6 +149,32 @@
                 console.log('Service Worker registration failed: ', err);
             });
         }
+
+        // Embed the manifest content
+        const manifestContent = {
+            "name": "Address to CSV Converter",
+            "short_name": "Address Converter",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#ffffff",
+            "theme_color": "#4CAF50",
+            "icons": [
+                {
+                    "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAA..."
+                    "sizes": "192x192",
+                    "type": "image/png"
+                },
+                {
+                    "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA..."
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }
+            ]
+        };
+
+        const manifestBlob = new Blob([JSON.stringify(manifestContent)], { type: 'application/json' });
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        document.querySelector('link[rel="manifest"]').setAttribute('href', manifestURL);
     </script>
 </body>
 </html>
