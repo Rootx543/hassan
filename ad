@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Professional Address to CSV Converter</title>
+    <link rel="manifest" href="#">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -121,6 +122,59 @@
                 link.click();
                 document.body.removeChild(link);
             }
+        }
+
+        // Embed the manifest content
+        const manifestContent = {
+            "name": "Address to CSV Converter",
+            "short_name": "Address Converter",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#ffffff",
+            "theme_color": "#4CAF50",
+            "icons": [
+                {
+                    "src": "icon-192x192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                },
+                {
+                    "src": "icon-512x512.png",
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }
+            ]
+        };
+
+        const manifestBlob = new Blob([JSON.stringify(manifestContent)], { type: 'application/json' });
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        document.querySelector('link[rel="manifest"]').setAttribute('href', manifestURL);
+
+        // Register service worker dynamically
+        if ('serviceWorker' in navigator) {
+            const serviceWorkerScript = `
+                self.addEventListener('install', event => {
+                    console.log('Service Worker installing.');
+                });
+
+                self.addEventListener('activate', event => {
+                    console.log('Service Worker activating.');
+                });
+
+                self.addEventListener('fetch', event => {
+                    console.log('Fetching:', event.request.url);
+                });
+            `;
+
+            const serviceWorkerBlob = new Blob([serviceWorkerScript], { type: 'application/javascript' });
+            const serviceWorkerURL = URL.createObjectURL(serviceWorkerBlob);
+
+            navigator.serviceWorker.register(serviceWorkerURL)
+            .then(reg => {
+                console.log('Service Worker registered!', reg);
+            }).catch(err => {
+                console.log('Service Worker registration failed: ', err);
+            });
         }
     </script>
 </body>
