@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Professional Address to CSV Converter</title>
-    <link rel="manifest" href="#">
+    
+    <!-- Add these meta tags for installability -->
+    <meta name="description" content="Convert addresses to CSV format easily">
+    <meta name="theme-color" content="#4CAF50">
+    <link rel="manifest" href="data:application/json;base64,ewogICAgIm5hbWUiOiAiQWRkcmVzcyB0byBDU1YgQ29udmVydGVyIiwKICAgICJzaG9ydF9uYW1lIjogIkFkZHJlc3NDU1YiLAogICAgImRlc2NyaXB0aW9uIjogIkNvbnZlcnQgYWRkcmVzc2VzIHRvIENTViBmb3JtYXQgZWFzaWx5IiwKICAgICJzdGFydF91cmwiOiAiLyIsCiAgICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAgICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmMGYwZjAiLAogICAgInRoZW1lX2NvbG9yIjogIiM0Q0FGNTAiLAogICAgImljb25zIjogWwogICAgICAgIHsKICAgICAgICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3BuZztiYXNlNjQsaVZCT1J3MEtHZ29BQUFBTlNVaEVVZ0FBQUVBQUFBQkFDQVlBQUFDcVFJZUFBQUFBWDBsRVFWUjRuTzJad1c0VE1SQ0dKeW5RRnRxQ0VCemhSUkFIRGh6Z0Jid0NRamszZXhSQ0FnNDhUZDhwbDVVNDhBeE9GQWxlSXRScFUxckVqTU5xdlJ2SHUvYWtLemw4VXFWNlBiYjkvMnZQN0hxbXFzZDloVm1DRjkxTDM5a1Y1a0xoeTB1MXRxV3FWbFV2MXZCUkhzME9YN1o4T05yWHlzbW1HdHNmL3YxNitQM0w5ZFBIMnZRL3ZBYVVvTVBCbzZhdkRWZlBHMlhYWlF4Z3Jrdk5ud05BcGc4QUFBQUFBQkFCQUFBQUFBQUF3UHdFVEdBeWZ3QjdmQUJrL2dBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQWdTVURtRHlEd0FjajhBUUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFCRUFHVCtBQUlmZ013ZkFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ0pBNWc4ZzhBSEkvQUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUVTRHpCeEQ0QUdUK0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFSSVBNSEVQZ0FaUDRBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUlrRG1EeUR3QWNqOEFRQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFSWUc3bS84T3lheHU2OE9hYThTQlQ4bFlzQ2VDL2lqZGpUZGZlRFJzYXV6VGoxdDJkSFZXelV0WEdMNTNxYms0NU9hSSt4QTc5d3o4NExaRnU5S2RMSHFzQ0FHdWNyRVNFZXplMlhzanB6dFBxeUVCYnJWbyt2NWJBTCttV3hJZU5iUjNZdTA1MUFDWFZKZStSeWhRUHdBUVNrL01JTXVEMmNLSldqL3RxckN2SzNDNlh6YWVzeXVteFlqWEZpWHZSaG00Zmt3WWpTMXFjUnNrWDRFU0VTSW5qbndTWS8rQ3poNlB6YXdOVmRWZlllbkM4R0F6OWhqbGYrRUxxbVVQVzUvdnN0Z0JteVdleUVQZDhGNlVMWWhtUUFsbVVnNi9uQVFaQ1o0ZWpielBhdERVK0NudEFYVHRObnlvZmRQSEQyTldMTVFLUTVwVGwvNmY4Wm05NnRHN2F6NTFVeGR4UlpPdlZDamQ5K3BnMkFuaXM1U1JDSkFINFdVNGRCYTdKV3NzUWdNZGFzbUtzTitBYnF5ZHI3a2dCL0t4bEVRR1NzSGJXcEFmZy9UWC9WM1QydlZvNzYzUUZrRU9YQnFEcVI2QWd0YTVLQ21DT0FDVzNnSlM2a3JUdm5hWUFjdC82YXRmbEt3SlMxOUxHVDNJQXBRTW9MWUpBbERmWGxtMi9zd0F5ZjQzSXVGZHlGZkRwc3dQQXVScUlBQnZxVHJEQlZteG5oN1hxbVM3ZStHdUI0OGltZGZBeEFVUW95ZkExODFWRTZYMHd0OWFjdDREUzhIMkUwS1MxNWdSUUlEWTlaUnRVdmxjTEtBM2ZKNExHclRVSHdCSXZwOXpyN1BEOVJHZ2lCUEEyVUZwK2x3aU5XMnVEQUJLRWJrN1RwdXZ0ck1Fbm9JSUlUVmhyUExmQWtpKzdMbGNSaHE0MUZzQkFreDZISHQzMHRiWUF4STlWdHp6UDFVaWJFeVdBd1VLTVcxNUNTNXNUSllCdlFXdE0xWmpRcHNXSkdrQWJEbDFhTTZHcGEwMEFJSEdobVVzTkVmQ04xN1VLUUhHQlRWblRRQWk0Q2tEL0FHQ3ZLRWp6RHplTkFBQUFBRWxGVGtTdVFtQ0MiLAogICAgICAgICAgICAic2l6ZXMiOiAiMTkyeDE5MiIsCiAgICAgICAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgICAgICB9CiAgICBdCn0=">
+    
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -89,7 +94,6 @@
         }
 
         function cleanAddress(address) {
-            // Remove periods and commas
             return address.replace(/[.,]/g, '').trim();
         }
 
@@ -99,7 +103,6 @@
 
             addresses.forEach(address => {
                 if (address.trim() !== '') {
-                    // Clean the address and wrap it in quotes
                     const cleanedAddress = cleanAddress(address);
                     csvContent += `"${cleanedAddress}"\n`;
                 }
@@ -124,57 +127,16 @@
             }
         }
 
+        // Service Worker Registration
         if ('serviceWorker' in navigator) {
-            const serviceWorkerScript = `
-                self.addEventListener('install', event => {
-                    console.log('Service Worker installing.');
+            navigator.serviceWorker.register('data:application/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdpbnN0YWxsJywgKGV2ZW50KSA9PiB7CiAgICBldmVudC53YWl0VW50aWwoCiAgICAgICAgY2FjaGVzLm9wZW4oJ2FkZHJlc3MtY3N2LWNvbnZlcnRlci12MScpLnRoZW4oKGNhY2hlKSA9PiB7CiAgICAgICAgICAgIHJldHVybiBjYWNoZS5hZGRBbGwoWwogICAgICAgICAgICAgICAgJy8nLAogICAgICAgICAgICAgICAgJy9pbmRleC5odG1sJywKICAgICAgICAgICAgICAgICcvaWNvbi5wbmcnCiAgICAgICAgICAgIF0pOwogICAgICAgIH0pCiAgICApOwp9KTsKCnNlbGYuYWRkRXZlbnRMaXN0ZW5lcignZmV0Y2gnLCAoZXZlbnQpID0+IHsKICAgIGV2ZW50LnJlc3BvbmRXaXRoKAogICAgICAgIGNhY2hlcy5tYXRjaChldmVudC5yZXF1ZXN0KS50aGVuKChyZXNwb25zZSkgPT4gewogICAgICAgICAgICByZXR1cm4gcmVzcG9uc2UgfHwgZmV0Y2goZXZlbnQucmVxdWVzdCk7CiAgICAgICAgfSkKICAgICk7Cn0pOw==')
+                .then((registration) => {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                })
+                .catch((error) => {
+                    console.log('Service Worker registration failed:', error);
                 });
-
-                self.addEventListener('activate', event => {
-                    console.log('Service Worker activating.');
-                });
-
-                self.addEventListener('fetch', event => {
-                    console.log('Fetching:', event.request.url);
-                });
-            `;
-
-            const serviceWorkerBlob = new Blob([serviceWorkerScript], { type: 'application/javascript' });
-            const serviceWorkerURL = URL.createObjectURL(serviceWorkerBlob);
-
-            navigator.serviceWorker.register(serviceWorkerURL)
-            .then(reg => {
-                console.log('Service Worker registered!', reg);
-            }).catch(err => {
-                console.log('Service Worker registration failed: ', err);
-            });
         }
-
-        // Embed the manifest content
-        const manifestContent = {
-            "name": "Address to CSV Converter",
-            "short_name": "Address Converter",
-            "start_url": ".",
-            "display": "standalone",
-            "background_color": "#ffffff",
-            "theme_color": "#4CAF50",
-            "icons": [
-                {
-                    "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAA..."
-                    "sizes": "192x192",
-                    "type": "image/png"
-                },
-                {
-                    "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA..."
-                    "sizes": "512x512",
-                    "type": "image/png"
-                }
-            ]
-        };
-
-        const manifestBlob = new Blob([JSON.stringify(manifestContent)], { type: 'application/json' });
-        const manifestURL = URL.createObjectURL(manifestBlob);
-        document.querySelector('link[rel="manifest"]').setAttribute('href', manifestURL);
     </script>
 </body>
 </html>
