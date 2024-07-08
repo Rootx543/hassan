@@ -130,34 +130,92 @@
             const placeholders = document.querySelectorAll('input');
             const forgotPassword = document.querySelector('.forgot-password');
             const createAccount = document.querySelector('.create-account');
+            const submitButton = document.querySelector('button[type="submit"]');
 
             // Define country-specific labels
             const languageLabels = {
                 'fr': {
-                    'CA': "Connexion - Français (Canada)",
-                    'FR': "Connexion - Français (France)",
-                    'MA': "Connexion - Français (Maroc)",
-                    'default': "Connexion - Français"
+                    'CA': {
+                        title: "Connexion - Français (Canada)",
+                        placeholderEmail: "Numéro de cellulaire ou adresse courriel",
+                        placeholderPassword: "Mot de passe",
+                        forgotPassword: "Mot de passe oublié?",
+                        submitButton: "Se connecter",
+                        createAccount: "Créer un compte"
+                    },
+                    'FR': {
+                        title: "Connexion - Français (France)",
+                        placeholderEmail: "Numéro de cellulaire ou adresse courriel",
+                        placeholderPassword: "Mot de passe",
+                        forgotPassword: "Mot de passe oublié?",
+                        submitButton: "Se connecter",
+                        createAccount: "Créer un compte"
+                    },
+                    'MA': {
+                        title: "Connexion - Français (Maroc)",
+                        placeholderEmail: "Numéro de cellulaire ou adresse courriel",
+                        placeholderPassword: "Mot de passe",
+                        forgotPassword: "Mot de passe oublié?",
+                        submitButton: "Se connecter",
+                        createAccount: "Créer un compte"
+                    },
+                    'default': {
+                        title: "Connexion - Français",
+                        placeholderEmail: "Numéro de cellulaire ou adresse courriel",
+                        placeholderPassword: "Mot de passe",
+                        forgotPassword: "Mot de passe oublié?",
+                        submitButton: "Se connecter",
+                        createAccount: "Créer un compte"
+                    }
                 },
                 'ar': {
-                    'default': "تسجيل الدخول - العربية"
+                    'default': {
+                        title: "تسجيل الدخول - العربية",
+                        placeholderEmail: "رقم الهاتف أو البريد الإلكتروني",
+                        placeholderPassword: "كلمة المرور",
+                        forgotPassword: "نسيت كلمة المرور؟",
+                        submitButton: "تسجيل الدخول",
+                        createAccount: "إنشاء حساب"
+                    }
                 },
                 'en': {
-                    'US': "Login - English (United States)",
-                    'GB': "Login - English (United Kingdom)",
-                    'default': "Login - English"
+                    'US': {
+                        title: "Login - English (United States)",
+                        placeholderEmail: "Phone number or email address",
+                        placeholderPassword: "Password",
+                        forgotPassword: "Forgot password?",
+                        submitButton: "Log In",
+                        createAccount: "Create an account"
+                    },
+                    'GB': {
+                        title: "Login - English (United Kingdom)",
+                        placeholderEmail: "Phone number or email address",
+                        placeholderPassword: "Password",
+                        forgotPassword: "Forgot password?",
+                        submitButton: "Log In",
+                        createAccount: "Create an account"
+                    },
+                    'default': {
+                        title: "Login - English",
+                        placeholderEmail: "Phone number or email address",
+                        placeholderPassword: "Password",
+                        forgotPassword: "Forgot password?",
+                        submitButton: "Log In",
+                        createAccount: "Create an account"
+                    }
                 }
             };
 
             const countryLabels = languageLabels[lang] || languageLabels['en'];
-            const title = countryLabels[country] || countryLabels['default'];
+            const content = countryLabels[country] || countryLabels['default'];
 
-            pageTitle.textContent = title;
-            h1.textContent = title.split(' - ')[1] || title;
-            placeholders[0].placeholder = lang === 'fr' ? "Numéro de cellulaire ou adresse courriel" : (lang === 'ar' ? "رقم الهاتف أو البريد الإلكتروني" : "Phone number or email address");
-            placeholders[1].placeholder = lang === 'fr' ? "Mot de passe" : (lang === 'ar' ? "كلمة المرور" : "Password");
-            forgotPassword.textContent = lang === 'fr' ? "Mot de passe oublié?" : (lang === 'ar' ? "نسيت كلمة المرور؟" : "Forgot password?");
-            createAccount.textContent = lang === 'fr' ? "Créer un compte" : (lang === 'ar' ? "إنشاء حساب" : "Create an account");
+            pageTitle.textContent = content.title;
+            h1.textContent = content.title.split(' - ')[1] || content.title;
+            placeholders[0].placeholder = content.placeholderEmail;
+            placeholders[1].placeholder = content.placeholderPassword;
+            forgotPassword.textContent = content.forgotPassword;
+            submitButton.textContent = content.submitButton;
+            createAccount.textContent = content.createAccount;
         }
 
         document.addEventListener('DOMContentLoaded', function() {
