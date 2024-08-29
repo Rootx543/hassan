@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <base href="https://cardeals-mobile.com/">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CarDeals Mobile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        /* ... (previous styles remain unchanged) ... */
+        .file-input {
+            display: none;
+        }
+        .file-label {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .image-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .image-preview-item {
+            position: relative;
+            width: 100px;
+            height: 100px;
+        }
+        .image-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .image-preview-item .remove-image {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .login-register-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .login-register-form input {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .login-register-form button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .filter-options {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .filter-group {
+            margin-bottom: 1rem;
+        }
+        .filter-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        .filter-group input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>{{ currentPage }}</h1>
+        </header>
+        <main class="content">
+            <!-- Browse Cars -->
+            <div v-if="currentPage === 'Browse Cars'">
+                <div class="search-bar">
+                    <input v-model="searchQuery" @input="debouncedSearch" placeholder="Search cars...">
+                    <button @click="search">🔍</button>
+                </div>
+                <div class="filters">
+                    <button @click="toggleFilter('sort')" :class="['filter-btn', { active: activeFilters.includes('sort') }]">
+                        Sort
+                    </button>
+                    <button @click="toggleFilter('price')" :class="['filter-btn', { active: activeFilters.includes('price') }]">
+                        Price
+                    </button>
+                    <button @click="toggleFilter('year')" :class="['filter-btn', { active: activeFilters.includes('year') }]">
+                        Year
+                    </button>
+                </div>
+                <div v-if="activeFilters.length > 0" class="filter-options">
+                    <div v-if="activeFilters.includes('sort')" class="filter-group">
+                        <label for="sort">Sort by:</label>
+                        <select id="sort" v-model="sortBy" @change="applyFilters">
+                            <option value="priceAsc">Price: Low to High</option>
+                            <option value="priceDesc">Price: High to Low</option>
+                            <option value="yearDesc">Year: Newest First</option>
+                            <option value="yearAsc">Year: Oldest First</option>
+                        </select>
+                    </div>
+                    <div v-if="activeFilters.includes('price')" class="filter-group">
+                        <label for="minPrice">Min Price:</label>
+                        <input id="minPrice" v-model.number="filters.minPrice" type="number" @input="applyFilters">
+                        <label for="maxPrice">Max Price:</label>
+                        <input id="maxPrice" v-model.number="filters.maxPrice" type="number" @input="applyFilters">
+                    </div>
+                    <div v-if="activeFilters.includes('year')" class="filter-group">
+                        <label for="yearFrom">Year From:</label>
+                        <input id="yearFrom" v-model.number="filters.yearFrom" type="number" @input="applyFilters">
+                        <label for="yearTo">Year To:</label>
+                        <input id="yearTo" v-model.number="filters.yearTo" type="number" @input="applyFilters">
+                    </div>
+                </div>
+                <div class="car-list">
+                    <div v-for="car in paginatedCars" :key="car.id" class="car-item" @click="viewCar(car)">
+                        <img :src="car.image" :alt="car.description" class="car-image">
+                        <div class="car-details">
+                            <h3>{{ car.title }}</h3>
+                            <p>{{ car.description }}</p>
+                            <span class="car-price">${{ car.price.toLocaleString() }}</span>
+                            <div class="car-meta">
+                                <span>Year: {{ car.year }}</span> |
+                                <span>Mileage: {{ car.mileage.toLocaleString() }} miles</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pagination">
+                    <button @click="prevPage" :disabled="currentPageNum === 1">Previous</button>
+                    <span>Page {{ currentPageNum }} of {{ totalPages }}</span>
+                    <button @click="nextPage" :disabled="currentPageNum === totalPages">Next</button>
+                </div>
+            </div>
+
+            <!-- Improved Sell Car -->
+            <div v-if="currentPage === 'Sell Car'">
+                <h2>Sell Your Car</h2>
+                <form @submit.prevent="submitListing" class="sell-form">
+                    <div class="form-group">
+                        <label for="title">Car Title</label>
+                        <input id="title" v-model="newListing.title" required>
+                        <span v-if="validationErrors.title" class="error-message">{{ validationErrors.title }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="make">Make</label>
+                        <input id="make" v-model="newListing.make" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="model">Model</label>
+                        <input id="model" v-model="newListing.model" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="year">Year</label>
+                        <input id="year" v-model.number="newListing.year" type="number" required min="1900" :max="currentYear">
+                        <span v-if="validationErrors.year" class="error-message">{{ validationErrors.year }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="price">Price ($)</label>
+                        <input id="price" v-model.number="newListing.price" type="number" required min="0">
+                        <span v-if="validationErrors.price" class="error-message">{{ validationErrors.price }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mileage">Mileage</label>
+                        <input id="mileage" v-model.number="newListing.mileage" type="number" required min="0">
+                        <span v-if="validationErrors.mileage" class="error-message">{{ validationErrors.mileage }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="condition">Condition</label>
+                        <select id="condition" v-model="newListing.condition" required>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" v-model="newListing.description" required></textarea>
+                        <span v-if="validationErrors.description" class="error-message">{{ validationErrors.description }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="image-upload" class="file-label">Upload Images</label>
+                        <input id="image-upload" type="file" class="file-input" @change="handleImageUpload" multiple accept="image/*">
+                        <div class="image-preview-container">
+                            <div v-for="(image, index) in newListing.images" :key="index" class="image-preview-item">
+                                <img :src="image" alt="Car image preview">
+                                <span class="remove-image" @click="removeImage(index)">×</span>
+                            </div>
+                        </div>
+                        <span v-if="validationErrors.images" class="error-message">{{ validationErrors.images }}</span>
+                    </div>
+
+                    <button type="submit" class="submit-button">List Your Car</button>
+                </form>
+            </div>
+
+            <!-- Profile -->
+            <div v-if="currentPage === 'Profile'">
+                <div v-if="user">
+                    <h2>Welcome, {{ user.name }}</h2>
+                    <p>Email: {{ user.email }}</p>
+                    <h3>Your Listings:</h3>
+                    <div v-for="listing in userListings" :key="listing.id" class="car-item">
+                        <img :src="listing.image" :alt="listing.description" class="car-image">
+                        <div class="car-details">
+                            <h3>{{ listing.title }}</h3>
+                            <p>{{ listing.description }}</p>
+                            <span class="car-price">${{ listing.price.toLocaleString() }}</span>
+                        </div>
+                    </div>
+                    <button @click="logout">Logout</button>
+                </div>
+                <div v-else>
+                    <button @click="showLoginModal = true">Login</button>
+                    <button @click="showRegisterModal = true">Register</button>
+                </div>
+            </div>
+        </main>
+        <nav>
+            <a href="#" @click.prevent="currentPage = 'Browse Cars'">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                Browse
+            </a>
+            <a href="#" @click.prevent="currentPage = 'Sell Car'">
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                Sell
+            </a>
+            <a href="#" @click.prevent="currentPage = 'Profile'">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                Profile
+            </a>
+        </nav>
+
+        <!-- Improved Login Modal -->
+        <div v-if="showLoginModal" class="modal">
+            <div class="modal-content">
+                <h2>Login</h2>
+                <form @submit.prevent="login" class="login-register-form">
+                    <input v-model="loginEmail" type="email" placeholder="Email" required>
+                    <input v-model="loginPassword" type="password" placeholder="Password" required>
+                    <button type="submit">Login</button>
+                </form>
+                <p>Don't have an account? <a href="#" @click="showLoginModal = false; showRegisterModal = true">Register here</a></p>
+                <button @click="showLoginModal = false">Close</button>
+            </div>
+        </div>
+
+        <!-- Improved Register Modal -->
+        <div v-if="showRegisterModal" class="modal">
+            <div class="modal-content">
+                <h2>Register</h2>
+                <form @submit.prevent="register" class="login-register-form"> <input v-model="registerName" placeholder="Name" required>
+                    <input v-model="registerEmail" type="email" placeholder="Email" required>
+                    <input v-model="registerPassword" type="password" placeholder="Password" required>
+                    <button type="submit">Register</button>
+                </form>
+                <p>Already have an account? <a href="#" @click="showRegisterModal = false; showLoginModal = true">Login here</a></p>
+                <button @click="showRegisterModal = false">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    new Vue({
+        el: '#app',
+        data: {
+            currentPage: 'Browse Cars',
+            cars: [
+                { id: 1, title: '2021 Sports Car', description: 'Low mileage, excellent condition', price: 35000, image: 'https://example.com/car1.jpg', year: 2021, mileage: 5000 },
+                { id: 2, title: '2019 Family SUV', description: 'Spacious interior, great for road trips', price: 28500, image: 'https://example.com/car2.jpg', year: 2019, mileage: 25000 },
+                { id: 3, title: '2020 Luxury Sedan', description: 'Loaded with features, like new', price: 42000, image: 'https://example.com/car3.jpg', year: 2020, mileage: 15000 },
+                { id: 4, title: '2018 Compact Car', description: 'Great fuel efficiency, perfect for city driving', price: 18000, image: 'https://example.com/car4.jpg', year: 2018, mileage: 35000 },
+                { id: 5, title: '2022 Electric Vehicle', description: 'Zero emissions, long range', price: 55000, image: 'https://example.com/car5.jpg', year: 2022, mileage: 1000 }
+            ],
+            filteredCars: [],
+            sortBy: 'priceAsc',
+            filters: {
+                minPrice: null,
+                maxPrice: null,
+                yearFrom: null,
+                yearTo: null
+            },
+            searchQuery: '',
+            currentPageNum: 1,
+            carsPerPage: 5,
+            activeFilters: [],
+            newListing: {
+                title: '',
+                make: '',
+                model: '',
+                description: '',
+                price: null,
+                year: null,
+                mileage: null,
+                condition: '',
+                images: []
+            },
+            validationErrors: {},
+            currentYear: new Date().getFullYear(),
+            user: null,
+            userListings: [],
+            showLoginModal: false,
+            showRegisterModal: false,
+            loginEmail: '',
+            loginPassword: '',
+            registerName: '',
+            registerEmail: '',
+            registerPassword: ''
+        },
+        computed: {
+            paginatedCars() {
+                const start = (this.currentPageNum - 1) * this.carsPerPage;
+                const end = start + this.carsPerPage;
+                return this.filteredCars.slice(start, end);
+            },
+            totalPages() {
+                return Math.ceil(this.filteredCars.length / this.carsPerPage);
+            }
+        },
+        methods: {
+            toggleFilter(filter) {
+                const index = this.activeFilters.indexOf(filter);
+                if (index > -1) {
+                    this.activeFilters.splice(index, 1);
+                } else {
+                    this.activeFilters.push(filter);
+                }
+                this.applyFilters();
+            },
+            sortCars() {
+                const sortFn = {
+                    priceAsc: (a, b) => a.price - b.price,
+                    priceDesc: (a, b) => b.price - a.price,
+                    yearDesc: (a, b) => b.year - a.year,
+                    yearAsc: (a, b) => a.year - b.year
+                };
+                this.filteredCars.sort(sortFn[this.sortBy]);
+            },
+            applyFilters() {
+                this.filteredCars = this.cars.filter(car => {
+                    const priceMatch = (!this.filters.minPrice || car.price >= this.filters.minPrice) &&
+                                       (!this.filters.maxPrice || car.price <= this.filters.maxPrice);
+                    const yearMatch = (!this.filters.yearFrom || car.year >= this.filters.yearFrom) &&
+                                      (!this.filters.yearTo || car.year <= this.filters.yearTo);
+                    return priceMatch && yearMatch;
+                });
+                this.sortCars();
+                this.currentPageNum = 1;
+            },
+            search() {
+                const query = this.searchQuery.toLowerCase();
+                this.filteredCars = this.cars.filter(car => 
+                    car.title.toLowerCase().includes(query) ||
+                    car.description.toLowerCase().includes(query)
+                );
+                this.currentPageNum = 1;
+            },
+            debouncedSearch: _.debounce(function() {
+                this.search();
+            }, 300),
+            prevPage() {
+                if (this.currentPageNum > 1) {
+                    this.currentPageNum--;
+                }
+            },
+            nextPage() {
+                if (this.currentPageNum < this.totalPages) {
+                    this.currentPageNum++;
+                }
+            },
+            viewCar(car) {
+                // Implement view car details logic
+                console.log('Viewing car:', car);
+            },
+            handleImageUpload(event) {
+                const files = event.target.files;
+                if (files) {
+                    for (let i = 0; i < files.length; i++) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            this.newListing.images.push(e.target.result);
+                        };
+                        reader.readAsDataURL(files[i]);
+                    }
+                }
+            },
+            removeImage(index) {
+                this.newListing.images.splice(index, 1);
+            },
+            submitListing() {
+                this.validationErrors = {};
+
+                // Validate fields
+                if (this.newListing.title.length < 10) {
+                    this.validationErrors.title = "Title should be at least 10 characters long";
+                }
+                if (this.newListing.year < 1900 || this.newListing.year > this.currentYear) {
+                    this.validationErrors.year = `Year must be between 1900 and ${this.currentYear}`;
+                }
+                if (this.newListing.price <= 0) {
+                    this.validationErrors.price = "Price must be greater than 0";
+                }
+                if (this.newListing.mileage < 0) {
+                    this.validationErrors.mileage = "Mileage cannot be negative";
+                }
+                if (this.newListing.description.length < 50) {
+                    this.validationErrors.description = "Description should be at least 50 characters long";
+                }
+                if (this.newListing.images.length === 0) {
+                    this.validationErrors.images = "Please upload at least one image";
+                }
+
+                if (Object.keys(this.validationErrors).length > 0) {
+                    return;
+                }
+
+                // Here you would typically send this data to your backend API
+                console.log('Submitting new listing:', this.newListing);
+                // For this example, we'll just add it to the cars array
+                this.cars.push({
+                    id: this.cars.length + 1,
+                    ...this.newListing,
+                    image: this.newListing.images[0] // Use the first image as the main image
+                });
+                this.filteredCars = [...this.cars];
+                // Reset the form
+                this.newListing = {
+                    title: '',
+                    make: '',
+                    model: '',
+                    description: '',
+                    price: null,
+                    year: null,
+                    mileage: null,
+                    condition: '',
+                    images: []
+                };
+                // Navigate back to browse page
+                this.currentPage = 'Browse Cars';
+            },
+            login() {
+                // Here you would typically send a request to your backend API
+                console.log('Logging in with:', this.loginEmail, this.loginPassword);
+                // For this example, we'll just set a mock user
+                this.user = {
+                    name: 'John Doe',
+                    email: this.loginEmail
+                };
+                this.showLoginModal = false;
+                // Reset form
+                this.loginEmail = '';
+                this.loginPassword = '';
+                // Fetch user listings (mock data for this example)
+                this.userListings = this.cars.slice(0, 2); // Assume the first two cars belong to this user
+            },
+            register() {
+                // Here you would typically send a request to your backend API
+                console.log('Registering:', this.registerName, this.registerEmail, this.registerPassword);
+                // For this example, we'll just set a mock user
+                this.user = {
+                    name: this.registerName,
+                    email: this.registerEmail
+                };
+                this.showRegisterModal = false;
+                // Reset form
+                this.registerName = '';
+                this.registerEmail = '';
+                this.registerPassword = '';
+            },
+            logout() {
+                this.user = null;
+                this.userListings = [];
+                this.currentPage = 'Browse Cars';
+            }
+        },
+        created() {
+            this.filteredCars = [...this.cars];
+        }
+    });
+    </script>
+</body>
+</html>
