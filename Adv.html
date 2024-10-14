@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Address List App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-8 text-center text-gray-800">Address List App</h1>
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <textarea id="addressInput" rows="8" class="w-full p-3 mb-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" placeholder="Paste your addresses here..."></textarea>
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <button onclick="processAddresses()" class="w-full sm:w-auto bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                    Process Addresses
+                </button>
+                <button id="downloadCsv" onclick="downloadCsv()" class="w-full sm:w-auto bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50" style="display: none;">
+                    Download CSV for Zeo
+                </button>
+            </div>
+        </div>
+        <div id="statistics" class="mb-8 p-6 bg-white rounded-lg shadow-lg hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Statistics</h2>
+            <p class="text-lg text-gray-600">Total Addresses: <span id="totalAddresses" class="font-bold text-blue-600">0</span></p>
+        </div>
+        <div id="addressList" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3"></div>
+    </div>
+
+    <script>
+        let processedAddresses = [];
+
+        function processAddresses() {
+            const input = document.getElementById('addressInput').value;
+            processedAddresses = input.split('\n')
+                .map(address => address.trim())
+                .filter(address => address !== '')
+                .map(address => {
+                    const caIndex = address.indexOf(' CA ');
+                    return caIndex !== -1 ? address.substring(0, caIndex + 3) : address;
+                });
+
+            const addressList = document.getElementById('addressList');
+            const statistics = document.getElementById('statistics');
+            const totalAddressesSpan = document.getElementById('totalAddresses');
+            const downloadCsvButton = document.getElementById('downloadCsv');
+            
+            addressList.innerHTML = '';
+            totalAddressesSpan.textContent = processedAddresses.length;
+            statistics.classList.remove('hidden');
+            downloadCsvButton.style.display = 'inline-block';
+
+            processedAddresses.forEach((address, index) => {
+                const addressDiv = document.createElement('div');
+                addressDiv.className = 'bg-white p-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105';
+                
+                const addressText = document.createElement('p');
+                addressText.className = 'mb-4 text-gray-700';
+                addressText.textContent = `${index + 1}. ${address}`;
+                
+                const mapButton = document.createElement('button');
+                mapButton.className = 'w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50';
+                mapButton.textContent = 'Open in Maps';
+                mapButton.onclick = () => openInMaps(address);
+                
+                addressDiv.appendChild(addressText);
+                addressDiv.appendChild(mapButton);
+                addressList.appendChild(addressDiv);
+            });
+        }
+
+        function openInMaps(address) {
+            const encodedAddress = encodeURIComponent(address);
+            const geoUrl = `geo:0,0?q=${encodedAddress}`;
+
+            const link = document.createElement('a');
+            link.href = geoUrl;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+
+            link.click();
+
+            document.body.removeChild(link);
+
+            setTimeout(() => {
+                if (!document.hidden) {
+                    alert("Your device may not support opening map apps directly. You can copy the address and paste it into your preferred map app.");
+                }
+            }, 500);
+        }
+
+        function downloadCsv() {
+            if (processedAddresses.length === 0) {
+                alert("No addresses to download. Please process addresses first.");
+                return;
+            }
+
+            const header = "Address,Latitude,Longitude,Duration,Time window start,Time window end,Service time,Group ID,Note\n";
+            
+            const csvContent = processedAddresses.map((address, index) => {
+                return `"${address}",,,,,,,,`;
+            }).join("\n");
+
+            const fullCsvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(header + csvContent);
+
+            const link = document.createElement("a");
+            link.setAttribute("href", fullCsvContent);
+            link.setAttribute("download", "zeo_route_planner_addresses.csv");
+            document.body.appendChild(link);
+
+            link.click();
+
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+  </html>
