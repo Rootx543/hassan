@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Québec Address Search</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        input, button {
+            margin: 10px 0;
+            padding: 5px;
+        }
+        #result {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Québec Address Search</h1>
+    <input type="text" id="addressInput" placeholder="Enter a Québec address">
+    <button onclick="searchAddress()">Search</button>
+    <div id="result"></div>
+
+    <script>
+        async function searchAddress() {
+            const address = document.getElementById('addressInput').value;
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Searching...';
+
+            try {
+                const response = await axios.get('https://geoegl.msp.gouv.qc.ca/apis/adressage/v2/geocodage', {
+                    params: {
+                        adresse: address,
+                        forme: 'detaillee',
+                        type: 'adresse'
+                    }
+                });
+
+                if (response.data.succes && response.data.resultats.length > 0) {
+                    const result = response.data.resultats[0];
+                    const lat = result.latitude;
+                    const lon = result.longitude;
+                    
+                    resultDiv.innerHTML = `
+                        <p>Address found: ${result.adressePostale}</p>
+                        <p>Coordinates: ${lat}, ${lon}</p>
+                        <button onclick="openInGoogleMaps(${lat}, ${lon})">Open in Google Maps</button>
+                    `;
+                } else {
+                    resultDiv.innerHTML = 'Address not found.';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = 'An error occurred while searching for the address.';
+                console.error(error);
+            }
+        }
+
+        function openInGoogleMaps(lat, lon) {
+            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+            window.open(mapsUrl, '_blank');
+        }
+    </script>
+</body>
+</html>
