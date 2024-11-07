@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#007bff">
+    <title>Recherche d'adresses - Québec</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background-color: white;
+            min-height: 100vh;
+        }
+
+        .header {
+            background-color: #007bff;
+            color: white;
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .search-container {
+            padding: 1rem;
+            background-color: white;
+            border-bottom: 1px solid #eee;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        input, button {
+            padding: 0.875rem;
+            font-size: 1rem;
+            border-radius: 8px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input {
+            flex: 1;
+            border: 1px solid #ddd;
+        }
+
+        input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-weight: 600;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .import-box {
+            margin-top: 1rem;
+        }
+
+        .checkbox-container {
+            margin-top: 0.5rem;
+        }
+
+        .results-container {
+            padding: 1rem;
+        }
+
+        .result-item {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #eee;
+        }
+
+        .result-item h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+            color: #007bff;
+        }
+
+        .map-link {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+
+        .loading {
+            display: none;
+            padding: 1rem;
+            text-align: center;
+            color: #666;
+        }
+
+        .error {
+            margin: 1rem;
+            padding: 1rem;
+            background-color: #fff3f3;
+            border: 1px solid #dc3545;
+            border-radius: 8px;
+            color: #dc3545;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Recherche d'adresses - Québec</h1>
+        </div>
+        <div class="search-container">
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    id="address-input" 
+                    placeholder="Entrez une adresse"
+                    autocomplete="street-address"
+                    onkeyup="handleKeyPress(event)"
+                >
+                <button onclick="searchAddress()" id="search-button">
+                    Rechercher
+                </button>
+            </div>
+            <div class="import-box">
+                <input type="file" id="file-input" accept=".csv" onchange="importAddresses(event)">
+                <label for="file-input">Importer des adresses (CSV)</label>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="clean-addresses" checked>
+                    <label for="clean-addresses">Nettoyer les en-têtes et données superflues</label>
+                </div>
+            </div>
+        </div>
+        <div id="loading" class="loading">Recherche en cours...</div>
+        <div id="error" class="error"></div>
+        <div id="results" class="results-container"></div>
+        <ul id="imported-addresses"></ul>
+    </div>
+
+    <script>
+        const searchButton = document.getElementById('search-button');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const resultsDiv = document.getElementById('results');
+        const importedAddressesDiv = document.getElementById('imported-addresses');
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                searchAddress();
+            }
+        }
+
+        function cleanAddress(address) {
+            // Remove header row
+            if (address.startsWith('Address,Latitude,Longitude')) {
+                return '';
+            }
+            
+            // Remove empty CSV lines with just commas
+            if (address.match(/^,+$/)) {
+                return '';
+            }
+
+            // If the line contains commas, take only the first part (the address)
+            if (address.includes(',')) {
+                return address.split(',')[0].trim();
+            }
+
+            return address.trim();
+        }
+
+        function importAddresses(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const shouldClean = document.getElementById('clean-addresses').checked;
+                let addresses;
+                
+                if (shouldClean) {
+                    addresses = text.split('\n')
+                        .map(line => cleanAddress(line))
+                        .filter(line => line); // Remove empty lines
+                } else {
+                    addresses = text.split('\n')
+                        .map(line => line.trim())
+                        .filter(line => line);
+                }
+                
+                displayImportedAddresses(addresses);
+            };
+            reader.readAsText(file);
+        }
+
+        function displayImportedAddresses(addresses) {
+            importedAddressesDiv.innerHTML = '';
+            addresses.forEach(address => {
+                const li = document.createElement('li');
+                li.textContent = address;
+                li.style.cursor = 'pointer';
+                li.onclick = () => {
+                    document.getElementById('address-input').value = address;
+                    searchAddress();
+                };
+                importedAddressesDiv.appendChild(li);
+            });
+        }
+
+        function getConfidenceLabel(score) {
+            if (score >= 80) return ['high', 'Confiance élevée'];
+            if (score >= 60) return ['medium', 'Confiance moyenne'];
+            return ['low', 'Confiance faible'];
+        }
+
+        function formatAddress(properties) {
+            const parts = [];
+            if (properties.numero) parts.push(properties.numero);
+            if (properties.route) parts.push(properties.route);
+            if (properties.municipalite) parts.push(properties.municipalite);
+            if (properties.codePostal) parts.push(properties.codePostal);
+            return parts.join(', ');
+        }
+
+        function getGoogleMapsLink(coordinates) {
+            return `https://www.google.com/maps?q=${coordinates[1]},${coordinates[0]}`;
+        }
+
+        async function searchAddress() {
+            const addressInput = document.getElementById('address-input').value.trim();
+            
+            if (!addressInput) {
+                showError("Veuillez entrer une adresse");
+                return;
+            }
+
+            searchButton.disabled = true;
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            resultsDiv.innerHTML = '';
+
+            try {
+                const encodedAddress = encodeURIComponent(addressInput);
+                const timestamp = Date.now();
+                const url = `https://geoegl.msp.gouv.qc.ca/apis/icherche/geocode/enlot?q=${encodedAddress}&_=${timestamp}`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error('Erreur de réseau');
+                }
+
+                if (!data.features || data.features.length === 0) {
+                    showError("Aucune adresse trouvée");
+                    return;
+                }
+
+                resultsDiv.innerHTML = data.features
+                    .map((feature, index) => {
+                        const [confidenceClass, confidenceText] = getConfidenceLabel(feature.confiance || 0);
+                        const formattedAddress = formatAddress(feature.properties);
+                        const coordinates = feature.geometry.coordinates;
+                        const mapsLink = getGoogleMapsLink(coordinates);
+
+                        return `
+                            <div class="result-item">
+                                <h3>Résultat ${index + 1}</h3>
+                                <div>${formattedAddress}</div>
+                                <div>
+                                    <a href="${mapsLink}" target="_blank" class="map-link">
+                                        Ouvrir dans Google Maps ↗
+                                    </a>
+                                </div>
+                                <span class="confidence ${confidenceClass}">${confidenceText}</span>
+                            </div>
+                        `;
+                    })
+                    .join('');
+
+            } catch (error) {
+                showError("Une erreur s'est produite lors de la recherche. Veuillez réessayer.");
+                console.error('Error:', error);
+            } finally {
+                searchButton.disabled = false;
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            searchButton.disabled = false;
+            loadingDiv.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
