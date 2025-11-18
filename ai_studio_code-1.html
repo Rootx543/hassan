@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Intelcom Driver Pro - Analytics</title>
+    
+    <!-- Leaflet Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- PDF Parser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
+    <style>
+        /* --- PRO DESIGN SYSTEM (QC EDITION) --- */
+        :root {
+            --primary: #094699; /* Quebec Flag Blue */
+            --primary-light: #e7f1ff;
+            --success: #28a745;
+            --warning: #ffc107;
+            --warning-dark: #856404;
+            --warning-border: #ffeeba;
+            --danger: #dc3545;
+            --bg: #f4f6f8;
+            --card: #ffffff;
+            --text: #212529;
+            --gray: #6c757d;
+            --google-blue: #1a73e8;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column;
+        }
+
+        /* HEADER */
+        header {
+            background: linear-gradient(135deg, #094699, #002d6b); color: white; padding: 14px 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15); z-index: 1000;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        header h1 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 0.5px; }
+        .reset-btn { 
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); 
+            color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;
+        }
+
+        /* MAIN LAYOUT */
+        main { flex: 1; overflow-y: auto; padding: 12px; padding-bottom: 80px; }
+
+        /* CARDS */
+        .card { 
+            background: var(--card); border-radius: 12px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 16px; margin-bottom: 16px; 
+        }
+        .hidden { display: none !important; }
+
+        /* ANALYTICS GRID */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;
+        }
+        .stat-box {
+            background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #e9ecef;
+        }
+        .stat-val { display: block; font-size: 18px; font-weight: 800; color: var(--primary); }
+        .stat-lbl { font-size: 11px; color: #666; text-transform: uppercase; font-weight: 600; }
+        
+        .efficiency-bar {
+            height: 6px; background: #eee; border-radius: 3px; margin-top: 10px; overflow: hidden; display: flex;
+        }
+        .eff-segment { height: 100%; }
+
+        /* UPLOAD ZONE */
+        .upload-zone {
+            border: 2px dashed #ced4da; border-radius: 12px; padding: 50px 20px;
+            text-align: center; cursor: pointer; background: #fff; transition: 0.2s;
+        }
+        .icon-lg { font-size: 40px; display: block; margin-bottom: 15px; }
+
+        /* MAP AREA */
+        #map-container { 
+            position: relative; height: 45vh; min-height: 300px; 
+            margin: -16px -16px 10px -16px; border-radius: 12px 12px 0 0; overflow: hidden;
+        }
+        #map { width: 100%; height: 100%; }
+        
+        .map-controls {
+            position: absolute; bottom: 20px; right: 10px; z-index: 999;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .fab {
+            width: 44px; height: 44px; border-radius: 50%; border: none;
+            background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .fab-primary { background: var(--primary); color: white; }
+        .fab-warning { background: var(--warning); color: #333; }
+
+        /* POPUP STYLES (Updated) */
+        .leaflet-popup-content { margin: 10px !important; line-height: 1.4; }
+        .popup-header { font-weight: 800; color: var(--warning-dark); margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 4px; font-size: 13px; }
+        .popup-addr { margin-bottom: 8px; font-size: 12px; color: #333; font-weight: 500; }
+        .popup-badges { display: flex; flex-wrap: wrap; gap: 4px; }
+        .popup-badge { 
+            background: var(--warning); color: #222; border: 1px solid #d39e00; 
+            padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* MULTI DROP TABLE STYLES */
+        .multi-table {
+            width: 100%; border-collapse: collapse; font-size: 13px;
+            background: rgba(255, 255, 255, 0.5); border-radius: 8px;
+        }
+        .multi-table th {
+            text-align: left; padding: 8px; color: var(--warning-dark);
+            border-bottom: 2px solid var(--warning-border); font-size: 11px; text-transform: uppercase;
+        }
+        .multi-table td {
+            padding: 10px 8px; border-bottom: 1px solid var(--warning-border); vertical-align: middle;
+        }
+        .multi-table tr:last-child td { border-bottom: none; }
+        .seq-badge {
+            display: inline-block; background: var(--warning-dark); color: #fff;
+            font-weight: bold; padding: 2px 6px; border-radius: 4px;
+            font-size: 11px; margin: 0 2px 2px 0;
+        }
+        .btn-drive {
+            display: inline-block; text-decoration: none; background: var(--warning);
+            color: #333; padding: 4px 8px; border-radius: 4px;
+            font-weight: bold; font-size: 11px; border: 1px solid #e0a800;
+        }
+
+        /* LIST ITEMS */
+        .stop-item {
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 14px 0; border-bottom: 1px solid #f0f0f0;
+        }
+        .stop-item.multi-drop-highlight { background: #fff9db; margin: 0 -16px; padding: 14px 16px; }
+        
+        .stop-seq {
+            background: var(--primary); color: white; width: 36px; height: 36px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 15px; flex-shrink: 0; box-shadow: 0 2px 4px rgba(9,70,153,0.3);
+        }
+        .stop-seq.multi { background: var(--warning); color: #222; border: 2px solid #b58900; }
+        .stop-details { flex: 1; }
+        .stop-addr { font-size: 16px; font-weight: 600; line-height: 1.3; margin-bottom: 4px; color: #333; }
+        .stop-meta { font-size: 12px; color: var(--gray); display: flex; flex-wrap: wrap; gap: 10px; }
+        
+        .badge-multi {
+            background: var(--warning); color: #333; padding: 2px 6px; border-radius: 4px;
+            font-weight: bold; font-size: 11px; border: 1px solid #d39e00;
+        }
+
+        .action-row { margin-top: 10px; display: flex; gap: 8px; }
+        .btn-action {
+            flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #dee2e6;
+            background: white; font-size: 14px; font-weight: 600; color: #495057;
+            text-align: center; text-decoration: none;
+        }
+        .btn-gmaps { border-color: #d2e3fc; color: var(--google-blue); background: #e8f0fe; }
+
+        /* MARKER STYLES */
+        .custom-marker {
+            background: var(--primary); color: white; border: 2px solid white;
+            border-radius: 50%; text-align: center; font-weight: bold; font-size: 12px;
+            line-height: 26px; box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+        .custom-marker.multi { background: var(--warning); color: #222; border: 2px solid #222; z-index: 1000 !important; }
+
+        /* EDIT BOX */
+        .edit-box { margin-top: 10px; }
+        .edit-input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>⚜️ Driver Pro QC</h1>
+    <button class="reset-btn" onclick="hardReset()">Reset</button>
+</header>
+
+<main>
+    <!-- VIEW 1: UPLOAD -->
+    <div id="view-upload" class="card">
+        <h2 style="font-size:18px; margin-top:0; color:#333;">Step 1: Import Manifest</h2>
+        <input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="handlePdf(this)">
+        <div class="upload-zone" onclick="document.getElementById('pdfInput').click()">
+            <span class="icon-lg">📄</span>
+            <strong style="font-size:16px; display:block; margin-bottom:5px;">Tap to Upload PDF</strong>
+            <div style="font-size:13px; color:#888;">Detects Multi-Drops Automatically</div>
+        </div>
+        <div id="uploadProgress" style="display:none; text-align:center; margin-top:10px; font-weight:bold;">Processing...</div>
+    </div>
+
+    <!-- VIEW 2: SELECT ROUTE -->
+    <div id="view-select" class="card hidden">
+        <h2 style="font-size:18px; margin-top:0; margin-bottom:20px;">Step 2: Select Route</h2>
+        <input type="text" id="streetSearch" placeholder="Search street name..." 
+               style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-bottom:15px;" onkeyup="filterRoute()">
+        <select id="routeSelect" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; background:white;">
+            <option value="">-- Select Route --</option>
+        </select>
+        <button onclick="confirmRoute()" style="width:100%; padding:15px; margin-top:20px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold;">
+            🚀 Load Route
+        </button>
+    </div>
+
+    <!-- VIEW 3: DASHBOARD -->
+    <div id="view-dashboard" class="hidden">
+        
+        <!-- ANALYTICS SECTION -->
+        <div class="card">
+            <h3 style="margin:0 0 10px 0; font-size:16px; font-weight:700;">📊 Route Analysis</h3>
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-val" id="stat-packages">0</span>
+                    <span class="stat-lbl">Packages</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-val" id="stat-stops" style="color:var(--success);">0</span>
+                    <span class="stat-lbl">Phys. Stops</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-val" id="stat-multi" style="color:var(--warning);">0</span>
+                    <span class="stat-lbl">Multi-Drops</span>
+                </div>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; font-size:11px; color:#666; margin-bottom:4px;">
+                <span>Composition</span>
+                <span id="stat-ratio">0% Multi</span>
+            </div>
+            <div class="efficiency-bar">
+                <div class="eff-segment" id="bar-single" style="width:50%; background:var(--primary);"></div>
+                <div class="eff-segment" id="bar-multi" style="width:50%; background:var(--warning);"></div>
+            </div>
+        </div>
+
+        <!-- Map Section -->
+        <div class="card" style="padding:0; overflow:hidden;">
+            <div id="map-container">
+                <div id="map"></div>
+                <div class="map-controls">
+                    <button class="fab" onclick="centerMap()">🎯</button>
+                    <button class="fab fab-warning" onclick="toggleMultiDisplay()">📦</button>
+                    <button class="fab fab-primary" onclick="exportCSV()">📤</button>
+                </div>
+            </div>
+            <div style="padding:12px; background:#fff; border-top:1px solid #eee; display:flex; justify-content:space-between;">
+                <span style="font-size:13px; font-weight:bold;">Status: <span id="geoStats">0/0</span></span>
+                <button onclick="retryErrors()" style="background:#f8f9fa; border:1px solid #ddd; padding:4px 8px; border-radius:4px; font-size:11px;">Retry</button>
+            </div>
+        </div>
+
+        <!-- MULTI-DROP SUMMARY -->
+        <div id="multi-summary-card" class="card hidden" style="border: 2px solid #ffc107;">
+            <h3 style="margin:0 0 10px 0; font-size:16px; color:#856404;">⚠️ Multi-Drop Summary</h3>
+            <div id="multi-summary-content"></div>
+        </div>
+
+        <!-- List Section -->
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0; font-size:16px;">Stops List</h3>
+                <label style="font-size:12px;"><input type="checkbox" id="chkMulti" onchange="renderList()"> Show Multi Only</label>
+            </div>
+            <div id="stopList"></div>
+        </div>
+    </div>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // --- APP STATE ---
+    let appData = { routes: {}, activeRouteId: null, stops: [] };
+    let map = null, markersGroup = null, routeLine = null;
+
+    // --- INIT ---
+    window.onload = () => {
+        if(localStorage.getItem('driverProQC_v3')) {
+            try {
+                appData = JSON.parse(localStorage.getItem('driverProQC_v3'));
+                if(appData.stops.length) restoreSession();
+            } catch(e) { localStorage.removeItem('driverProQC_v3'); }
+        }
+    };
+    function saveState() { localStorage.setItem('driverProQC_v3', JSON.stringify(appData)); }
+    function hardReset() { localStorage.removeItem('driverProQC_v3'); location.reload(); }
+
+    // --- PDF PARSING ---
+    async function handlePdf(input) {
+        if(!input.files[0]) return;
+        document.querySelector('.upload-zone').style.display = 'none';
+        document.getElementById('uploadProgress').style.display = 'block';
+        
+        try {
+            const buff = await input.files[0].arrayBuffer();
+            const pdf = await pdfjsLib.getDocument(buff).promise;
+            let fullText = "";
+            for(let i=1; i<=pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                fullText += content.items.map(s => s.str).join(" ") + " |PAGE_BREAK| ";
+            }
+            parseData(fullText);
+            document.getElementById('view-upload').classList.add('hidden');
+            document.getElementById('view-select').classList.remove('hidden');
+            populateDropdown();
+        } catch(e) { alert("PDF Error"); location.reload(); }
+    }
+
+    function parseData(text) {
+        text = text.replace(/\s+/g, ' ');
+        appData.routes = {};
+        const routeHeaders = text.split(/Route\s*-\s*([A-Z]{2,5}\d{2,5})/gi);
+        
+        for(let i=1; i<routeHeaders.length; i+=2) {
+            const id = routeHeaders[i];
+            const chunk = routeHeaders[i+1];
+            const rowRegex = /((?:D11|RET|GDI|ESI|CRI|YW0|JY2|INT|IEN|STR|AMZ)[A-Z0-9]*)\s+([A-Z0-9]+)\s+(\b\d{1,3}\b)/gi;
+            const items = [];
+            let match;
+            
+            while(match = rowRegex.exec(chunk)) {
+                items.push({ code: match[1], seq: parseInt(match[3]), idx: match.index + match[0].length });
+            }
+            
+            for(let k=0; k<items.length; k++) {
+                const curr = items[k];
+                const next = items[k+1];
+                let addr = chunk.substring(curr.idx, next ? next.idx - next.code.length - 15 : curr.idx + 350);
+                const dim = addr.match(/(\d+\.?\d*\s*(?:CM|IN)\s*X)/i);
+                if(dim) addr = addr.substring(0, dim.index);
+                addr = addr.replace(/SIG\s*$/, '').replace(/\|PAGE_BREAK\|/g, '').trim();
+                
+                if(addr.length > 5) {
+                    if(!appData.routes[id]) appData.routes[id] = [];
+                    if(!appData.routes[id].some(s => s.seq === curr.seq)) {
+                        appData.routes[id].push({
+                            seq: curr.seq, address: addr, cleanAddress: sanitizeAddress(addr),
+                            lat: null, lon: null, status: 'pending', duplicates: []
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    function sanitizeAddress(addr) {
+        return addr.replace(/Appartement\s*\d+[A-Z]?/gi, '')
+            .replace(/App\s*\d+[A-Z]?/gi, '').replace(/Unit\s*\d+[A-Z]?/gi, '')
+            .replace(/#\s*\d+[A-Z]?/gi, '').replace(/Code\s*[:#]?\s*\d+/gi, '')
+            .replace(/\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function populateDropdown() {
+        const sel = document.getElementById('routeSelect');
+        sel.innerHTML = '<option value="">-- Select --</option>';
+        Object.keys(appData.routes).sort().forEach(id => {
+            const opt = document.createElement('option');
+            opt.value = id; opt.text = `${id} (${appData.routes[id].length} stops)`;
+            sel.appendChild(opt);
+        });
+    }
+
+    function filterRoute() {
+        const q = document.getElementById('streetSearch').value.toLowerCase();
+        if(q.length < 3) return;
+        for(const [id, list] of Object.entries(appData.routes)) {
+            if(list.some(s => s.address.toLowerCase().includes(q))) {
+                document.getElementById('routeSelect').value = id; return;
+            }
+        }
+    }
+
+    function confirmRoute() {
+        const id = document.getElementById('routeSelect').value;
+        if(!id) return;
+        appData.activeRouteId = id;
+        appData.stops = appData.routes[id].sort((a,b) => a.seq - b.seq);
+        saveState(); restoreSession();
+    }
+
+    function restoreSession() {
+        document.getElementById('view-upload').classList.add('hidden');
+        document.getElementById('view-select').classList.add('hidden');
+        document.getElementById('view-dashboard').classList.remove('hidden');
+        initMap(); renderList(); updateAnalysis(); startGeocodingQueue();
+    }
+
+    // --- CORE LOGIC ---
+    function initMap() {
+        if(map) return;
+        map = L.map('map').setView([46.8139, -71.2080], 11); 
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM', maxZoom:19 }).addTo(map);
+        markersGroup = L.featureGroup().addTo(map);
+    }
+
+    function detectDuplicates() {
+        appData.stops.forEach(s => s.duplicates = []);
+        const locMap = {};
+        appData.stops.forEach(s => {
+            if(s.status === 'success' && s.lat) {
+                const key = `${s.lat.toFixed(5)},${s.lon.toFixed(5)}`;
+                if(!locMap[key]) locMap[key] = [];
+                locMap[key].push(s.seq);
+            }
+        });
+        appData.stops.forEach(s => {
+            if(s.status === 'success' && s.lat) {
+                const key = `${s.lat.toFixed(5)},${s.lon.toFixed(5)}`;
+                s.duplicates = locMap[key].filter(seq => seq !== s.seq);
+            }
+        });
+        renderMultiDropSummary(locMap);
+    }
+    
+    function renderMultiDropSummary(locMap) {
+        const container = document.getElementById('multi-summary-content');
+        const card = document.getElementById('multi-summary-card');
+        container.innerHTML = '';
+        
+        let multiGroups = [];
+        for (const [key, seqs] of Object.entries(locMap)) {
+            if (seqs.length > 1) {
+                const coords = key.split(',');
+                const firstStop = appData.stops.find(s => s.seq === seqs[0]);
+                multiGroups.push({
+                    lat: coords[0], lon: coords[1],
+                    address: firstStop ? firstStop.address : "Unknown",
+                    stops: seqs.sort((a, b) => a - b)
+                });
+            }
+        }
+
+        if (multiGroups.length === 0) {
+            card.classList.add('hidden');
+            return;
+        }
+
+        let tableHtml = `
+            <table class="multi-table">
+                <thead>
+                    <tr>
+                        <th style="width:50%">Address</th>
+                        <th style="width:30%">Pack #</th>
+                        <th style="width:20%; text-align:right">Map</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        multiGroups.forEach(group => {
+            const badges = group.stops.map(num => `<span class="seq-badge">${num}</span>`).join('');
+            tableHtml += `
+                <tr>
+                    <td style="font-weight:600; color:#333;">${group.address}</td>
+                    <td>${badges}</td>
+                    <td style="text-align:right;">
+                        <a href="https://www.google.com/maps/search/?api=1&query=${group.lat},${group.lon}" 
+                           target="_blank" class="btn-drive">GO ➔</a>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tableHtml += `</tbody></table>`;
+        container.innerHTML = tableHtml;
+        card.classList.remove('hidden');
+    }
+
+    function updateAnalysis() {
+        const totalPkgs = appData.stops.length;
+        let physicalStops = 0;
+        let multiDropPkgs = 0; 
+        const processedGroups = new Set();
+
+        appData.stops.forEach(s => {
+            if(s.duplicates && s.duplicates.length > 0) {
+                multiDropPkgs++;
+                const group = [s.seq, ...s.duplicates].sort().join(',');
+                if(!processedGroups.has(group)) {
+                    physicalStops++; 
+                    processedGroups.add(group);
+                }
+            } else {
+                physicalStops++;
+            }
+        });
+
+        document.getElementById('stat-packages').textContent = totalPkgs;
+        document.getElementById('stat-stops').textContent = physicalStops;
+        document.getElementById('stat-multi').textContent = processedGroups.size;
+
+        const multiPct = (multiDropPkgs / totalPkgs) * 100;
+        const singlePct = 100 - multiPct;
+
+        document.getElementById('bar-single').style.width = singlePct + "%";
+        document.getElementById('bar-multi').style.width = multiPct + "%";
+        document.getElementById('stat-ratio').textContent = Math.round(multiPct) + "% of load";
+    }
+
+    // *** UPDATED POPUP LOGIC ***
+    function updateMapMarkers() {
+        markersGroup.clearLayers();
+        if(routeLine) map.removeLayer(routeLine);
+        const valid = appData.stops.filter(s => s.lat);
+        const points = [];
+
+        valid.forEach(s => {
+            points.push([s.lat, s.lon]);
+            const isMulti = s.duplicates && s.duplicates.length > 0;
+            
+            // Create Custom Popup Content
+            let popupHtml = "";
+            
+            if (isMulti) {
+                // Gather ALL sequences for this location
+                const allSeqs = [s.seq, ...s.duplicates].sort((a, b) => a - b);
+                const badges = allSeqs.map(num => `<span class="popup-badge">#${num}</span>`).join('');
+                
+                popupHtml = `
+                    <div style="min-width:160px">
+                        <div class="popup-header">📦 Multi-Drop (${allSeqs.length})</div>
+                        <div class="popup-addr">${s.cleanAddress}</div>
+                        <div class="popup-badges">${badges}</div>
+                    </div>
+                `;
+            } else {
+                // Standard Single Stop
+                popupHtml = `
+                    <div style="font-weight:bold; font-size:14px;">Stop #${s.seq}</div>
+                    <div style="font-size:12px; margin-top:4px;">${s.cleanAddress}</div>
+                `;
+            }
+
+            const icon = L.divIcon({
+                className: `custom-marker ${s.status === 'error' ? 'error' : ''} ${isMulti ? 'multi' : ''}`,
+                html: isMulti ? '📦' : s.seq, iconSize: [30, 30], iconAnchor: [15, 15]
+            });
+            
+            L.marker([s.lat, s.lon], {icon}).bindPopup(popupHtml).addTo(markersGroup);
+        });
+
+        if(points.length) {
+            routeLine = L.polyline(points, {color: '#094699', weight: 4, opacity: 0.7}).addTo(map);
+            if(!map.hasFit) { map.fitBounds(markersGroup.getBounds(), {padding:[50,50]}); map.hasFit = true; }
+        }
+        document.getElementById('geoStats').textContent = `${valid.length}/${appData.stops.length}`;
+    }
+
+    async function startGeocodingQueue() {
+        let pending = appData.stops.filter(s => !s.lat && s.status !== 'error');
+        for(const stop of pending) {
+            await geocodeStop(stop);
+            if(stop.seq % 3 === 0) {
+                detectDuplicates(); updateMapMarkers(); renderList(); updateAnalysis(); saveState();
+            }
+            await new Promise(r => setTimeout(r, 150));
+        }
+        detectDuplicates(); updateMapMarkers(); renderList(); updateAnalysis(); saveState();
+    }
+
+    async function geocodeStop(stop) {
+        try {
+            const res = await fetch(`https://geoegl.msp.gouv.qc.ca/apis/icherche/geocode?type=adresses&limit=1&geometry=true&q=${encodeURIComponent(stop.cleanAddress)}`);
+            const data = await res.json();
+            if(data.features?.length) {
+                stop.lat = data.features[0].geometry.coordinates[1];
+                stop.lon = data.features[0].geometry.coordinates[0];
+                stop.status = 'success';
+            } else stop.status = 'error';
+        } catch(e) { stop.status = 'error'; }
+    }
+
+    function renderList() {
+        const container = document.getElementById('stopList');
+        container.innerHTML = '';
+        const onlyMulti = document.getElementById('chkMulti').checked;
+
+        appData.stops.forEach((stop, idx) => {
+            const isMulti = stop.duplicates && stop.duplicates.length > 0;
+            if(onlyMulti && !isMulti) return;
+
+            const div = document.createElement('div');
+            div.className = `stop-item ${isMulti ? 'multi-drop-highlight' : ''}`;
+            div.innerHTML = `
+                <div class="stop-seq ${stop.lat ? '' : 'error'} ${isMulti ? 'multi' : ''}">${stop.seq}</div>
+                <div class="stop-details">
+                    <div class="stop-addr">${stop.address}</div>
+                    <div class="stop-meta">
+                        ${isMulti ? `<span class="badge-multi">Matches: ${stop.duplicates.join(', ')}</span>` : ''}
+                        ${stop.lat ? '' : '<span style="color:red">Not Found</span>'}
+                    </div>
+                    <div class="action-row">
+                        ${stop.lat ? `<a href="https://www.google.com/maps/search/?api=1&query=${stop.lat},${stop.lon}" target="_blank" class="btn-action btn-gmaps">Google Maps</a>` : ''}
+                        <button class="btn-action" style="background:#f0f0f0" onclick="toggleEdit(${idx})">Edit</button>
+                    </div>
+                    <div id="edit-${idx}" class="edit-box hidden">
+                        <input type="text" id="in-${idx}" class="edit-input" value="${stop.cleanAddress}">
+                        <button onclick="saveEdit(${idx})" class="btn-action" style="background:var(--success); color:white; margin-top:5px;">Save</button>
+                    </div>
+                </div>`;
+            container.appendChild(div);
+        });
+    }
+
+    function toggleEdit(i) { document.getElementById(`edit-${i}`).classList.toggle('hidden'); }
+    async function saveEdit(i) {
+        const s = appData.stops[i];
+        s.cleanAddress = document.getElementById(`in-${i}`).value;
+        s.lat = null; s.status = 'pending';
+        await geocodeStop(s); detectDuplicates(); saveState(); renderList(); updateMapMarkers(); updateAnalysis();
+    }
+
+    function centerMap() { if(markersGroup.getLayers().length) map.fitBounds(markersGroup.getBounds()); }
+    function toggleMultiDisplay() { document.getElementById('chkMulti').click(); }
+    function retryErrors() { appData.stops.forEach(s => { if(s.status==='error') s.status='pending'; }); startGeocodingQueue(); }
+    
+    function exportCSV() {
+        let csv = "Seq,Address,Matches,Lat,Lon\n";
+        appData.stops.forEach(s => csv += `${s.seq},"${s.address}","${s.duplicates?.join('|')}",${s.lat||0},${s.lon||0}\n`);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+        a.download = 'route.csv'; a.click();
+    }
+</script>
+</body>
+</html>
