@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Intelcom Driver Pro - Live GPS</title>
+    
+    <!-- Leaflet Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- PDF Parser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
+    <style>
+        /* --- PRO DESIGN SYSTEM --- */
+        :root {
+            --primary: #094699;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --bg: #f4f6f8;
+            --card: #ffffff;
+            --text: #212529;
+            --gray: #6c757d;
+            --gps-blue: #4285F4;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column;
+        }
+
+        /* HEADER */
+        header {
+            background: linear-gradient(135deg, #094699, #002d6b); color: white; padding: 12px 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15); z-index: 1000;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        header h1 { margin: 0; font-size: 18px; font-weight: 800; }
+        
+        .header-actions { display: flex; gap: 10px; }
+        .btn-header { 
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); 
+            color: white; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;
+        }
+
+        /* MAIN LAYOUT */
+        main { flex: 1; overflow-y: auto; padding: 12px; }
+
+        .card { 
+            background: var(--card); border-radius: 12px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 16px; margin-bottom: 16px; 
+        }
+        .hidden { display: none !important; }
+
+        /* TABS */
+        .tab-nav { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tab-btn { 
+            flex: 1; padding: 10px; border: none; background: #e9ecef; border-radius: 8px; 
+            font-weight: bold; color: #666; cursor: pointer; transition: 0.2s;
+        }
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 5px rgba(9, 70, 153, 0.3); }
+
+        /* MAP & PERFORMANCE OPTIMIZATIONS */
+        #map-container { 
+            position: relative; height: 45vh; min-height: 300px; 
+            margin: -16px -16px 10px -16px; border-radius: 12px 12px 0 0; 
+            overflow: hidden; transition: height 0.3s; 
+            /* Force Hardware Acceleration */
+            transform: translate3d(0,0,0);
+            will-change: transform;
+        }
+        
+        /* Leaflet Performance Tweaks */
+        .leaflet-pane { will-change: transform; }
+        .leaflet-marker-icon { will-change: transform; }
+        .leaflet-zoom-anim .leaflet-zoom-animated { transition: transform 0.25s cubic-bezier(0,0,0.25,1); }
+
+        #map { width: 100%; height: 100%; background: #e5e9ec; }
+        
+        /* FULLSCREEN MODIFIER */
+        #map-container.fullscreen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh !important;
+            z-index: 2000; margin: 0; border-radius: 0;
+        }
+        #map-container.fullscreen .map-controls { bottom: 40px; right: 20px; }
+
+        .map-controls { position: absolute; bottom: 20px; right: 10px; z-index: 999; display: flex; flex-direction: column; gap: 10px; }
+        
+        .fab { 
+            width: 44px; height: 44px; border-radius: 50%; border: none; 
+            background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.2); 
+            font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: 0.3s;
+        }
+        
+        /* LIVE LOCATION STYLES */
+        .fab.active-loc { background: var(--gps-blue); color: white; }
+        
+        .user-gps-marker {
+            background-color: var(--gps-blue);
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            animation: pulse-ring 2s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(66, 133, 244, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0); }
+        }
+
+        /* DOWNLOAD PROGRESS */
+        #dl-progress-container {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%); 
+            width: 80%; z-index: 1000; background: rgba(255,255,255,0.9); 
+            padding: 8px; border-radius: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: none; text-align: center;
+        }
+        #dl-bar-bg { width: 100%; height: 6px; background: #ddd; border-radius: 3px; overflow: hidden; margin-top: 5px; }
+        #dl-bar-fill { width: 0%; height: 100%; background: var(--success); transition: width 0.2s; }
+        #dl-text { font-size: 11px; font-weight: bold; color: #333; }
+
+        /* LIST ITEMS */
+        .stop-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid #f0f0f0; position: relative; transition: 0.3s; }
+        
+        .stop-item.cluster-0 { border-left: 4px solid #007bff; padding-left: 8px; }
+        .stop-item.cluster-1 { border-left: 4px solid #6610f2; padding-left: 8px; }
+        .stop-item.cluster-2 { border-left: 4px solid #e83e8c; padding-left: 8px; }
+        .stop-item.cluster-3 { border-left: 4px solid #fd7e14; padding-left: 8px; }
+        .stop-item.cluster-4 { border-left: 4px solid #28a745; padding-left: 8px; }
+
+        .stop-seq { background: var(--primary); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; flex-shrink: 0; }
+        .stop-seq.multi { background: var(--warning); color: #222; border: 2px solid #b58900; }
+
+        .stop-details { flex: 1; }
+        .stop-addr { font-size: 16px; font-weight: 600; line-height: 1.3; margin-bottom: 4px; color: #333; }
+        
+        .access-code { color: #dc3545; font-weight: 800; background: #ffeaea; padding: 2px 6px; border-radius: 4px; font-size: 13px; display: inline-block; margin-top: 4px; border: 1px solid #f5c6cb; }
+        .priority-badge { background: #dc3545; color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-left: 5px; }
+
+        .action-row { margin-top: 10px; display: flex; gap: 8px; }
+        .btn-action { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #dee2e6; background: white; font-size: 14px; font-weight: 600; color: #495057; text-align: center; text-decoration: none; cursor: pointer; }
+        .btn-gmaps { border-color: #d2e3fc; color: #1a73e8; background: #e8f0fe; }
+        .btn-edit { border-color: #ffeeba; color: #856404; background: #fff3cd; }
+
+        /* ANALYTICS VIEW */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-box { background: white; border: 1px solid #eee; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-val { font-size: 24px; font-weight: 900; color: var(--primary); }
+        .stat-lbl { font-size: 12px; color: #666; text-transform: uppercase; font-weight: bold; margin-top: 5px; }
+
+        .multi-group { background: white; border-left: 4px solid var(--warning); margin-bottom: 12px; border-radius: 8px; padding: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .mg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .mg-count { background: var(--warning); color: #222; font-weight: bold; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+        .mg-addr { font-weight: 600; color: #333; font-size: 14px; }
+        .mg-seqs { display: flex; gap: 5px; flex-wrap: wrap; }
+        .mg-seq { background: #eee; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold; color: #555; }
+
+        /* MARKERS */
+        .custom-marker { background: var(--primary); color: white; border: 2px solid white; border-radius: 50%; text-align: center; font-weight: bold; font-size: 12px; line-height: 26px; box-shadow: 0 3px 6px rgba(0,0,0,0.4); }
+        .custom-marker.multi { background: var(--warning); color: #222; border: 2px solid #222; z-index: 1000 !important; }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>⚜️ Driver GeoFix</h1>
+    <div class="header-actions">
+        <button class="btn-header" onclick="softReset()">🔙 Routes</button>
+        <button class="btn-header" onclick="hardReset()">📂 New PDF</button>
+    </div>
+</header>
+
+<main>
+    <!-- VIEW 1: UPLOAD -->
+    <div id="view-upload" class="card">
+        <h2 style="font-size:18px; margin-top:0; color:#333;">Step 1: Import Manifest</h2>
+        <input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="handlePdf(this)">
+        <div onclick="document.getElementById('pdfInput').click()" style="padding:40px; text-align:center; border:2px dashed #ccc; border-radius:10px; cursor:pointer;">
+            <span style="font-size:40px;">📄</span><br>
+            <b>Upload PDF</b>
+        </div>
+    </div>
+
+    <!-- VIEW 2: SELECT ROUTE -->
+    <div id="view-select" class="card hidden">
+        <h2 style="font-size:18px; margin-top:0;">Step 2: Confirm Route</h2>
+        <select id="routeSelect" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; background:white; margin-top:10px;">
+            <option value="">-- Select Route --</option>
+        </select>
+        <button onclick="confirmRoute()" style="width:100%; padding:15px; margin-top:20px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold;">
+            🚀 Load Route
+        </button>
+    </div>
+
+    <!-- VIEW 3: DASHBOARD -->
+    <div id="view-dashboard" class="hidden">
+        
+        <!-- TABS -->
+        <div class="tab-nav">
+            <button id="tab-main-btn" class="tab-btn active" onclick="switchTab('main')">📍 Route Map</button>
+            <button id="tab-analytics-btn" class="tab-btn" onclick="switchTab('analytics')">📦 Duplicates</button>
+        </div>
+
+        <!-- TAB 1: MAIN ROUTE -->
+        <div id="tab-main">
+            <!-- MAP -->
+            <div class="card" style="padding:0; overflow:hidden;">
+                <div id="map-container">
+                    <!-- DOWNLOAD OVERLAY -->
+                    <div id="dl-progress-container">
+                        <div id="dl-text">Downloading offline map...</div>
+                        <div id="dl-bar-bg"><div id="dl-bar-fill"></div></div>
+                    </div>
+
+                    <div id="map"></div>
+                    <div class="map-controls">
+                        <button id="btn-location" class="fab" onclick="toggleFollowMode()" title="Follow Me">📍</button>
+                        <button class="fab" onclick="toggleFullscreen()" title="Full Screen">⛶</button>
+                        <button class="fab" onclick="downloadOfflineArea()" title="Save Offline">💾</button>
+                        <button class="fab" onclick="centerMap()" title="Reset View">🎯</button>
+                    </div>
+                </div>
+                <div style="padding:12px; display:flex; justify-content:space-between; font-size:12px; background:white;">
+                    <span id="geoStats">Status: 0/0</span>
+                    <button onclick="retryErrors()" style="padding:4px 8px;">Retry Geo</button>
+                </div>
+            </div>
+
+            <!-- STOPS LIST -->
+            <div class="card">
+                <h3 style="margin:0 0 15px 0; font-size:16px;">Stops List</h3>
+                <div id="stopList"></div>
+            </div>
+        </div>
+
+        <!-- TAB 2: ANALYTICS -->
+        <div id="tab-analytics" class="hidden">
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="stat-val" id="stat-locations">0</div>
+                    <div class="stat-lbl">Multi-Drop Locs</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-val" id="stat-packages">0</div>
+                    <div class="stat-lbl">Total Dup Pkgs</div>
+                </div>
+            </div>
+            
+            <h3 style="font-size:16px; margin:0 0 15px 0; padding-left:5px;">Grouped Locations</h3>
+            <div id="analytics-list">
+                <!-- Content generated by JS -->
+                <div style="text-align:center; padding:20px; color:#999;">No duplicates found.</div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // --- DATABASE SETUP FOR OFFLINE MAPS ---
+    const DB_NAME = "DriverFixMapDB";
+    const STORE_NAME = "tiles";
+    let db = null;
+
+    function initDB() {
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onupgradeneeded = (e) => {
+            const d = e.target.result;
+            if (!d.objectStoreNames.contains(STORE_NAME)) {
+                d.createObjectStore(STORE_NAME); 
+            }
+        };
+        request.onsuccess = (e) => db = e.target.result;
+        request.onerror = (e) => console.error("DB Error", e);
+    }
+    initDB();
+
+    async function saveTile(key, blob) {
+        if (!db) return;
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).put(blob, key);
+    }
+
+    async function getTile(key) {
+        if (!db) return null;
+        return new Promise((resolve) => {
+            const tx = db.transaction(STORE_NAME, "readonly");
+            const req = tx.objectStore(STORE_NAME).get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    }
+
+    // --- CUSTOM OFFLINE LAYER ---
+    const OfflineLayer = L.TileLayer.extend({
+        createTile: function (coords, done) {
+            const tile = document.createElement('img');
+            const key = `${coords.x}_${coords.y}_${coords.z}`;
+            tile.alt = '';
+            tile.setAttribute('role', 'presentation');
+
+            getTile(key).then(blob => {
+                if (blob) {
+                    const url = URL.createObjectURL(blob);
+                    tile.src = url;
+                    tile.onload = () => { URL.revokeObjectURL(url); done(null, tile); };
+                } else {
+                    tile.src = this.getTileUrl(coords);
+                    tile.onload = () => done(null, tile);
+                    tile.onerror = () => done(new Error('Failed to load tile'), tile);
+                }
+            });
+            return tile;
+        }
+    });
+
+    // --- STATE ---
+    let appData = { routes: {}, activeRouteId: null, stops: [] };
+    let map = null, markersGroup = null, routeLine = null;
+    let isGeocodingActive = false;
+    
+    // Location State
+    let userMarker = null;
+    let userCircle = null;
+    let isFollowing = false;
+    let hasLocation = false;
+
+    const clusterColors = ['#007bff', '#6610f2', '#e83e8c', '#fd7e14', '#28a745', '#20c997', '#17a2b8'];
+
+    window.onload = () => {
+        if(localStorage.getItem('driverFocus_v2')) {
+            try {
+                appData = JSON.parse(localStorage.getItem('driverFocus_v2'));
+                if(appData.stops.length) restoreSession();
+            } catch(e) { localStorage.removeItem('driverFocus_v2'); }
+        }
+    };
+    function saveState() { localStorage.setItem('driverFocus_v2', JSON.stringify(appData)); }
+
+    // --- TABS & NAV ---
+    function switchTab(tab) {
+        if(tab === 'main') {
+            document.getElementById('tab-main').classList.remove('hidden');
+            document.getElementById('tab-analytics').classList.add('hidden');
+            document.getElementById('tab-main-btn').classList.add('active');
+            document.getElementById('tab-analytics-btn').classList.remove('active');
+            setTimeout(() => { if(map) map.invalidateSize(); }, 100);
+        } else {
+            document.getElementById('tab-main').classList.add('hidden');
+            document.getElementById('tab-analytics').classList.remove('hidden');
+            document.getElementById('tab-main-btn').classList.remove('active');
+            document.getElementById('tab-analytics-btn').classList.add('active');
+            renderAnalytics();
+        }
+    }
+
+    // --- RESETS ---
+    function hardReset() {
+        if(confirm("Load a new PDF? This will delete the current route.")) {
+            localStorage.removeItem('driverFocus_v2');
+            location.reload();
+        }
+    }
+
+    function softReset() {
+        if(confirm("Choose a different route number from this PDF?")) {
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-select').classList.remove('hidden');
+            appData.stops = [];
+            saveState();
+        }
+    }
+
+    // --- PARSING ---
+    async function handlePdf(input) {
+        if(!input.files[0]) return;
+        document.querySelector('#view-upload div').innerText = "Reading PDF...";
+        try {
+            const buff = await input.files[0].arrayBuffer();
+            const pdf = await pdfjsLib.getDocument(buff).promise;
+            let fullText = "";
+            for(let i=1; i<=pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                fullText += content.items.map(s => s.str).join(" ") + " |PAGE_BREAK| ";
+            }
+            parseData(fullText);
+            document.getElementById('view-upload').classList.add('hidden');
+            document.getElementById('view-select').classList.remove('hidden');
+            populateDropdown();
+        } catch(e) { alert("PDF Error"); location.reload(); }
+    }
+
+    function parseData(text) {
+        text = text.replace(/\s+/g, ' ');
+        appData.routes = {};
+        const routeHeaders = text.split(/Route\s*-\s*([A-Z]{2,5}\d{2,5})/gi);
+        
+        for(let i=1; i<routeHeaders.length; i+=2) {
+            const id = routeHeaders[i];
+            const chunk = routeHeaders[i+1];
+            const rowRegex = /((?:D11|RET|GDI|ESI|CRI|YW0|JY2|INT|IEN|STR|AMZ)[A-Z0-9]*)\s+([A-Z0-9]+)\s+(\b\d{1,3}\b)/gi;
+            const items = [];
+            let match;
+            while(match = rowRegex.exec(chunk)) {
+                items.push({ code: match[1], seq: parseInt(match[3]), idx: match.index + match[0].length });
+            }
+            
+            for(let k=0; k<items.length; k++) {
+                const curr = items[k];
+                const next = items[k+1];
+                let rawAddr = chunk.substring(curr.idx, next ? next.idx - next.code.length - 15 : curr.idx + 350);
+                
+                let accessCode = null;
+                const codeMatch = rawAddr.match(/(?:code|buzzer|entree|porte|acc?s)[:#\s]*(\d{3,})/i);
+                if(codeMatch) accessCode = codeMatch[1];
+
+                let isPriority = /URGENT|12:00|17:00|PRIORIT/i.test(rawAddr);
+
+                const dim = rawAddr.match(/(\d+\.?\d*\s*(?:CM|IN)\s*X)/i);
+                if(dim) rawAddr = rawAddr.substring(0, dim.index);
+                let cleanAddr = rawAddr.replace(/Appartement\s*\d+[A-Z]?/gi, '')
+                    .replace(/App\s*\d+[A-Z]?/gi, '').replace(/Unit\s*\d+[A-Z]?/gi, '')
+                    .replace(/#\s*\d+[A-Z]?/gi, '').replace(/Code\s*[:#]?\s*\d+/gi, '')
+                    .replace(/\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/g, '').replace(/SIG\s*$/, '')
+                    .replace(/\|PAGE_BREAK\|/g, '').trim();
+
+                const fsa = cleanAddr.match(/[A-Z]\d[A-Z]/) ? cleanAddr.match(/[A-Z]\d[A-Z]/)[0] : "UNK";
+
+                if(cleanAddr.length > 5) {
+                    if(!appData.routes[id]) appData.routes[id] = [];
+                    if(!appData.routes[id].some(s => s.seq === curr.seq)) {
+                        appData.routes[id].push({
+                            seq: curr.seq, address: rawAddr, cleanAddress: cleanAddr,
+                            lat: null, lon: null, status: 'pending', duplicates: [],
+                            accessCode: accessCode, isPriority: isPriority, fsa: fsa
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    function populateDropdown() {
+        const sel = document.getElementById('routeSelect');
+        sel.innerHTML = '<option value="">-- Select --</option>';
+        Object.keys(appData.routes).sort().forEach(id => {
+            const opt = document.createElement('option');
+            opt.value = id; opt.text = `${id} (${appData.routes[id].length} stops)`;
+            sel.appendChild(opt);
+        });
+    }
+
+    function confirmRoute() {
+        const id = document.getElementById('routeSelect').value;
+        if(!id) return;
+        appData.activeRouteId = id;
+        appData.stops = appData.routes[id].sort((a,b) => a.seq - b.seq);
+        saveState(); restoreSession();
+    }
+
+    function restoreSession() {
+        document.getElementById('view-upload').classList.add('hidden');
+        document.getElementById('view-select').classList.add('hidden');
+        document.getElementById('view-dashboard').classList.remove('hidden');
+        switchTab('main');
+        initMap(); 
+        renderList();
+        updateMapMarkers(); 
+        startGeocodingQueue();
+    }
+
+    // --- MAP ---
+    function initMap() {
+        if(map) return;
+        
+        const googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{maxZoom:20,subdomains:['mt0','mt1','mt2','mt3']});
+        const googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{maxZoom:20,subdomains:['mt0','mt1','mt2','mt3']});
+        const offlineLayer = new OfflineLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' });
+
+        map = L.map('map', { 
+            center: [46.8139, -71.2080], 
+            zoom: 11, 
+            layers: [googleStreets],
+            preferCanvas: true, 
+            wheelDebounceTime: 100,
+            markerZoomAnimation: true 
+        });
+        
+        L.control.layers({ 
+            "Google Streets": googleStreets, 
+            "Google Satellite": googleHybrid,
+            "Offline Mode": offlineLayer
+        }).addTo(map);
+        
+        markersGroup = L.featureGroup().addTo(map);
+
+        // --- LIVE LOCATION EVENTS ---
+        map.on('locationfound', onLocationFound);
+        map.on('locationerror', onLocationError);
+        
+        // Stop "Following" if user drags the map manually
+        map.on('dragstart', () => {
+            if(isFollowing) {
+                isFollowing = false;
+                document.getElementById('btn-location').classList.remove('active-loc');
+            }
+        });
+    }
+
+    // --- LOCATION LOGIC ---
+    function toggleFollowMode() {
+        const btn = document.getElementById('btn-location');
+        
+        if (!hasLocation) {
+            // First time click: Start Watching
+            map.locate({setView: true, maxZoom: 16, watch: true, enableHighAccuracy: true});
+            btn.classList.add('active-loc');
+            isFollowing = true;
+        } else {
+            // Subsequent clicks: Toggle "Follow" mode
+            isFollowing = !isFollowing;
+            if(isFollowing) {
+                btn.classList.add('active-loc');
+                // Immediately snap to known location
+                if(userMarker) map.panTo(userMarker.getLatLng());
+            } else {
+                btn.classList.remove('active-loc');
+            }
+        }
+    }
+
+    function onLocationFound(e) {
+        hasLocation = true;
+        const radius = e.accuracy / 2;
+
+        // Update or create Marker (Blue Dot)
+        if (userMarker) {
+            userMarker.setLatLng(e.latlng);
+            userCircle.setLatLng(e.latlng);
+            userCircle.setRadius(radius);
+        } else {
+            const icon = L.divIcon({ className: 'user-gps-marker', iconSize: [20, 20], iconAnchor: [10, 10] });
+            userMarker = L.marker(e.latlng, {icon: icon, zIndexOffset: 2000}).addTo(map);
+            userCircle = L.circle(e.latlng, { radius: radius, color: '#4285F4', weight: 1, fillOpacity: 0.1 }).addTo(map);
+        }
+
+        // If "Follow Me" is active, move the map
+        if (isFollowing) {
+            map.panTo(e.latlng, { animate: true, duration: 0.5 });
+        }
+    }
+
+    function onLocationError(e) {
+        console.log("Location Access Denied or Error");
+        alert("Could not access location. Check device settings.");
+        document.getElementById('btn-location').classList.remove('active-loc');
+    }
+
+    // --- DECOUPLED RENDERER (Anti-Lag) ---
+    let renderLoopId = null;
+    let lastRenderCount = 0;
+
+    function startRenderLoop() {
+        if(renderLoopId) clearInterval(renderLoopId);
+        renderLoopId = setInterval(() => {
+            const validCount = appData.stops.filter(s => s.lat && s.status === 'success').length;
+            if(validCount > lastRenderCount || isGeocodingActive) {
+                detectDuplicates(); 
+                updateMapMarkers(); 
+                renderList();       
+                lastRenderCount = validCount;
+                document.getElementById('geoStats').textContent = `Geo: ${validCount}/${appData.stops.length}`;
+                saveState();
+            }
+            if(!isGeocodingActive && validCount === lastRenderCount) {
+                clearInterval(renderLoopId); 
+                renderLoopId = null;
+            }
+        }, 1500);
+    }
+
+    function updateMapMarkers() {
+        markersGroup.clearLayers();
+        if(routeLine) map.removeLayer(routeLine);
+        
+        const valid = appData.stops.filter(s => s.lat);
+        const points = [];
+        const fsaMap = getFsaColorMap();
+
+        valid.forEach(s => {
+            points.push([s.lat, s.lon]);
+            const isMulti = s.duplicates.length > 0;
+            
+            let color = s.isPriority ? '#dc3545' : (fsaMap[s.fsa] || '#094699');
+            let zIndex = 1000;
+            
+            const markerHtml = `<div style="background:${color}; width:30px; height:30px; border-radius:50%; border:2px solid white; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px; box-shadow:0 2px 5px rgba(0,0,0,0.3);">${isMulti ? '📦' : s.seq}</div>`;
+            
+            const icon = L.divIcon({ className: 'custom-marker', html: markerHtml, iconSize: [30, 30], iconAnchor: [15, 15] });
+            
+            let popup = `<b>Stop #${s.seq}</b><br>${s.cleanAddress}`;
+            if(s.accessCode) popup += `<br><span class="access-code">Code: ${s.accessCode}</span>`;
+
+            if (isMulti) {
+                popup += `<div style="margin-top:8px; padding:6px; background:#fff3cd; border:1px solid #ffeeba; border-radius:4px; text-align:center;">
+                            <strong style="color:#856404; display:block; font-size:13px;">📦 ${1 + s.duplicates.length} Packages Total</strong>
+                            <div style="font-size:11px; color:#856404; margin-top:2px;">Includes: #${s.duplicates.join(', #')}</div>
+                         </div>`;
+            }
+            
+            popup += `<br><button onclick="openMap(${s.lat},${s.lon})" style="width:100%; margin-top:8px; background:#1a73e8; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer;">Navigate ➔</button>`;
+
+            L.marker([s.lat, s.lon], {icon, zIndexOffset: zIndex}).bindPopup(popup).addTo(markersGroup);
+        });
+
+        if(points.length) {
+            routeLine = L.polyline(points, {color: 'red', weight: 4, opacity: 0.8, dashArray: '5, 10'}).addTo(map);
+            if(!map.hasFit && points.length > 1) { 
+                map.fitBounds(markersGroup.getBounds(), {padding:[50,50]}); 
+                map.hasFit = true; 
+            }
+        }
+        
+        // Re-add user marker if it exists (since we cleared layers)
+        if(userMarker) userMarker.addTo(map);
+        if(userCircle) userCircle.addTo(map);
+    }
+
+    // --- OFFLINE MAP DOWNLOADER ---
+    function downloadOfflineArea() {
+        if(markersGroup.getLayers().length === 0) { alert("Wait for stops to load first."); return; }
+        if(!confirm("Download map area for offline use? Use Wi-Fi if possible.")) return;
+
+        const bounds = markersGroup.getBounds();
+        const north = bounds.getNorth() + 0.01;
+        const south = bounds.getSouth() - 0.01;
+        const east = bounds.getEast() + 0.01;
+        const west = bounds.getWest() - 0.01;
+
+        const zooms = [12, 13, 14, 15, 16]; 
+        const tiles = [];
+
+        zooms.forEach(z => {
+            const top = lat2tile(north, z);
+            const bottom = lat2tile(south, z);
+            const left = long2tile(west, z);
+            const right = long2tile(east, z);
+
+            for(let x = left; x <= right; x++) {
+                for(let y = top; y <= bottom; y++) {
+                    tiles.push({x, y, z});
+                }
+            }
+        });
+
+        downloadTiles(tiles);
+    }
+
+    function lat2tile(lat, zoom) { return Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)); }
+    function long2tile(lon, zoom) { return Math.floor((lon + 180) / 360 * Math.pow(2, zoom)); }
+
+    async function downloadTiles(tiles) {
+        const container = document.getElementById('dl-progress-container');
+        const fill = document.getElementById('dl-bar-fill');
+        const text = document.getElementById('dl-text');
+        container.style.display = 'block';
+        
+        let completed = 0;
+        let total = tiles.length;
+        text.innerText = `Downloading ${total} tiles...`;
+
+        const chunkSize = 10;
+        for (let i = 0; i < tiles.length; i += chunkSize) {
+            const chunk = tiles.slice(i, i + chunkSize);
+            await Promise.all(chunk.map(async (t) => {
+                const key = `${t.x}_${t.y}_${t.z}`;
+                const existing = await getTile(key);
+                if(!existing) {
+                    try {
+                        const url = `https://tile.openstreetmap.org/${t.z}/${t.x}/${t.y}.png`;
+                        const res = await fetch(url);
+                        if(res.ok) {
+                            const blob = await res.blob();
+                            await saveTile(key, blob);
+                        }
+                    } catch(e) { console.log("Tile fetch fail", e); }
+                }
+                completed++;
+                fill.style.width = (completed / total * 100) + "%";
+            }));
+        }
+
+        setTimeout(() => {
+            container.style.display = 'none';
+            alert("Map Saved! Switch layer to 'Offline Mode' when needed.");
+        }, 500);
+    }
+
+    // --- UI UTILS ---
+    function toggleFullscreen() {
+        const el = document.getElementById('map-container');
+        el.classList.toggle('fullscreen');
+        setTimeout(() => { 
+            map.invalidateSize(); 
+            if(markersGroup.getLayers().length) map.fitBounds(markersGroup.getBounds());
+        }, 300);
+    }
+
+    function centerMap() { 
+        isFollowing = false; // Disable follow mode on manual center
+        document.getElementById('btn-location').classList.remove('active-loc');
+        if(markersGroup.getLayers().length) map.fitBounds(markersGroup.getBounds()); 
+    }
+    
+    function openMap(lat, lon) {
+        if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+            window.location.href = `geo:${lat},${lon}?q=${lat},${lon}`;
+        } else {
+            window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
+        }
+    }
+
+    // --- GEOCODING ---
+    async function startGeocodingQueue() {
+        let pending = appData.stops.filter(s => !s.lat && s.status !== 'error');
+        if(pending.length === 0) return;
+        
+        isGeocodingActive = true;
+        startRenderLoop(); 
+
+        const CONCURRENCY = 3; 
+        for (let i = 0; i < pending.length; i += CONCURRENCY) {
+            const chunk = pending.slice(i, i + CONCURRENCY);
+            await Promise.all(chunk.map(s => geocodeStop(s)));
+            await new Promise(r => setTimeout(r, 200)); 
+        }
+
+        isGeocodingActive = false;
+        updateMapMarkers(); 
+        renderList();
+        saveState();
+    }
+
+    async function geocodeStop(stop) {
+        try {
+            const res = await fetch(`https://geoegl.msp.gouv.qc.ca/apis/icherche/geocode?type=adresses&limit=1&geometry=true&q=${encodeURIComponent(stop.cleanAddress)}`);
+            const data = await res.json();
+            if(data.features?.length) {
+                stop.lat = data.features[0].geometry.coordinates[1];
+                stop.lon = data.features[0].geometry.coordinates[0];
+                stop.status = 'success';
+            } else stop.status = 'error';
+        } catch(e) { stop.status = 'error'; }
+    }
+
+    function detectDuplicates() {
+        appData.stops.forEach(s => s.duplicates = []);
+        const locMap = {};
+        appData.stops.forEach(s => {
+            const key = s.lat ? `${s.lat.toFixed(4)},${s.lon.toFixed(4)}` : s.cleanAddress;
+            if(!locMap[key]) locMap[key] = [];
+            locMap[key].push(s.seq);
+        });
+        appData.stops.forEach(s => {
+            const key = s.lat ? `${s.lat.toFixed(4)},${s.lon.toFixed(4)}` : s.cleanAddress;
+            if(locMap[key] && locMap[key].length > 1) {
+                s.duplicates = locMap[key].filter(seq => seq !== s.seq);
+            }
+        });
+    }
+
+    // --- EDIT ADDRESS ---
+    async function editAddress(idx) {
+        const stop = appData.stops[idx];
+        const newAddr = prompt("Edit Address for Stop #" + stop.seq, stop.cleanAddress);
+        
+        if (newAddr && newAddr.trim() !== "" && newAddr !== stop.cleanAddress) {
+            stop.cleanAddress = newAddr.trim();
+            stop.lat = null;
+            stop.lon = null;
+            stop.status = 'pending';
+            renderList();
+            await geocodeStop(stop);
+            detectDuplicates();
+            updateMapMarkers();
+            renderList();
+            saveState();
+        }
+    }
+
+    // --- ANALYTICS RENDER ---
+    function renderAnalytics() {
+        const container = document.getElementById('analytics-list');
+        container.innerHTML = '';
+        const processedKeys = new Set();
+        let totalMultiLocations = 0;
+        let totalExtraPackages = 0;
+        const groups = [];
+
+        appData.stops.forEach(s => {
+            if (s.duplicates.length > 0) {
+                const key = s.lat ? `${s.lat.toFixed(4)},${s.lon.toFixed(4)}` : s.cleanAddress;
+                if (!processedKeys.has(key)) {
+                    processedKeys.add(key);
+                    const allSeqs = [s.seq, ...s.duplicates].sort((a,b) => a-b);
+                    groups.push({ address: s.cleanAddress, seqs: allSeqs, count: allSeqs.length });
+                    totalMultiLocations++;
+                    totalExtraPackages += s.duplicates.length;
+                }
+            }
+        });
+
+        document.getElementById('stat-locations').innerText = totalMultiLocations;
+        document.getElementById('stat-packages').innerText = totalExtraPackages;
+
+        if(groups.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">No multi-drop locations found yet.<br>Wait for geocoding to finish.</div>';
+            return;
+        }
+
+        groups.sort((a, b) => b.count - a.count);
+        groups.forEach(g => {
+            const div = document.createElement('div');
+            div.className = 'multi-group';
+            let seqTags = g.seqs.map(num => `<span class="mg-seq">#${num}</span>`).join('');
+            div.innerHTML = `<div class="mg-header"><div class="mg-addr">${g.address}</div><div class="mg-count">${g.count} pkgs</div></div><div class="mg-seqs">${seqTags}</div>`;
+            container.appendChild(div);
+        });
+    }
+
+    // --- LIST RENDER ---
+    function getFsaColorMap() {
+        const fsas = [...new Set(appData.stops.map(s => s.fsa))];
+        const map = {};
+        fsas.forEach((f, i) => map[f] = clusterColors[i % clusterColors.length]);
+        return map;
+    }
+
+    function renderList() {
+        const container = document.getElementById('stopList');
+        container.innerHTML = '';
+        const fsaMap = getFsaColorMap();
+
+        appData.stops.forEach((stop, idx) => {
+            const isMulti = stop.duplicates.length > 0;
+            const colorIndex = Object.keys(fsaMap).indexOf(stop.fsa) % clusterColors.length;
+            
+            const div = document.createElement('div');
+            div.className = `stop-item cluster-${colorIndex}`;
+            
+            div.innerHTML = `
+                <div class="stop-seq ${isMulti ? 'multi' : ''}">${stop.seq}</div>
+                <div class="stop-details">
+                    <div class="stop-addr">
+                        ${stop.address}
+                        ${stop.isPriority ? '<span class="priority-badge">URGENT</span>' : ''}
+                    </div>
+                    ${stop.accessCode ? `<div class="access-code">Code: ${stop.accessCode}</div>` : ''}
+                    ${isMulti ? `<div style="font-size:11px; color:#856404; margin-top:2px;"><b>+${stop.duplicates.length} pkgs:</b> ${stop.duplicates.join(', ')}</div>` : ''}
+                    
+                    <div class="action-row">
+                        ${stop.lat ? `<button onclick="openMap(${stop.lat},${stop.lon})" class="btn-action btn-gmaps">🗺️ Maps</button>` : ''}
+                        <button class="btn-action btn-edit" onclick="editAddress(${idx})">✏️ Edit Addr</button>
+                    </div>
+                </div>`;
+            container.appendChild(div);
+        });
+    }
+
+    function retryErrors() { appData.stops.forEach(s => { if(s.status==='error') s.status='pending'; }); startGeocodingQueue(); }
+</script>
+</body>
+</html>
