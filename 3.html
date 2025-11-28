@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Intelcom Driver Pro - GPS</title>
+    
+    <!-- Leaflet Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- PDF Parser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
+    <style>
+        /* --- PRO DESIGN SYSTEM --- */
+        :root {
+            --primary: #094699;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --bg: #f4f6f8;
+            --card: #ffffff;
+            --text: #212529;
+            --gray: #6c757d;
+            --gps-blue: #4285F4;
+            --optimize: #6f42c1;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column;
+        }
+
+        /* HEADER */
+        header {
+            background: linear-gradient(135deg, #094699, #002d6b); color: white; padding: 12px 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15); z-index: 1000;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        header h1 { margin: 0; font-size: 18px; font-weight: 800; }
+        
+        .header-actions { display: flex; gap: 10px; }
+        .btn-header { 
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); 
+            color: white; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;
+        }
+
+        /* MAIN LAYOUT */
+        main { flex: 1; overflow-y: auto; padding: 12px; }
+
+        .card { 
+            background: var(--card); border-radius: 12px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 16px; margin-bottom: 16px; 
+        }
+        .hidden { display: none !important; }
+
+        /* TABS */
+        .tab-nav { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+        .tab-btn { 
+            flex: 1; padding: 10px; border: none; background: #e9ecef; border-radius: 8px; 
+            font-weight: bold; color: #666; cursor: pointer; transition: 0.2s; min-width: 80px;
+        }
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 5px rgba(9, 70, 153, 0.3); }
+        .tab-btn.optimize-tab { background: #e8dff5; color: var(--optimize); }
+        .tab-btn.optimize-tab.active { background: var(--optimize); color: white; }
+
+        /* MAP & PERFORMANCE OPTIMIZATIONS */
+        #map-container { 
+            position: relative; height: 45vh; min-height: 300px; 
+            margin: -16px -16px 10px -16px; border-radius: 12px 12px 0 0; 
+            overflow: hidden; transition: height 0.3s; 
+            transform: translate3d(0,0,0);
+            will-change: transform;
+        }
+        
+        .leaflet-pane { will-change: transform; }
+        .leaflet-marker-icon { will-change: transform; }
+        .leaflet-zoom-anim .leaflet-zoom-animated { transition: transform 0.25s cubic-bezier(0,0,0.25,1); }
+
+        #map { width: 100%; height: 100%; background: #e5e9ec; }
+        
+        /* FULLSCREEN MODIFIER */
+        #map-container.fullscreen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh !important;
+            z-index: 2000; margin: 0; border-radius: 0;
+        }
+        #map-container.fullscreen .map-controls { bottom: 40px; right: 20px; }
+
+        .map-controls { position: absolute; bottom: 20px; right: 10px; z-index: 999; display: flex; flex-direction: column; gap: 10px; }
+        
+        .fab { 
+            width: 44px; height: 44px; border-radius: 50%; border: none; 
+            background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.2); 
+            font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: 0.3s;
+        }
+        
+        .fab.active-loc { background: var(--gps-blue); color: white; }
+        .fab.active-list { background: var(--primary); color: white; }
+        .fab.optimize-active { background: var(--optimize); color: white; }
+        
+        .user-gps-marker {
+            background-color: var(--gps-blue);
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            animation: pulse-ring 2s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(66, 133, 244, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0); }
+        }
+
+        /* FLOATING ADDRESS LIST PANEL */
+        #floating-list-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 320px;
+            max-width: calc(100vw - 80px);
+            max-height: calc(100vh - 100px);
+            background: rgba(255,255,255,0.97);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 1001;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        #floating-list-panel.show { display: flex; }
+        
+        .floating-header {
+            background: linear-gradient(135deg, #094699, #002d6b);
+            color: white;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        .floating-header.optimized {
+            background: linear-gradient(135deg, #6f42c1, #4a2c7a);
+        }
+        
+        .floating-header h3 { margin: 0; font-size: 14px; font-weight: 700; }
+        
+        .floating-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .floating-stats {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            display: flex;
+            gap: 15px;
+            border-bottom: 1px solid #eee;
+            flex-shrink: 0;
+        }
+        
+        .floating-stat {
+            text-align: center;
+        }
+        
+        .floating-stat-val {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        
+        .floating-stat-val.saved {
+            color: var(--success);
+        }
+        
+        .floating-stat-lbl {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        
+        .floating-list-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .floating-stop {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        .floating-stop:hover {
+            background: #f0f7ff;
+            border-color: var(--primary);
+        }
+        
+        .floating-stop.completed {
+            opacity: 0.5;
+            background: #f8f8f8;
+        }
+        
+        .floating-seq {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        
+        .floating-seq.multi {
+            background: var(--warning);
+            color: #222;
+        }
+        
+        .floating-seq.optimized {
+            background: var(--optimize);
+        }
+        
+        .floating-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .floating-addr {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.3;
+            word-wrap: break-word;
+        }
+        
+        .floating-meta {
+            display: flex;
+            gap: 6px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        
+        .pkg-badge {
+            background: var(--warning);
+            color: #222;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        
+        .code-badge {
+            background: #ffeaea;
+            color: #dc3545;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .priority-badge-sm {
+            background: #dc3545;
+            color: white;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+        
+        .orig-seq-badge {
+            background: #e9ecef;
+            color: #666;
+            font-size: 9px;
+            font-weight: 600;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        
+        .floating-nav-btn {
+            background: var(--gps-blue);
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        /* OPTIMIZATION PANEL */
+        .optimize-card {
+            background: linear-gradient(135deg, #f3e8ff, #e8dff5);
+            border: 2px solid var(--optimize);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .optimize-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .optimize-header h3 {
+            margin: 0;
+            color: var(--optimize);
+            font-size: 16px;
+        }
+        
+        .optimize-status {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .optimize-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .opt-stat {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .opt-stat-val {
+            font-size: 20px;
+            font-weight: 800;
+        }
+        
+        .opt-stat-val.before { color: var(--danger); }
+        .opt-stat-val.after { color: var(--success); }
+        .opt-stat-val.saved { color: var(--optimize); }
+        
+        .opt-stat-lbl {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        
+        .optimize-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-optimize {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        .btn-optimize.primary {
+            background: var(--optimize);
+            color: white;
+        }
+        
+        .btn-optimize.primary:hover {
+            background: #5a32a3;
+        }
+        
+        .btn-optimize.secondary {
+            background: white;
+            color: var(--optimize);
+            border: 2px solid var(--optimize);
+        }
+        
+        .btn-optimize:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .direction-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .dir-btn {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+        }
+        
+        .dir-btn:hover {
+            border-color: var(--optimize);
+        }
+        
+        .dir-btn.active {
+            border-color: var(--optimize);
+            background: #f3e8ff;
+        }
+        
+        .dir-btn .icon {
+            font-size: 20px;
+            display: block;
+        }
+        
+        .dir-btn .label {
+            font-size: 10px;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .start-point-selector {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .start-point-selector label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .start-point-selector select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        /* DOWNLOAD PROGRESS */
+        #dl-progress-container {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%); 
+            width: 80%; z-index: 1000; background: rgba(255,255,255,0.9); 
+            padding: 8px; border-radius: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: none; text-align: center;
+        }
+        #dl-bar-bg { width: 100%; height: 6px; background: #ddd; border-radius: 3px; overflow: hidden; margin-top: 5px; }
+        #dl-bar-fill { width: 0%; height: 100%; background: var(--success); transition: width 0.2s; }
+        #dl-text { font-size: 11px; font-weight: bold; color: #333; }
+
+        /* LIST ITEMS */
+        .stop-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid #f0f0f0; position: relative; transition: 0.3s; }
+        
+        .stop-item.cluster-0 { border-left: 4px solid #007bff; padding-left: 8px; }
+        .stop-item.cluster-1 { border-left: 4px solid #6610f2; padding-left: 8px; }
+        .stop-item.cluster-2 { border-left: 4px solid #e83e8c; padding-left: 8px; }
+        .stop-item.cluster-3 { border-left: 4px solid #fd7e14; padding-left: 8px; }
+        .stop-item.cluster-4 { border-left: 4px solid #28a745; padding-left: 8px; }
+
+        .stop-seq { background: var(--primary); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; flex-shrink: 0; }
+        .stop-seq.multi { background: var(--warning); color: #222; border: 2px solid #b58900; }
+        .stop-seq.optimized { background: var(--optimize); }
+
+        .stop-details { flex: 1; }
+        .stop-addr { font-size: 16px; font-weight: 600; line-height: 1.3; margin-bottom: 4px; color: #333; }
+        
+        .access-code { color: #dc3545; font-weight: 800; background: #ffeaea; padding: 2px 6px; border-radius: 4px; font-size: 13px; display: inline-block; margin-top: 4px; border: 1px solid #f5c6cb; }
+        .priority-badge { background: #dc3545; color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-left: 5px; }
+        .orig-seq { background: #e9ecef; color: #666; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
+
+        .action-row { margin-top: 10px; display: flex; gap: 8px; }
+        .btn-action { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #dee2e6; background: white; font-size: 14px; font-weight: 600; color: #495057; text-align: center; text-decoration: none; cursor: pointer; }
+        .btn-gmaps { border-color: #d2e3fc; color: #1a73e8; background: #e8f0fe; }
+        .btn-edit { border-color: #ffeeba; color: #856404; background: #fff3cd; }
+
+        /* ANALYTICS VIEW */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-box { background: white; border: 1px solid #eee; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-val { font-size: 24px; font-weight: 900; color: var(--primary); }
+        .stat-lbl { font-size: 12px; color: #666; text-transform: uppercase; font-weight: bold; margin-top: 5px; }
+
+        .multi-group { background: white; border-left: 4px solid var(--warning); margin-bottom: 12px; border-radius: 8px; padding: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .mg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .mg-count { background: var(--warning); color: #222; font-weight: bold; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+        .mg-addr { font-weight: 600; color: #333; font-size: 14px; }
+        .mg-seqs { display: flex; gap: 5px; flex-wrap: wrap; }
+        .mg-seq { background: #eee; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold; color: #555; }
+
+        /* MARKERS */
+        .custom-marker { background: var(--primary); color: white; border: 2px solid white; border-radius: 50%; text-align: center; font-weight: bold; font-size: 12px; line-height: 26px; box-shadow: 0 3px 6px rgba(0,0,0,0.4); }
+        .custom-marker.multi { background: var(--warning); color: #222; border: 2px solid #222; z-index: 1000 !important; }
+
+        /* Optimized route line */
+        .leaflet-interactive.optimized-route {
+            stroke: var(--optimize);
+            stroke-width: 4;
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>⚜️ Driver GeoFix</h1>
+    <div class="header-actions">
+        <button class="btn-header" onclick="softReset()">🔙 Routes</button>
+        <button class="btn-header" onclick="hardReset()">📂 New PDF</button>
+    </div>
+</header>
+
+<main>
+    <!-- VIEW 1: UPLOAD -->
+    <div id="view-upload" class="card">
+        <h2 style="font-size:18px; margin-top:0; color:#333;">Step 1: Import Manifest</h2>
+        <input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="handlePdf(this)">
+        <div onclick="document.getElementById('pdfInput').click()" style="padding:40px; text-align:center; border:2px dashed #ccc; border-radius:10px; cursor:pointer;">
+            <span style="font-size:40px;">📄</span><br>
+            <b>Upload PDF</b>
+        </div>
+    </div>
+
+    <!-- VIEW 2: SELECT ROUTE -->
+    <div id="view-select" class="card hidden">
+        <h2 style="font-size:18px; margin-top:0;">Step 2: Confirm Route</h2>
+        <select id="routeSelect" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; background:white; margin-top:10px;">
+            <option value="">-- Select Route --</option>
+        </select>
+        <button onclick="confirmRoute()" style="width:100%; padding:15px; margin-top:20px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold;">
+            🚀 Load Route
+        </button>
+    </div>
+
+    <!-- VIEW 3: DASHBOARD -->
+    <div id="view-dashboard" class="hidden">
+        
+        <!-- TABS -->
+        <div class="tab-nav">
+            <button id="tab-main-btn" class="tab-btn active" onclick="switchTab('main')">📍 Map</button>
+            <button id="tab-optimize-btn" class="tab-btn optimize-tab" onclick="switchTab('optimize')">🚀 Optimize</button>
+            <button id="tab-analytics-btn" class="tab-btn" onclick="switchTab('analytics')">📦 Duplicates</button>
+        </div>
+
+        <!-- TAB 1: MAIN ROUTE -->
+        <div id="tab-main">
+            <!-- MAP -->
+            <div class="card" style="padding:0; overflow:hidden;">
+                <div id="map-container">
+                    <!-- DOWNLOAD OVERLAY -->
+                    <div id="dl-progress-container">
+                        <div id="dl-text">Downloading offline map...</div>
+                        <div id="dl-bar-bg"><div id="dl-bar-fill"></div></div>
+                    </div>
+
+                    <!-- FLOATING ADDRESS LIST PANEL -->
+                    <div id="floating-list-panel">
+                        <div class="floating-header" id="floating-header">
+                            <h3 id="floating-title">📋 Stops List</h3>
+                            <button class="floating-close" onclick="toggleFloatingList()">✕</button>
+                        </div>
+                        <div class="floating-stats">
+                            <div class="floating-stat">
+                                <div class="floating-stat-val" id="fl-total">0</div>
+                                <div class="floating-stat-lbl">Locations</div>
+                            </div>
+                            <div class="floating-stat">
+                                <div class="floating-stat-val" id="fl-packages">0</div>
+                                <div class="floating-stat-lbl">Packages</div>
+                            </div>
+                            <div class="floating-stat">
+                                <div class="floating-stat-val saved" id="fl-saved" style="display:none;">0</div>
+                                <div class="floating-stat-lbl" id="fl-saved-lbl" style="display:none;">KM Saved</div>
+                            </div>
+                        </div>
+                        <div class="floating-list-content" id="floating-list-content">
+                            <!-- Generated by JS -->
+                        </div>
+                    </div>
+
+                    <div id="map"></div>
+                    <div class="map-controls">
+                        <button id="btn-list" class="fab" onclick="toggleFloatingList()" title="Show Stops List">📋</button>
+                        <button id="btn-location" class="fab" onclick="toggleLocation()" title="Locate Me">📍</button>
+                        <button class="fab" onclick="toggleFullscreen()" title="Full Screen">⛶</button>
+                        <button class="fab" onclick="downloadOfflineArea()" title="Save Offline">💾</button>
+                        <button class="fab" onclick="centerMap()" title="Reset View">🎯</button>
+                    </div>
+                </div>
+                <div style="padding:12px; display:flex; justify-content:space-between; align-items:center; font-size:12px; background:white;">
+                    <span id="geoStats">Status: 0/0</span>
+                    <div style="display:flex; gap:8px;">
+                        <span id="routeMode" style="padding:4px 8px; border-radius:4px; font-weight:bold;"></span>
+                        <button onclick="retryErrors()" style="padding:4px 8px;">Retry Geo</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STOPS LIST -->
+            <div class="card">
+                <h3 style="margin:0 0 15px 0; font-size:16px;">Stops List <span id="listModeLabel"></span></h3>
+                <div id="stopList"></div>
+            </div>
+        </div>
+
+        <!-- TAB 2: OPTIMIZE -->
+        <div id="tab-optimize" class="hidden">
+            <div class="optimize-card">
+                <div class="optimize-header">
+                    <span style="font-size:28px;">🚀</span>
+                    <h3>Route Optimizer</h3>
+                </div>
+                
+                <div class="optimize-status" id="optimize-status">
+                    <div style="text-align:center; color:#666;">
+                        <span style="font-size:24px;">⏳</span>
+                        <p>Waiting for all addresses to be geocoded...</p>
+                        <p id="geo-progress-text">0/0 addresses ready</p>
+                    </div>
+                </div>
+
+                <div id="optimize-ready" style="display:none;">
+                    <div class="start-point-selector">
+                        <label>🏁 Start Point (Your Current Location or First Stop)</label>
+                        <select id="startPointSelect">
+                            <option value="first">First Stop in Manifest</option>
+                            <option value="current">My Current GPS Location</option>
+                            <option value="custom">Custom Address...</option>
+                        </select>
+                        <input type="text" id="customStartAddress" placeholder="Enter starting address..." style="width:100%; padding:10px; margin-top:8px; border:1px solid #ddd; border-radius:6px; display:none;">
+                    </div>
+
+                    <div style="margin-bottom:15px;">
+                        <label style="display:block; font-size:12px; font-weight:600; color:#666; margin-bottom:8px;">📐 Optimization Strategy</label>
+                        <div class="direction-selector">
+                            <div class="dir-btn active" data-strategy="nearest" onclick="selectStrategy('nearest')">
+                                <span class="icon">🎯</span>
+                                <span class="label">Nearest</span>
+                            </div>
+                            <div class="dir-btn" data-strategy="north-south" onclick="selectStrategy('north-south')">
+                                <span class="icon">⬇️</span>
+                                <span class="label">N→S</span>
+                            </div>
+                            <div class="dir-btn" data-strategy="south-north" onclick="selectStrategy('south-north')">
+                                <span class="icon">⬆️</span>
+                                <span class="label">S→N</span>
+                            </div>
+                            <div class="dir-btn" data-strategy="cluster" onclick="selectStrategy('cluster')">
+                                <span class="icon">🔵</span>
+                                <span class="label">Cluster</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="optimize-stats" id="optimize-stats" style="display:none;">
+                        <div class="opt-stat">
+                            <div class="opt-stat-val before" id="stat-before">0</div>
+                            <div class="opt-stat-lbl">Original (km)</div>
+                        </div>
+                        <div class="opt-stat">
+                            <div class="opt-stat-val after" id="stat-after">0</div>
+                            <div class="opt-stat-lbl">Optimized (km)</div>
+                        </div>
+                        <div class="opt-stat">
+                            <div class="opt-stat-val saved" id="stat-saved">0%</div>
+                            <div class="opt-stat-lbl">Saved</div>
+                        </div>
+                    </div>
+
+                    <div class="optimize-actions">
+                        <button class="btn-optimize primary" id="btn-run-optimize" onclick="runOptimization()">
+                            🚀 Optimize Route
+                        </button>
+                        <button class="btn-optimize secondary" id="btn-reset-route" onclick="resetToOriginal()" style="display:none;">
+                            ↩️ Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Optimization Explanation -->
+            <div class="card">
+                <h4 style="margin:0 0 10px 0; font-size:14px;">ℹ️ How It Works</h4>
+                <div style="font-size:13px; color:#666; line-height:1.5;">
+                    <p><strong>🎯 Nearest:</strong> Always go to the closest unvisited stop. Best for dense urban areas.</p>
+                    <p><strong>⬇️ North→South:</strong> Sweep from north to south, minimizing backtracking. Good for long routes.</p>
+                    <p><strong>⬆️ South→North:</strong> Sweep from south to north.</p>
+                    <p><strong>🔵 Cluster:</strong> Groups nearby stops together, then optimizes within each cluster. Best for spread-out routes.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: ANALYTICS -->
+        <div id="tab-analytics" class="hidden">
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="stat-val" id="stat-locations">0</div>
+                    <div class="stat-lbl">Multi-Drop Locs</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-val" id="stat-packages">0</div>
+                    <div class="stat-lbl">Total Dup Pkgs</div>
+                </div>
+            </div>
+            
+            <h3 style="font-size:16px; margin:0 0 15px 0; padding-left:5px;">Grouped Locations</h3>
+            <div id="analytics-list">
+                <div style="text-align:center; padding:20px; color:#999;">No duplicates found.</div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // --- DATABASE SETUP FOR OFFLINE MAPS ---
+    const DB_NAME = "DriverFixMapDB";
+    const STORE_NAME = "tiles";
+    let db = null;
+
+    function initDB() {
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onupgradeneeded = (e) => {
+            const d = e.target.result;
+            if (!d.objectStoreNames.contains(STORE_NAME)) {
+                d.createObjectStore(STORE_NAME); 
+            }
+        };
+        request.onsuccess = (e) => db = e.target.result;
+        request.onerror = (e) => console.error("DB Error", e);
+    }
+    initDB();
+
+    async function saveTile(key, blob) {
+        if (!db) return;
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).put(blob, key);
+    }
+
+    async function getTile(key) {
+        if (!db) return null;
+        return new Promise((resolve) => {
+            const tx = db.transaction(STORE_NAME, "readonly");
+            const req = tx.objectStore(STORE_NAME).get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    }
+
+    // --- CUSTOM OFFLINE LAYER ---
+    const OfflineLayer = L.TileLayer.extend({
+        createTile: function (coords, done) {
+            const tile = document.createElement('img');
+            const key = `${coords.x}_${coords.y}_${coords.z}`;
+            tile.alt = '';
+            tile.setAttribute('role', 'presentation');
+
+            getTile(key).then(blob => {
+                if (blob) {
+                    const url = URL.createObjectURL(blob);
+                    tile.src = url;
+                    tile.onload = () => { URL.revokeObjectURL(url); done(null, tile); };
+                } else {
+                    tile.src = this.getTileUrl(coords);
+                    tile.onload = () => done(null, tile);
+                    tile.onerror = () => done(new Error('Failed to load tile'), tile);
+                }
+            });
+            return tile;
+        }
+    });
+
+    // --- STATE ---
+    let appData = { 
+        routes: {}, 
+        activeRouteId: null, 
+        stops: [], 
+        completedStops: [],
+        optimizedOrder: null, // Array of indices representing optimized order
+        isOptimized: false,
+        originalDistance: 0,
+        optimizedDistance: 0
+    };
+    let map = null, markersGroup = null, routeLine = null;
+    let isGeocodingActive = false;
+    let floatingListOpen = false;
+    let selectedStrategy = 'nearest';
+    let userCurrentLocation = null;
+    
+    // Location State
+    let userMarker = null;
+    let userCircle = null;
+    let hasLocation = false;
+
+    const clusterColors = ['#007bff', '#6610f2', '#e83e8c', '#fd7e14', '#28a745', '#20c997', '#17a2b8'];
+
+    window.onload = () => {
+        if(localStorage.getItem('driverFocus_v3')) {
+            try {
+                appData = JSON.parse(localStorage.getItem('driverFocus_v3'));
+                if (!appData.completedStops) appData.completedStops = [];
+                if (!appData.optimizedOrder) appData.optimizedOrder = null;
+                if(appData.stops.length) restoreSession();
+            } catch(e) { localStorage.removeItem('driverFocus_v3'); }
+        }
+        
+        // Start point selector change handler
+        document.getElementById('startPointSelect').addEventListener('change', function() {
+            document.getElementById('customStartAddress').style.display = 
+                this.value === 'custom' ? 'block' : 'none';
+        });
+    };
+    function saveState() { localStorage.setItem('driverFocus_v3', JSON.stringify(appData)); }
+
+    // --- TABS & NAV ---
+    function switchTab(tab) {
+        document.getElementById('tab-main').classList.add('hidden');
+        document.getElementById('tab-optimize').classList.add('hidden');
+        document.getElementById('tab-analytics').classList.add('hidden');
+        document.getElementById('tab-main-btn').classList.remove('active');
+        document.getElementById('tab-optimize-btn').classList.remove('active');
+        document.getElementById('tab-analytics-btn').classList.remove('active');
+        
+        if(tab === 'main') {
+            document.getElementById('tab-main').classList.remove('hidden');
+            document.getElementById('tab-main-btn').classList.add('active');
+            setTimeout(() => { if(map) map.invalidateSize(); }, 100);
+        } else if(tab === 'optimize') {
+            document.getElementById('tab-optimize').classList.remove('hidden');
+            document.getElementById('tab-optimize-btn').classList.add('active');
+            updateOptimizePanel();
+        } else {
+            document.getElementById('tab-analytics').classList.remove('hidden');
+            document.getElementById('tab-analytics-btn').classList.add('active');
+            renderAnalytics();
+        }
+    }
+
+    // --- OPTIMIZATION LOGIC ---
+    function selectStrategy(strategy) {
+        selectedStrategy = strategy;
+        document.querySelectorAll('.dir-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.strategy === strategy);
+        });
+    }
+
+    function updateOptimizePanel() {
+        const geocodedCount = appData.stops.filter(s => s.lat && s.status === 'success').length;
+        const totalCount = appData.stops.length;
+        
+        document.getElementById('geo-progress-text').textContent = `${geocodedCount}/${totalCount} addresses ready`;
+        
+        if (geocodedCount >= totalCount * 0.9 && geocodedCount > 0) { // At least 90% geocoded
+            document.getElementById('optimize-status').style.display = 'none';
+            document.getElementById('optimize-ready').style.display = 'block';
+            
+            if (appData.isOptimized) {
+                document.getElementById('optimize-stats').style.display = 'grid';
+                document.getElementById('btn-reset-route').style.display = 'block';
+                document.getElementById('btn-run-optimize').textContent = '🔄 Re-Optimize';
+                
+                document.getElementById('stat-before').textContent = appData.originalDistance.toFixed(1);
+                document.getElementById('stat-after').textContent = appData.optimizedDistance.toFixed(1);
+                const savedPct = ((appData.originalDistance - appData.optimizedDistance) / appData.originalDistance * 100);
+                document.getElementById('stat-saved').textContent = savedPct.toFixed(0) + '%';
+            }
+        } else {
+            document.getElementById('optimize-status').style.display = 'block';
+            document.getElementById('optimize-ready').style.display = 'none';
+        }
+    }
+
+    // Haversine distance in km
+    function haversineDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+
+    function calculateTotalDistance(orderedStops) {
+        let total = 0;
+        for (let i = 0; i < orderedStops.length - 1; i++) {
+            if (orderedStops[i].lat && orderedStops[i+1].lat) {
+                total += haversineDistance(
+                    orderedStops[i].lat, orderedStops[i].lon,
+                    orderedStops[i+1].lat, orderedStops[i+1].lon
+                );
+            }
+        }
+        return total;
+    }
+
+    async function runOptimization() {
+        const btn = document.getElementById('btn-run-optimize');
+        btn.disabled = true;
+        btn.textContent = '⏳ Optimizing...';
+
+        // Get valid stops (with coordinates)
+        const validStops = appData.stops.filter(s => s.lat && s.status === 'success');
+        
+        if (validStops.length < 2) {
+            alert('Need at least 2 geocoded stops to optimize');
+            btn.disabled = false;
+            btn.textContent = '🚀 Optimize Route';
+            return;
+        }
+
+        // Calculate original distance
+        appData.originalDistance = calculateTotalDistance(appData.stops.filter(s => s.lat));
+
+        // Get start point
+        let startLat, startLon;
+        const startOption = document.getElementById('startPointSelect').value;
+        
+        if (startOption === 'current' && userCurrentLocation) {
+            startLat = userCurrentLocation.lat;
+            startLon = userCurrentLocation.lng;
+        } else if (startOption === 'custom') {
+            // For now, use first stop if custom address not geocoded
+            const firstValid = validStops[0];
+            startLat = firstValid.lat;
+            startLon = firstValid.lon;
+        } else {
+            const firstValid = validStops[0];
+            startLat = firstValid.lat;
+            startLon = firstValid.lon;
+        }
+
+        // Run selected optimization algorithm
+        let optimizedIndices;
+        
+        switch(selectedStrategy) {
+            case 'nearest':
+                optimizedIndices = optimizeNearestNeighbor(validStops, startLat, startLon);
+                break;
+            case 'north-south':
+                optimizedIndices = optimizeDirectional(validStops, 'north-south');
+                break;
+            case 'south-north':
+                optimizedIndices = optimizeDirectional(validStops, 'south-north');
+                break;
+            case 'cluster':
+                optimizedIndices = optimizeWithClusters(validStops, startLat, startLon);
+                break;
+            default:
+                optimizedIndices = optimizeNearestNeighbor(validStops, startLat, startLon);
+        }
+
+        // Map back to original stop indices
+        appData.optimizedOrder = optimizedIndices.map(i => appData.stops.indexOf(validStops[i]));
+        
+        // Add any non-geocoded stops at the end
+        appData.stops.forEach((stop, idx) => {
+            if (!stop.lat && !appData.optimizedOrder.includes(idx)) {
+                appData.optimizedOrder.push(idx);
+            }
+        });
+
+        // Calculate optimized distance
+        const optimizedStops = appData.optimizedOrder.map(i => appData.stops[i]).filter(s => s.lat);
+        appData.optimizedDistance = calculateTotalDistance(optimizedStops);
+        
+        appData.isOptimized = true;
+        saveState();
+
+        // Update UI
+        btn.disabled = false;
+        btn.textContent = '🔄 Re-Optimize';
+        document.getElementById('btn-reset-route').style.display = 'block';
+        document.getElementById('optimize-stats').style.display = 'grid';
+        
+        document.getElementById('stat-before').textContent = appData.originalDistance.toFixed(1);
+        document.getElementById('stat-after').textContent = appData.optimizedDistance.toFixed(1);
+        const savedPct = ((appData.originalDistance - appData.optimizedDistance) / appData.originalDistance * 100);
+        document.getElementById('stat-saved').textContent = savedPct.toFixed(0) + '%';
+
+        // Update map and list
+        updateMapMarkers();
+        renderList();
+        if (floatingListOpen) renderFloatingList();
+        updateRouteModeLabel();
+
+        alert(`✅ Route Optimized!\n\nOriginal: ${appData.originalDistance.toFixed(1)} km\nOptimized: ${appData.optimizedDistance.toFixed(1)} km\nSaved: ${savedPct.toFixed(0)}%`);
+    }
+
+    // Nearest Neighbor Algorithm
+    function optimizeNearestNeighbor(stops, startLat, startLon) {
+        const n = stops.length;
+        const visited = new Array(n).fill(false);
+        const order = [];
+        
+        // Find nearest to start
+        let currentLat = startLat;
+        let currentLon = startLon;
+        
+        for (let i = 0; i < n; i++) {
+            let nearestIdx = -1;
+            let nearestDist = Infinity;
+            
+            for (let j = 0; j < n; j++) {
+                if (!visited[j] && stops[j].lat) {
+                    const dist = haversineDistance(currentLat, currentLon, stops[j].lat, stops[j].lon);
+                    if (dist < nearestDist) {
+                        nearestDist = dist;
+                        nearestIdx = j;
+                    }
+                }
+            }
+            
+            if (nearestIdx !== -1) {
+                visited[nearestIdx] = true;
+                order.push(nearestIdx);
+                currentLat = stops[nearestIdx].lat;
+                currentLon = stops[nearestIdx].lon;
+            }
+        }
+        
+        return order;
+    }
+
+    // Directional Sweep Algorithm
+    function optimizeDirectional(stops, direction) {
+        const validStops = stops.filter(s => s.lat);
+        const indexed = validStops.map((s, i) => ({ ...s, origIdx: i }));
+        
+        // Sort by latitude
+        if (direction === 'north-south') {
+            indexed.sort((a, b) => b.lat - a.lat); // North to South (high to low lat)
+        } else {
+            indexed.sort((a, b) => a.lat - b.lat); // South to North
+        }
+        
+        // Within similar latitudes, sort by longitude (west to east)
+        const latBands = [];
+        let currentBand = [indexed[0]];
+        
+        for (let i = 1; i < indexed.length; i++) {
+            // If within ~500m latitude, same band
+            if (Math.abs(indexed[i].lat - indexed[i-1].lat) < 0.005) {
+                currentBand.push(indexed[i]);
+            } else {
+                latBands.push(currentBand);
+                currentBand = [indexed[i]];
+            }
+        }
+        latBands.push(currentBand);
+        
+        // Sort each band by longitude, alternating direction for snake pattern
+        const result = [];
+        latBands.forEach((band, idx) => {
+            band.sort((a, b) => idx % 2 === 0 ? a.lon - b.lon : b.lon - a.lon);
+            result.push(...band);
+        });
+        
+        return result.map(s => stops.indexOf(stops.find(st => st.seq === s.seq)));
+    }
+
+    // Cluster-based optimization
+    function optimizeWithClusters(stops, startLat, startLon) {
+        const validStops = stops.filter(s => s.lat);
+        const k = Math.min(5, Math.ceil(validStops.length / 8)); // Dynamic cluster count
+        
+        // Simple k-means clustering
+        const clusters = kMeansClustering(validStops, k);
+        
+        // Order clusters by distance from start
+        const clusterCenters = clusters.map(cluster => {
+            const avgLat = cluster.reduce((sum, s) => sum + s.lat, 0) / cluster.length;
+            const avgLon = cluster.reduce((sum, s) => sum + s.lon, 0) / cluster.length;
+            return { lat: avgLat, lon: avgLon, stops: cluster };
+        });
+        
+        // Sort clusters by distance from start using nearest neighbor
+        const orderedClusters = [];
+        let currentLat = startLat;
+        let currentLon = startLon;
+        const usedClusters = new Set();
+        
+        for (let i = 0; i < clusterCenters.length; i++) {
+            let nearestIdx = -1;
+            let nearestDist = Infinity;
+            
+            clusterCenters.forEach((c, idx) => {
+                if (!usedClusters.has(idx)) {
+                    const dist = haversineDistance(currentLat, currentLon, c.lat, c.lon);
+                    if (dist < nearestDist) {
+                        nearestDist = dist;
+                        nearestIdx = idx;
+                    }
+                }
+            });
+            
+            if (nearestIdx !== -1) {
+                usedClusters.add(nearestIdx);
+                orderedClusters.push(clusterCenters[nearestIdx]);
+                currentLat = clusterCenters[nearestIdx].lat;
+                currentLon = clusterCenters[nearestIdx].lon;
+            }
+        }
+        
+        // Within each cluster, use nearest neighbor
+        const result = [];
+        orderedClusters.forEach(cluster => {
+            const clusterOrder = optimizeNearestNeighbor(cluster.stops, currentLat, currentLon);
+            clusterOrder.forEach(idx => {
+                const stop = cluster.stops[idx];
+                result.push(stops.indexOf(stop));
+            });
+            if (cluster.stops.length > 0) {
+                const lastStop = cluster.stops[clusterOrder[clusterOrder.length - 1]];
+                if (lastStop) {
+                    currentLat = lastStop.lat;
+                    currentLon = lastStop.lon;
+                }
+            }
+        });
+        
+        return result;
+    }
+
+    function kMeansClustering(stops, k) {
+        // Initialize centroids randomly
+        const centroids = [];
+        const shuffled = [...stops].sort(() => Math.random() - 0.5);
+        for (let i = 0; i < k && i < shuffled.length; i++) {
+            centroids.push({ lat: shuffled[i].lat, lon: shuffled[i].lon });
+        }
+        
+        let clusters = [];
+        
+        // Iterate
+        for (let iter = 0; iter < 10; iter++) {
+            clusters = Array.from({ length: k }, () => []);
+            
+            // Assign stops to nearest centroid
+            stops.forEach(stop => {
+                let nearestIdx = 0;
+                let nearestDist = Infinity;
+                
+                centroids.forEach((c, idx) => {
+                    const dist = haversineDistance(stop.lat, stop.lon, c.lat, c.lon);
+                    if (dist < nearestDist) {
+                        nearestDist = dist;
+                        nearestIdx = idx;
+                    }
+                });
+                
+                clusters[nearestIdx].push(stop);
+            });
+            
+            // Update centroids
+            clusters.forEach((cluster, idx) => {
+                if (cluster.length > 0) {
+                    centroids[idx].lat = cluster.reduce((sum, s) => sum + s.lat, 0) / cluster.length;
+                    centroids[idx].lon = cluster.reduce((sum, s) => sum + s.lon, 0) / cluster.length;
+                }
+            });
+        }
+        
+        return clusters.filter(c => c.length > 0);
+    }
+
+    function resetToOriginal() {
+        if (confirm('Reset to original manifest order?')) {
+            appData.optimizedOrder = null;
+            appData.isOptimized = false;
+            appData.originalDistance = 0;
+            appData.optimizedDistance = 0;
+            saveState();
+            
+            document.getElementById('btn-run-optimize').textContent = '🚀 Optimize Route';
+            document.getElementById('btn-reset-route').style.display = 'none';
+            document.getElementById('optimize-stats').style.display = 'none';
+            
+            updateMapMarkers();
+            renderList();
+            if (floatingListOpen) renderFloatingList();
+            updateRouteModeLabel();
+        }
+    }
+
+    function getOrderedStops() {
+        if (appData.isOptimized && appData.optimizedOrder) {
+            return appData.optimizedOrder.map(i => appData.stops[i]);
+        }
+        return appData.stops;
+    }
+
+    function updateRouteModeLabel() {
+        const label = document.getElementById('routeMode');
+        const listLabel = document.getElementById('listModeLabel');
+        
+        if (appData.isOptimized) {
+            label.textContent = '🚀 OPTIMIZED';
+            label.style.background = '#e8dff5';
+            label.style.color = '#6f42c1';
+            listLabel.innerHTML = '<span style="background:#e8dff5; color:#6f42c1; padding:2px 8px; border-radius:4px; font-size:12px;">🚀 Optimized Order</span>';
+        } else {
+            label.textContent = '📋 MANIFEST';
+            label.style.background = '#e9ecef';
+            label.style.color = '#666';
+            listLabel.innerHTML = '<span style="background:#e9ecef; color:#666; padding:2px 8px; border-radius:4px; font-size:12px;">Original Order</span>';
+        }
+    }
+
+    // --- FLOATING LIST TOGGLE ---
+    function toggleFloatingList() {
+        const panel = document.getElementById('floating-list-panel');
+        const btn = document.getElementById('btn-list');
+        floatingListOpen = !floatingListOpen;
+        
+        if (floatingListOpen) {
+            panel.classList.add('show');
+            btn.classList.add('active-list');
+            renderFloatingList();
+        } else {
+            panel.classList.remove('show');
+            btn.classList.remove('active-list');
+        }
+    }
+
+    // --- RENDER FLOATING LIST (Respects optimization) ---
+    function renderFloatingList() {
+        const container = document.getElementById('floating-list-content');
+        const header = document.getElementById('floating-header');
+        const title = document.getElementById('floating-title');
+        
+        container.innerHTML = '';
+        
+        // Update header based on mode
+        if (appData.isOptimized) {
+            header.classList.add('optimized');
+            title.textContent = '🚀 Optimized Route';
+            document.getElementById('fl-saved').style.display = 'block';
+            document.getElementById('fl-saved-lbl').style.display = 'block';
+            const savedKm = (appData.originalDistance - appData.optimizedDistance).toFixed(1);
+            document.getElementById('fl-saved').textContent = savedKm;
+        } else {
+            header.classList.remove('optimized');
+            title.textContent = '📋 Stops List';
+            document.getElementById('fl-saved').style.display = 'none';
+            document.getElementById('fl-saved-lbl').style.display = 'none';
+        }
+        
+        const orderedStops = getOrderedStops();
+        
+        // Build consolidated list
+        const locationMap = new Map();
+        const processedSeqs = new Set();
+        
+        orderedStops.forEach((stop, displayIdx) => {
+            if (processedSeqs.has(stop.seq)) return;
+            
+            const key = stop.lat ? `${stop.lat.toFixed(4)},${stop.lon.toFixed(4)}` : stop.cleanAddress;
+            
+            if (!locationMap.has(key)) {
+                locationMap.set(key, {
+                    primaryStop: stop,
+                    displayIndex: displayIdx + 1,
+                    allSeqs: [stop.seq],
+                    packageCount: 1
+                });
+                processedSeqs.add(stop.seq);
+            }
+            
+            if (stop.duplicates && stop.duplicates.length > 0) {
+                const loc = locationMap.get(key);
+                stop.duplicates.forEach(dupSeq => {
+                    if (!processedSeqs.has(dupSeq)) {
+                        loc.allSeqs.push(dupSeq);
+                        loc.packageCount++;
+                        processedSeqs.add(dupSeq);
+                    }
+                });
+            }
+        });
+        
+        const consolidatedStops = Array.from(locationMap.values());
+        
+        const totalLocations = consolidatedStops.length;
+        const totalPackages = appData.stops.length;
+        
+        document.getElementById('fl-total').textContent = totalLocations;
+        document.getElementById('fl-packages').textContent = totalPackages;
+        
+        consolidatedStops.forEach((loc, idx) => {
+            const stop = loc.primaryStop;
+            const isMulti = loc.packageCount > 1;
+            const isCompleted = appData.completedStops.includes(stop.seq);
+            
+            const div = document.createElement('div');
+            div.className = `floating-stop ${isCompleted ? 'completed' : ''}`;
+            div.onclick = () => focusOnStop(stop);
+            
+            let metaHtml = '';
+            if (isMulti) {
+                metaHtml += `<span class="pkg-badge">📦 ${loc.packageCount} pkgs</span>`;
+            }
+            if (stop.accessCode) {
+                metaHtml += `<span class="code-badge">🔑 ${stop.accessCode}</span>`;
+            }
+            if (stop.isPriority) {
+                metaHtml += `<span class="priority-badge-sm">URGENT</span>`;
+            }
+            if (appData.isOptimized) {
+                metaHtml += `<span class="orig-seq-badge">Manifest #${stop.seq}</span>`;
+            }
+            
+            div.innerHTML = `
+                <div class="floating-seq ${isMulti ? 'multi' : ''} ${appData.isOptimized ? 'optimized' : ''}">${loc.displayIndex}</div>
+                <div class="floating-info">
+                    <div class="floating-addr">${stop.cleanAddress}</div>
+                    <div class="floating-meta">${metaHtml}</div>
+                </div>
+                ${stop.lat ? `<button class="floating-nav-btn" onclick="event.stopPropagation(); openMap(${stop.lat},${stop.lon})">GO</button>` : ''}
+            `;
+            
+            container.appendChild(div);
+        });
+        
+        if (consolidatedStops.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Loading stops...</div>';
+        }
+    }
+
+    function focusOnStop(stop) {
+        if (stop.lat && stop.lon) {
+            map.setView([stop.lat, stop.lon], 17);
+            markersGroup.eachLayer(layer => {
+                if (layer.getLatLng) {
+                    const pos = layer.getLatLng();
+                    if (Math.abs(pos.lat - stop.lat) < 0.0001 && Math.abs(pos.lng - stop.lon) < 0.0001) {
+                        layer.openPopup();
+                    }
+                }
+            });
+        }
+    }
+
+    // --- RESETS ---
+    function hardReset() {
+        if(confirm("Load a new PDF? This will delete the current route.")) {
+            localStorage.removeItem('driverFocus_v3');
+            location.reload();
+        }
+    }
+
+    function softReset() {
+        if(confirm("Choose a different route number from this PDF?")) {
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-select').classList.remove('hidden');
+            appData.stops = [];
+            appData.completedStops = [];
+            appData.optimizedOrder = null;
+            appData.isOptimized = false;
+            saveState();
+        }
+    }
+
+    // --- PARSING ---
+    async function handlePdf(input) {
+        if(!input.files[0]) return;
+        document.querySelector('#view-upload div').innerText = "Reading PDF...";
+        try {
+            const buff = await input.files[0].arrayBuffer();
+            const pdf = await pdfjsLib.getDocument(buff).promise;
+            let fullText = "";
+            for(let i=1; i<=pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                fullText += content.items.map(s => s.str).join(" ") + " |PAGE_BREAK| ";
+            }
+            parseData(fullText);
+            document.getElementById('view-upload').classList.add('hidden');
+            document.getElementById('view-select').classList.remove('hidden');
+            populateDropdown();
+        } catch(e) { alert("PDF Error"); location.reload(); }
+    }
+
+    function parseData(text) {
+        text = text.replace(/\s+/g, ' ');
+        appData.routes = {};
+        const routeHeaders = text.split(/Route\s*-\s*([A-Z]{2,5}\d{2,5})/gi);
+        
+        for(let i=1; i<routeHeaders.length; i+=2) {
+            const id = routeHeaders[i];
+            const chunk = routeHeaders[i+1];
+            const rowRegex = /((?:D11|RET|GDI|ESI|CRI|YW0|JY2|INT|IEN|STR|AMZ)[A-Z0-9]*)\s+([A-Z0-9]+)\s+(\b\d{1,3}\b)/gi;
+            const items = [];
+            let match;
+            while(match = rowRegex.exec(chunk)) {
+                items.push({ code: match[1], seq: parseInt(match[3]), idx: match.index + match[0].length });
+            }
+            
+            for(let k=0; k<items.length; k++) {
+                const curr = items[k];
+                const next = items[k+1];
+                let rawAddr = chunk.substring(curr.idx, next ? next.idx - next.code.length - 15 : curr.idx + 350);
+                
+                let accessCode = null;
+                const codeMatch = rawAddr.match(/(?:code|buzzer|entree|porte|acc?s)[:#\s]*(\d{3,})/i);
+                if(codeMatch) accessCode = codeMatch[1];
+
+                let isPriority = /URGENT|12:00|17:00|PRIORIT/i.test(rawAddr);
+
+                const dim = rawAddr.match(/(\d+\.?\d*\s*(?:CM|IN)\s*X)/i);
+                if(dim) rawAddr = rawAddr.substring(0, dim.index);
+                let cleanAddr = rawAddr.replace(/Appartement\s*\d+[A-Z]?/gi, '')
+                    .replace(/App\s*\d+[A-Z]?/gi, '').replace(/Unit\s*\d+[A-Z]?/gi, '')
+                    .replace(/#\s*\d+[A-Z]?/gi, '').replace(/Code\s*[:#]?\s*\d+/gi, '')
+                    .replace(/\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/g, '').replace(/SIG\s*$/, '')
+                    .replace(/\|PAGE_BREAK\|/g, '').trim();
+
+                const fsa = cleanAddr.match(/[A-Z]\d[A-Z]/) ? cleanAddr.match(/[A-Z]\d[A-Z]/)[0] : "UNK";
+
+                if(cleanAddr.length > 5) {
+                    if(!appData.routes[id]) appData.routes[id] = [];
+                    if(!appData.routes[id].some(s => s.seq === curr.seq)) {
+                        appData.routes[id].push({
+                            seq: curr.seq, address: rawAddr, cleanAddress: cleanAddr,
+                            lat: null, lon: null, status: 'pending', duplicates: [],
+                            accessCode: accessCode, isPriority: isPriority, fsa: fsa
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    function populateDropdown() {
+        const sel = document.getElementById('routeSelect');
+        sel.innerHTML = '<option value="">-- Select --</option>';
+        Object.keys(appData.routes).sort().forEach(id => {
+            const opt = document.createElement('option');
+            opt.value = id; opt.text = `${id} (${appData.routes[id].length} stops)`;
+            sel.appendChild(opt);
+        });
+    }
+
+    function confirmRoute() {
+        const id = document.getElementById('routeSelect').value;
+        if(!id) return;
+        appData.activeRouteId = id;
+        appData.stops = appData.routes[id].sort((a,b) => a.seq - b.seq);
+        appData.completedStops = [];
+        appData.optimizedOrder = null;
+        appData.isOptimized = false;
+        saveState(); restoreSession();
+    }
+
+    function restoreSession() {
+        document.getElementById('view-upload').classList.add('hidden');
+        document.getElementById('view-select').classList.add('hidden');
+        document.getElementById('view-dashboard').classList.remove('hidden');
+        switchTab('main');
+        initMap(); 
+        renderList();
+        updateMapMarkers(); 
+        updateRouteModeLabel();
+        startGeocodingQueue();
+    }
+
+    // --- MAP ---
+    function initMap() {
+        if(map) return;
+        
+        const googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{maxZoom:20,subdomains:['mt0','mt1','mt2','mt3']});
+        const googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{maxZoom:20,subdomains:['mt0','mt1','mt2','mt3']});
+        const offlineLayer = new OfflineLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' });
+
+        map = L.map('map', { 
+            center: [46.8139, -71.2080], 
+            zoom: 11, 
+            layers: [googleStreets],
+            preferCanvas: true, 
+            wheelDebounceTime: 100,
+            markerZoomAnimation: true 
+        });
+        
+        L.control.layers({ 
+            "Google Streets": googleStreets, 
+            "Google Satellite": googleHybrid,
+            "Offline Mode": offlineLayer
+        }).addTo(map);
+        
+        markersGroup = L.featureGroup().addTo(map);
+
+        map.on('locationfound', onLocationFound);
+        map.on('locationerror', onLocationError);
+    }
+
+    // --- LOCATION LOGIC ---
+    function toggleLocation() {
+        if (!hasLocation) {
+            map.locate({setView: false, maxZoom: 16, watch: true, enableHighAccuracy: true});
+            document.getElementById('btn-location').classList.add('active-loc');
+        } else {
+            if(userMarker) {
+                map.panTo(userMarker.getLatLng());
+            }
+        }
+    }
+
+    function onLocationFound(e) {
+        const radius = e.accuracy / 2;
+        userCurrentLocation = e.latlng;
+
+        if (userMarker) {
+            userMarker.setLatLng(e.latlng);
+            userCircle.setLatLng(e.latlng);
+            userCircle.setRadius(radius);
+        } else {
+            const icon = L.divIcon({ className: 'user-gps-marker', iconSize: [20, 20], iconAnchor: [10, 10] });
+            userMarker = L.marker(e.latlng, {icon: icon, zIndexOffset: 2000}).addTo(map);
+            userCircle = L.circle(e.latlng, { radius: radius, color: '#4285F4', weight: 1, fillOpacity: 0.1 }).addTo(map);
+            
+            if (!hasLocation) {
+                map.panTo(e.latlng);
+                hasLocation = true;
+            }
+        }
+    }
+
+    function onLocationError(e) {
+        console.log("Location Access Denied or Error");
+        alert("Could not access location. Check device settings.");
+        document.getElementById('btn-location').classList.remove('active-loc');
+    }
+
+    // --- DECOUPLED RENDERER ---
+    let renderLoopId = null;
+    let lastRenderCount = 0;
+
+    function startRenderLoop() {
+        if(renderLoopId) clearInterval(renderLoopId);
+        renderLoopId = setInterval(() => {
+            const validCount = appData.stops.filter(s => s.lat && s.status === 'success').length;
+            if(validCount > lastRenderCount || isGeocodingActive) {
+                detectDuplicates(); 
+                updateMapMarkers(); 
+                renderList();
+                if (floatingListOpen) renderFloatingList();
+                updateOptimizePanel();
+                lastRenderCount = validCount;
+                document.getElementById('geoStats').textContent = `Geo: ${validCount}/${appData.stops.length}`;
+                saveState();
+            }
+            if(!isGeocodingActive && validCount === lastRenderCount) {
+                clearInterval(renderLoopId); 
+                renderLoopId = null;
+            }
+        }, 1500);
+    }
+
+    function updateMapMarkers() {
+        markersGroup.clearLayers();
+        if(routeLine) map.removeLayer(routeLine);
+        
+        const orderedStops = getOrderedStops();
+        const valid = orderedStops.filter(s => s.lat);
+        const points = [];
+        const fsaMap = getFsaColorMap();
+
+        valid.forEach((s, displayIdx) => {
+            points.push([s.lat, s.lon]);
+            const isMulti = s.duplicates.length > 0;
+            
+            let color = s.isPriority ? '#dc3545' : (appData.isOptimized ? '#6f42c1' : (fsaMap[s.fsa] || '#094699'));
+            
+            const displayNum = displayIdx + 1;
+            const markerHtml = `<div style="background:${color}; width:30px; height:30px; border-radius:50%; border:2px solid white; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px; box-shadow:0 2px 5px rgba(0,0,0,0.3);">${isMulti ? '📦' : displayNum}</div>`;
+            
+            const icon = L.divIcon({ className: 'custom-marker', html: markerHtml, iconSize: [30, 30], iconAnchor: [15, 15] });
+            
+            let popup = `<b>Stop #${displayNum}</b>${appData.isOptimized ? ` <span style="color:#666; font-size:11px;">(Manifest #${s.seq})</span>` : ''}<br>${s.cleanAddress}`;
+            if(s.accessCode) popup += `<br><span class="access-code">Code: ${s.accessCode}</span>`;
+
+            if (isMulti) {
+                const packageCount = 1 + s.duplicates.length;
+                popup += `<div style="margin-top:8px; padding:6px; background:#fff3cd; border:1px solid #ffeeba; border-radius:4px; text-align:center;">
+                            <strong style="color:#856404; display:block; font-size:13px;">📦 ${packageCount} Packages Total</strong>
+                         </div>`;
+            }
+            
+            popup += `<br><button onclick="openMap(${s.lat},${s.lon})" style="width:100%; margin-top:8px; background:#1a73e8; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer;">Navigate ➔</button>`;
+
+            L.marker([s.lat, s.lon], {icon}).bindPopup(popup).addTo(markersGroup);
+        });
+
+        if(points.length) {
+            const lineColor = appData.isOptimized ? '#6f42c1' : '#dc3545';
+            routeLine = L.polyline(points, {color: lineColor, weight: 4, opacity: 0.8, dashArray: appData.isOptimized ? null : '5, 10'}).addTo(map);
+            if(!map.hasFit && points.length > 1) { 
+                map.fitBounds(markersGroup.getBounds(), {padding:[50,50]}); 
+                map.hasFit = true; 
+            }
+        }
+        
+        if(userMarker) userMarker.addTo(map);
+        if(userCircle) userCircle.addTo(map);
+    }
+
+    // --- OFFLINE MAP DOWNLOADER ---
+    function downloadOfflineArea() {
+        if(markersGroup.getLayers().length === 0) { alert("Wait for stops to load first."); return; }
+        if(!confirm("Download map area for offline use? Use Wi-Fi if possible.")) return;
+
+        const bounds = markersGroup.getBounds();
+        const north = bounds.getNorth() + 0.01;
+        const south = bounds.getSouth() - 0.01;
+        const east = bounds.getEast() + 0.01;
+        const west = bounds.getWest() - 0.01;
+
+        const zooms = [12, 13, 14, 15, 16]; 
+        const tiles = [];
+
+        zooms.forEach(z => {
+            const top = lat2tile(north, z);
+            const bottom = lat2tile(south, z);
+            const left = long2tile(west, z);
+            const right = long2tile(east, z);
+
+            for(let x = left; x <= right; x++) {
+                for(let y = top; y <= bottom; y++) {
+                    tiles.push({x, y, z});
+                }
+            }
+        });
+
+        downloadTiles(tiles);
+    }
+
+    function lat2tile(lat, zoom) { return Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)); }
+    function long2tile(lon, zoom) { return Math.floor((lon + 180) / 360 * Math.pow(2, zoom)); }
+
+    async function downloadTiles(tiles) {
+        const container = document.getElementById('dl-progress-container');
+        const fill = document.getElementById('dl-bar-fill');
+        const text = document.getElementById('dl-text');
+        container.style.display = 'block';
+        
+        let completed = 0;
+        let total = tiles.length;
+        text.innerText = `Downloading ${total} tiles...`;
+
+        const chunkSize = 10;
+        for (let i = 0; i < tiles.length; i += chunkSize) {
+            const chunk = tiles.slice(i, i + chunkSize);
+            await Promise.all(chunk.map(async (t) => {
+                const key = `${t.x}_${t.y}_${t.z}`;
+                const existing = await getTile(key);
+                if(!existing) {
+                    try {
+                        const url = `https://tile.openstreetmap.org/${t.z}/${t.x}/${t.y}.png`;
+                        const res = await fetch(url);
+                        if(res.ok) {
+                            const blob = await res.blob();
+                            await saveTile(key, blob);
+                        }
+                    } catch(e) { console.log("Tile fetch fail", e); }
+                }
+                completed++;
+                fill.style.width = (completed / total * 100) + "%";
+            }));
+        }
+
+        setTimeout(() => {
+            container.style.display = 'none';
+            alert("Map Saved! Switch layer to 'Offline Mode' when needed.");
+        }, 500);
+    }
+
+    // --- UI UTILS ---
+    function toggleFullscreen() {
+        const el = document.getElementById('map-container');
+        el.classList.toggle('fullscreen');
+        setTimeout(() => { 
+            map.invalidateSize(); 
+            if(markersGroup.getLayers().length) map.fitBounds(markersGroup.getBounds());
+        }, 300);
+    }
+
+    function centerMap() { 
+        if(markersGroup.getLayers().length) map.fitBounds(markersGroup.getBounds()); 
+    }
+    
+    function openMap(lat, lon) {
+        if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+            window.location.href = `geo:${lat},${lon}?q=${lat},${lon}`;
+        } else {
+            window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
+        }
+    }
+
+    // --- GEOCODING ---
+    async function startGeocodingQueue() {
+        let pending = appData.stops.filter(s => !s.lat && s.status !== 'error');
+        if(pending.length === 0) {
+            updateOptimizePanel();
+            return;
+        }
+        
+        isGeocodingActive = true;
+        startRenderLoop(); 
+
+        const CONCURRENCY = 3; 
+        for (let i = 0; i < pending.length; i += CONCURRENCY) {
+            const chunk = pending.slice(i, i + CONCURRENCY);
+            await Promise.all(chunk.map(s => geocodeStop(s)));
+            await new Promise(r => setTimeout(r, 200)); 
+        }
+
+        isGeocodingActive = false;
+        updateMapMarkers(); 
+        renderList();
+        if (floatingListOpen) renderFloatingList();
+        updateOptimizePanel();
+        saveState();
+    }
+
+    async function geocodeStop(stop) {
+        try {
+            const res = await fetch(`https://geoegl.msp.gouv.qc.ca/apis/icherche/geocode?type=adresses&limit=1&geometry=true&q=${encodeURIComponent(stop.cleanAddress)}`);
+            const data = await res.json();
+            if(data.features?.length) {
+                stop.lat = data.features[0].geometry.coordinates[1];
+                stop.lon = data.features[0].geometry.coordinates[0];
+                stop.status = 'success';
+            } else stop.status = 'error';
+        } catch(e) { stop.status = 'error'; }
+    }
+
+    function detectDuplicates() {
+        appData.stops.forEach(s => s.duplicates = []);
+        const locMap = {};
+        appData.stops.forEach(s => {
+            const key = s.lat ? `${s.lat.toFixed(4)},${s.lon.toFixed(4)}` : s.cleanAddress;
+            if(!locMap[key]) locMap[key] = [];
+            locMap[key].push(s.seq);
+        });
+        appData.stops.forEach(s => {
+            const key = s.lat ? `${s.lat.toFixed(4)},${s.lon.toFixed(4)}` : s.cleanAddress;
+            if(locMap[key] && locMap[key].length > 1) {
+                s.duplicates = locMap[key].filter(seq => seq !== s.seq);
+            }
+        });
+    }
+
+    // --- EDIT ADDRESS ---
+    async function editAddress(idx) {
+        const stop = appData.stops[idx];
+        const newAddr = prompt("Edit Address for Stop #" + stop.seq, stop.cleanAddress);
+        
+        if (newAddr && newAddr.trim() !== "" && newAddr !== stop.cleanAddress) {
+            stop.cleanAddress = newAddr.trim();
+            stop.lat = null;
+            stop.lon = null;
+            stop.status = 'pending';
+            renderList();
+            await geocodeStop(stop);
+            detectDuplicates();
+            updateMapMarkers();
+            renderList();
+            if (floatingListOpen) renderFloatingList();
+            saveState();
+        }
+    }
+
+    // --- ANALYTICS RENDER ---
+    function renderAnalytics() {
+        const container = document.getElementById('analytics-list');
+        container.innerHTML = '';
+        const processedKeys = new Set();
+        let totalMultiLocations = 0;
+        let totalExtraPackages = 0;
+        const groups = [];
+
+        appData.stops.forEach(s => {
+            if (s.duplicates.length > 0) {
+                const key = s.lat ? `${s.lat.toFixed(4)},${s.lon.toFixed(4)}` : s.cleanAddress;
+                if (!processedKeys.has(key)) {
+                    processedKeys.add(key);
+                    const allSeqs = [s.seq, ...s.duplicates].sort((a,b) => a-b);
+                    groups.push({ address: s.cleanAddress, seqs: allSeqs, count: allSeqs.length });
+                    totalMultiLocations++;
+                    totalExtraPackages += s.duplicates.length;
+                }
+            }
+        });
+
+        document.getElementById('stat-locations').innerText = totalMultiLocations;
+        document.getElementById('stat-packages').innerText = totalExtraPackages;
+
+        if(groups.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">No multi-drop locations found yet.<br>Wait for geocoding to finish.</div>';
+            return;
+        }
+
+        groups.sort((a, b) => b.count - a.count);
+        groups.forEach(g => {
+            const div = document.createElement('div');
+            div.className = 'multi-group';
+            let seqTags = g.seqs.map(num => `<span class="mg-seq">#${num}</span>`).join('');
+            div.innerHTML = `<div class="mg-header"><div class="mg-addr">${g.address}</div><div class="mg-count">${g.count} pkgs</div></div><div class="mg-seqs">${seqTags}</div>`;
+            container.appendChild(div);
+        });
+    }
+
+    // --- LIST RENDER ---
+    function getFsaColorMap() {
+        const fsas = [...new Set(appData.stops.map(s => s.fsa))];
+        const map = {};
+        fsas.forEach((f, i) => map[f] = clusterColors[i % clusterColors.length]);
+        return map;
+    }
+
+    function renderList() {
+        const container = document.getElementById('stopList');
+        container.innerHTML = '';
+        const fsaMap = getFsaColorMap();
+        const orderedStops = getOrderedStops();
+
+        orderedStops.forEach((stop, displayIdx) => {
+            const isMulti = stop.duplicates.length > 0;
+            const colorIndex = Object.keys(fsaMap).indexOf(stop.fsa) % clusterColors.length;
+            const originalIdx = appData.stops.indexOf(stop);
+            
+            const div = document.createElement('div');
+            div.className = `stop-item cluster-${colorIndex}`;
+            
+            const displayNum = displayIdx + 1;
+            
+            div.innerHTML = `
+                <div class="stop-seq ${isMulti ? 'multi' : ''} ${appData.isOptimized ? 'optimized' : ''}">${displayNum}</div>
+                <div class="stop-details">
+                    <div class="stop-addr">
+                        ${stop.address}
+                        ${stop.isPriority ? '<span class="priority-badge">URGENT</span>' : ''}
+                        ${appData.isOptimized ? `<span class="orig-seq">Manifest #${stop.seq}</span>` : ''}
+                    </div>
+                    ${stop.accessCode ? `<div class="access-code">Code: ${stop.accessCode}</div>` : ''}
+                    ${isMulti ? `<div style="font-size:11px; color:#856404; margin-top:2px;"><b>+${stop.duplicates.length} pkgs:</b> ${stop.duplicates.join(', ')}</div>` : ''}
+                    
+                    <div class="action-row">
+                        ${stop.lat ? `<button onclick="openMap(${stop.lat},${stop.lon})" class="btn-action btn-gmaps">🗺️ Maps</button>` : ''}
+                        <button class="btn-action btn-edit" onclick="editAddress(${originalIdx})">✏️ Edit Addr</button>
+                    </div>
+                </div>`;
+            container.appendChild(div);
+        });
+    }
+
+    function retryErrors() { appData.stops.forEach(s => { if(s.status==='error') s.status='pending'; }); startGeocodingQueue(); }
+</script>
+</body>
+</html>
