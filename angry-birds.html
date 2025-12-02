@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angry Birds Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            position: relative;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 70%, #90EE90 70%, #228B22 100%);
+            border: 5px solid #8B4513;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        #gameCanvas {
+            display: block;
+            cursor: crosshair;
+        }
+
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+
+        .ui-panel {
+            background: rgba(0,0,0,0.5);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 18px;
+        }
+
+        #gameOver, #levelComplete {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            display: none;
+            z-index: 10;
+        }
+
+        #gameOver h2, #levelComplete h2 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #FF6B6B;
+        }
+
+        #levelComplete h2 {
+            color: #4CAF50;
+        }
+
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .star {
+            color: gold;
+            font-size: 24px;
+        }
+
+        .star.earned {
+            text-shadow: 0 0 10px gold;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1200" height="600"></canvas>
+        
+        <div id="ui">
+            <div class="ui-panel">
+                <div>Level: <span id="levelDisplay">1</span></div>
+                <div>Score: <span id="scoreDisplay">0</span></div>
+            </div>
+            <div class="ui-panel">
+                <div>Birds: <span id="birdsDisplay">3</span></div>
+                <div>Pigs: <span id="pigsDisplay">3</span></div>
+            </div>
+        </div>
+
+        <div id="gameOver">
+            <h2>Game Over!</h2>
+            <p style="font-size: 24px; margin: 20px 0;">Final Score: <span id="finalScore">0</span></p>
+            <button class="btn" onclick="game.restart()">Try Again</button>
+        </div>
+
+        <div id="levelComplete">
+            <h2>Level Complete!</h2>
+            <div style="margin: 20px 0;">
+                <span class="star" id="star1">★</span>
+                <span class="star" id="star2">★</span>
+                <span class="star" id="star3">★</span>
+            </div>
+            <p style="font-size: 20px; margin: 20px 0;">Score: <span id="levelScore">0</span></p>
+            <button class="btn" onclick="game.nextLevel()">Next Level</button>
+            <button class="btn" onclick="game.restart()">Restart</button>
+        </div>
+
+        <div id="instructions">
+            Click and drag to aim, release to launch the bird!
+        </div>
+    </div>
+
+    <script>
+        class Vector2D {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+            }
+
+            add(v) {
+                return new Vector2D(this.x + v.x, this.y + v.y);
+            }
+
+            subtract(v) {
+                return new Vector2D(this.x - v.x, this.y - v.y);
+            }
+
+            multiply(scalar) {
+                return new Vector2D(this.x * scalar, this.y * scalar);
+            }
+
+            magnitude() {
+                return Math.sqrt(this.x * this.x + this.y * this.y);
+            }
+
+            normalize() {
+                const mag = this.magnitude();
+                return mag > 0 ? new Vector2D(this.x / mag, this.y / mag) : new Vector2D(0, 0);
+            }
+        }
+
+        class PhysicsObject {
+            constructor(x, y, width, height, mass = 1) {
+                this.position = new Vector2D(x, y);
+                this.velocity = new Vector2D(0, 0);
+                this.acceleration = new Vector2D(0, 0);
+                this.width = width;
+                this.height = height;
+                this.mass = mass;
+                this.restitution = 0.6;
+                this.isStatic = false;
+                this.isDestroyed = false;
+                this.rotation = 0;
+                this.angularVelocity = 0;
+            }
+
+            applyForce(force) {
+                const f = force.multiply(1 / this.mass);
+                this.acceleration = this.acceleration.add(f);
+            }
+
+            update(deltaTime) {
+                if (this.isStatic || this.isDestroyed) return;
+
+                this.velocity = this.velocity.add(this.acceleration.multiply(deltaTime));
+                this.position = this.position.add(this.velocity.multiply(deltaTime));
+                this.rotation += this.angularVelocity * deltaTime;
+
+                this.velocity = this.velocity.multiply(0.99);
+                this.angularVelocity *= 0.98;
+
+                this.acceleration = new Vector2D(0, 0);
+            }
+
+            checkCollision(other) {
+                return this.position.x < other.position.x + other.width &&
+                       this.position.x + this.width > other.position.x &&
+                       this.position.y < other.position.y + other.height &&
+                       this.position.y + this.height > other.position.y;
+            }
+
+            resolveCollision(other) {
+                if (this.isStatic && other.isStatic) return;
+
+                const overlap = this.getOverlap(other);
+                if (overlap.x === 0 && overlap.y === 0) return;
+
+                if (!this.isStatic && !other.isStatic) {
+                    this.position = this.position.subtract(overlap.multiply(0.5));
+                    other.position = other.position.add(overlap.multiply(0.5));
+                } else if (this.isStatic) {
+                    other.position = other.position.add(overlap);
+                } else {
+                    this.position = this.position.subtract(overlap);
+                }
+
+                const relativeVelocity = this.velocity.subtract(other.velocity);
+                const normal = overlap.normalize();
+                const velocityAlongNormal = relativeVelocity.x * normal.x + relativeVelocity.y * normal.y;
+
+                if (velocityAlongNormal > 0) return;
+
+                const restitution = Math.min(this.restitution, other.restitution);
+                const impulse = -(1 + restitution) * velocityAlongNormal / (1/this.mass + 1/other.mass);
+
+                if (!this.isStatic) {
+                    this.velocity = this.velocity.add(normal.multiply(impulse / this.mass));
+                    this.angularVelocity += (Math.random() - 0.5) * 0.1;
+                }
+                if (!other.isStatic) {
+                    other.velocity = other.velocity.subtract(normal.multiply(impulse / other.mass));
+                    other.angularVelocity += (Math.random() - 0.5) * 0.1;
+                }
+            }
+
+            getOverlap(other) {
+                const dx = (this.position.x + this.width/2) - (other.position.x + other.width/2);
+                const dy = (this.position.y + this.height/2) - (other.position.y + other.height/2);
+                const overlapX = (this.width + other.width)/2 - Math.abs(dx);
+                const overlapY = (this.height + other.height)/2 - Math.abs(dy);
+
+                if (overlapX > 0 && overlapY > 0) {
+                    if (overlapX < overlapY) {
+                        return new Vector2D(overlapX * Math.sign(dx), 0);
+                    } else {
+                        return new Vector2D(0, overlapY * Math.sign(dy));
+                    }
+                }
+                return new Vector2D(0, 0);
+            }
+        }
+
+        class Bird extends PhysicsObject {
+            constructor(x, y) {
+                super(x, y, 30, 30, 1);
+                this.color = '#FF0000';
+                this.isLaunched = false;
+                this.trail = [];
+                this.maxTrailLength = 20;
+            }
+
+            launch(velocity) {
+                this.velocity = velocity;
+                this.isLaunched = true;
+            }
+
+            update(deltaTime) {
+                super.update(deltaTime);
+                if (this.isLaunched) {
+                    this.trail.push({x: this.position.x, y: this.position.y});
+                    if (this.trail.length > this.maxTrailLength) {
+                        this.trail.shift();
+                    }
+                }
+            }
+
+            draw(ctx) {
+                if (this.isDestroyed) return;
+
+                if (this.trail.length > 0) {
+                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(this.trail[0].x + this.width/2, this.trail[0].y + this.height/2);
+                    for (let i = 1; i < this.trail.length; i++) {
+                        ctx.lineTo(this.trail[i].x + this.width/2, this.trail[i].y + this.height/2);
+                    }
+                    ctx.stroke();
+                }
+
+                ctx.save();
+                ctx.translate(this.position.x + this.width/2, this.position.y + this.height/2);
+                ctx.rotate(this.rotation);
+
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.width/2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(-5, -5, 6, 0, Math.PI * 2);
+                ctx.arc(5, -5, 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(-5, -5, 3, 0, Math.PI * 2);
+                ctx.arc(5, -5, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#FFA500';
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(8, 3);
+                ctx.lineTo(8, -3);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        class Pig extends PhysicsObject {
+            constructor(x, y) {
+                super(x, y, 35, 35, 1.2);
+                this.health = 100;
+                this.maxHealth = 100;
+                this.color = '#90EE90';
+                this.hitEffect = 0;
+            }
+
+            takeDamage(amount) {
+                this.health -= amount;
+                this.hitEffect = 10;
+                if (this.health <= 0) {
+                    this.isDestroyed = true;
+                    return true;
+                }
+                return false;
+            }
+
+            update(deltaTime) {
+                super.update(deltaTime);
+                if (this.hitEffect > 0) {
+                    this.hitEffect -= deltaTime * 20;
+                }
+            }
+
+            draw(ctx) {
+                if (this.isDestroyed) return;
+
+                ctx.save();
+                ctx.translate(this.position.x + this.width/2, this.position.y + this.height/2);
+                ctx.rotate(this.rotation);
+
+                const shake = this.hitEffect > 0 ? (Math.random() - 0.5) * this.hitEffect : 0;
+                ctx.translate(shake, shake);
+
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.width/2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(-8, -5, 5, 0, Math.PI * 2);
+                ctx.arc(8, -5, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(-8, -5, 2, 0, Math.PI * 2);
+                ctx.arc(8, -5, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#FFB6C1';
+                ctx.beginPath();
+                ctx.ellipse(0, 2, 8, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(-3, 2, 1.5, 0, Math.PI * 2);
+                ctx.arc(3, 2, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(0, -this.height/2 - 10, this.width/2, 0, Math.PI * 2);
+                ctx.stroke();
+
+                const healthPercent = this.health / this.maxHealth;
+                ctx.fillStyle = healthPercent > 0.5 ? '#4CAF50' : healthPercent > 0.25 ? '#FFA500' : '#FF0000';
+                ctx.beginPath();
+                ctx.arc(0, -this.height/2 - 10, this.width/2, -Math.PI/2, -Math.PI/2 + Math.PI * 2 * healthPercent);
+                ctx.lineTo(0, -this.height/2 - 10);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        class Block extends PhysicsObject {
+            constructor(x, y, width, height, type = 'wood') {
+                super(x, y, width, height, 2);
+                this.type = type;
+                this.health = type === 'wood' ? 50 : type === 'stone' ? 100 : 30;
+                this.maxHealth = this.health;
+                this.colors = {
+                    wood: '#8B4513',
+                    stone: '#808080',
+                    glass: '#ADD8E6'
+                };
+                this.color = this.colors[type];
+            }
+
+            takeDamage(amount) {
+                this.health -= amount;
+                if (this.health <= 0) {
+                    this.isDestroyed = true;
+                    return true;
+                }
+                return false;
+            }
+
+            draw(ctx) {
+                if (this.isDestroyed) return;
+
+                ctx.save();
+                ctx.translate(this.position.x + this.width/2, this.position.y + this.height/2);
+                ctx.rotate(this.rotation);
+
+                const alpha = this.health / this.maxHealth;
+                ctx.globalAlpha = Math.max(0.3, alpha);
+
+                ctx.fillStyle = this.color;
+                ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+
+                ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(-this.width/2, -this.height/2, this.width, this.height);
+
+                if (this.type === 'wood') {
+                    ctx.strokeStyle = 'rgba(101, 67, 33, 0.5)';
+                    for (let i = 0; i < 3; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(-this.width/2, -this.height/2 + i * this.height/3);
+                        ctx.lineTo(this.width/2, -this.height/2 + i * this.height/3);
+                        ctx.stroke();
+                    }
+                }
+
+                ctx.restore();
+            }
+        }
+
+        class Slingshot {
+            constructor(x, y) {
+                this.position = new Vector2D(x, y);
+                this.width = 20;
+                this.height = 100;
+                this.maxStretch = 100;
+                this.isDragging = false;
+                this.dragPosition = null;
+            }
+
+            draw(ctx, bird) {
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 8;
+                ctx.lineCap = 'round';
+
+                ctx.beginPath();
+                ctx.moveTo(this.position.x - 15, this.position.y);
+                ctx.lineTo(this.position.x - 15, this.position.y - this.height);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(this.position.x + 15, this.position.y);
+                ctx.lineTo(this.position.x + 15, this.position.y - this.height);
+                ctx.stroke();
+
+                if (bird && !bird.isLaunched) {
+                    ctx.strokeStyle = '#8B4513';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(this.position.x - 15, this.position.y - this.height + 10);
+                    ctx.lineTo(bird.position.x + bird.width/2, bird.position.y + bird.height/2);
+                    ctx.lineTo(this.position.x + 15, this.position.y - this.height + 10);
+                    ctx.stroke();
+                }
+
+                if (this.isDragging && this.dragPosition) {
+                    const dx = this.dragPosition.x - this.position.x;
+                    const dy = this.dragPosition.y - (this.position.y - 50);
+                    const angle = Math.atan2(dy, dx);
+                    const power = Math.min(new Vector2D(dx, dy).magnitude(), this.maxStretch);
+                    
+                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(this.position.x, this.position.y - 50);
+                    const trajectoryLength = 200;
+                    ctx.lineTo(
+                        this.position.x + Math.cos(angle) * trajectoryLength,
+                        this.position.y - 50 + Math.sin(angle) * trajectoryLength
+                    );
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.font = '16px Arial';
+                    ctx.fillText(`Power: ${Math.round(power)}%`, this.position.x + 30, this.position.y - 80);
+                }
+            }
+
+            startDrag(x, y) {
+                this.isDragging = true;
+                this.dragPosition = new Vector2D(x, y);
+            }
+
+            updateDrag(x, y) {
+                if (this.isDragging) {
+                    this.dragPosition = new Vector2D(x, y);
+                }
+            }
+
+            endDrag() {
+                this.isDragging = false;
+                const result = this.dragPosition;
+                this.dragPosition = null;
+                return result;
+            }
+
+            getLaunchVelocity(endPosition) {
+                const dx = this.position.x - endPosition.x;
+                const dy = (this.position.y - 50) - endPosition.y;
+                const distance = Math.min(Math.sqrt(dx*dx + dy*dy), this.maxStretch);
+                const power = distance / this.maxStretch;
+                return new Vector2D(dx * power * 8, dy * power * 8);
+            }
+        }
+
+        class Game {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.width = this.canvas.width;
+                this.height = this.canvas.height;
+                
+                this.gravity = new Vector2D(0, 500);
+                this.ground = this.height - 100;
+                
+                this.slingshot = new Slingshot(150, this.ground);
+                this.birds = [];
+                this.pigs = [];
+                this.blocks = [];
+                this.currentBird = null;
+                this.currentLevel = 1;
+                this.score = 0;
+                this.totalBirds = 3;
+                
+                this.isMouseDown = false;
+                this.lastTime = Date.now();
+                
+                this.setupEventListeners();
+                this.loadLevel(this.currentLevel);
+                this.gameLoop();
+            }
+
+            setupEventListeners() {
+                this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+                
+                this.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    this.handleMouseDown({clientX: touch.clientX, clientY: touch.clientY});
+                });
+                this.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    this.handleMouseMove({clientX: touch.clientX, clientY: touch.clientY});
+                });
+                this.canvas.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.handleMouseUp(e);
+                });
+            }
+
+            getMousePos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                return new Vector2D(
+                    e.clientX - rect.left,
+                    e.clientY - rect.top
+                );
+            }
+
+            handleMouseDown(e) {
+                if (!this.currentBird || this.currentBird.isLaunched) return;
+                
+                const mousePos = this.getMousePos(e);
+                const dx = mousePos.x - this.currentBird.position.x;
+                const dy = mousePos.y - this.currentBird.position.y;
+                const distance = Math.sqrt(dx*dx + dy*dy);
+                
+                if (distance < 50) {
+                    this.isMouseDown = true;
+                    this.slingshot.startDrag(mousePos.x, mousePos.y);
+                }
+            }
+
+            handleMouseMove(e) {
+                if (!this.isMouseDown || !this.currentBird) return;
+                
+                const mousePos = this.getMousePos(e);
+                this.slingshot.updateDrag(mousePos.x, mousePos.y);
+                
+                const dx = this.slingshot.position.x - mousePos.x;
+                const dy = (this.slingshot.position.y - 50) - mousePos.y;
+                const distance = Math.sqrt(dx*dx + dy*dy);
+                
+                if (distance <= this.slingshot.maxStretch) {
+                    this.currentBird.position.x = mousePos.x - this.currentBird.width/2;
+                    this.currentBird.position.y = mousePos.y - this.currentBird.height/2;
+                } else {
+                    const angle = Math.atan2(dy, dx);
+                    this.currentBird.position.x = this.slingshot.position.x - Math.cos(angle) * this.slingshot.maxStretch - this.currentBird.width/2;
+                    this.currentBird.position.y = (this.slingshot.position.y - 50) - Math.sin(angle) * this.slingshot.maxStretch - this.currentBird.height/2;
+                }
+            }
+
+            handleMouseUp(e) {
+                if (!this.isMouseDown || !this.currentBird) return;
+                
+                this.isMouseDown = false;
+                const endPos = this.slingshot.endDrag();
+                
+                if (endPos) {
+                    const velocity = this.slingshot.getLaunchVelocity(endPos);
+                    this.currentBird.launch(velocity);
+                    
+                    setTimeout(() => {
+                        this.prepareNextBird();
+                    }, 3000);
+                }
+            }
+
+            loadLevel(level) {
+                this.birds = [];
+                this.pigs = [];
+                this.blocks = [];
+                this.currentBird = null;
+                this.totalBirds = 3 + level;
+
+                const levels = {
+                    1: () => {
+                        this.pigs.push(new Pig(700, this.ground - 35));
+                        this.pigs.push(new Pig(800, this.ground - 35));
+                        this.pigs.push(new Pig(900, this.ground - 35));
+                        
+                        this.blocks.push(new Block(680, this.ground - 80, 20, 80, 'wood'));
+                        this.blocks.push(new Block(740, this.ground - 80, 20, 80, 'wood'));
+                        this.blocks.push(new Block(660, this.ground - 100, 100, 20, 'wood'));
+                        
+                        this.blocks.push(new Block(780, this.ground - 80, 20, 80, 'wood'));
+                        this.blocks.push(new Block(840, this.ground - 80, 20, 80, 'wood'));
+                        this.blocks.push(new Block(760, this.ground - 100, 100, 20, 'wood'));
+                        
+                        this.blocks.push(new Block(880, this.ground - 80, 20, 80, 'wood'));
+                        this.blocks.push(new Block(940, this.ground - 80, 20, 80, 'wood'));
+                        this.blocks.push(new Block(860, this.ground - 100, 100, 20, 'wood'));
+                    },
+                    2: () => {
+                        this.pigs.push(new Pig(750, this.ground - 35));
+                        this.pigs.push(new Pig(850, this.ground - 35));
+                        this.pigs.push(new Pig(800, this.ground - 115));
+                        
+                        for (let i = 0; i < 4; i++) {
+                            this.blocks.push(new Block(720 + i * 30, this.ground - 80, 20, 80, 'stone'));
+                        }
+                        this.blocks.push(new Block(700, this.ground - 100, 140, 20, 'wood'));
+                        
+                        for (let i = 0; i < 4; i++) {
+                            this.blocks.push(new Block(720 + i * 30, this.ground - 160, 20, 80, 'wood'));
+                        }
+                        this.blocks.push(new Block(700, this.ground - 180, 140, 20, 'glass'));
+                    },
+                    3: () => {
+                        this.pigs.push(new Pig(750, this.ground - 35));
+                        this.pigs.push(new Pig(900, this.ground - 35));
+                        this.pigs.push(new Pig(825, this.ground - 115));
+                        this.pigs.push(new Pig(825, this.ground - 195));
+                        
+                        this.blocks.push(new Block(730, this.ground - 80, 20, 80, 'stone'));
+                        this.blocks.push(new Block(790, this.ground - 80, 20, 80, 'stone'));
+                        this.blocks.push(new Block(710, this.ground - 100, 100, 20, 'stone'));
+                        
+                        this.blocks.push(new Block(860, this.ground - 80, 20, 80, 'stone'));
+                        this.blocks.push(new Block(920, this.ground - 80, 20, 80, 'stone'));
+                        this.blocks.push(new Block(840, this.ground - 100, 100, 20, 'stone'));
+                        
+                        this.blocks.push(new Block(790, this.ground - 160, 20, 80, 'wood'));
+                        this.blocks.push(new Block(860, this.ground - 160, 20, 80, 'wood'));
+                        this.blocks.push(new Block(770, this.ground - 180, 110, 20, 'glass'));
+                        
+                        this.blocks.push(new Block(805, this.ground - 240, 20, 80, 'glass'));
+                        this.blocks.push(new Block(785, this.ground - 260, 60, 20, 'glass'));
+                    }
+                };
+
+                const levelFunc = levels[level] || levels[3];
+                levelFunc();
+
+                for (let i = 0; i < this.totalBirds; i++) {
+                    this.birds.push(new Bird(
+                        this.slingshot.position.x - 15,
+                        this.slingshot.position.y - 50 - 15
+                    ));
+                }
+
+                this.currentBird = this.birds[0];
+                this.updateUI();
+            }
+
+            prepareNextBird() {
+                const currentIndex = this.birds.indexOf(this.currentBird);
+                if (currentIndex < this.birds.length - 1) {
+                    this.currentBird = this.birds[currentIndex + 1];
+                    this.currentBird.position.x = this.slingshot.position.x - 15;
+                    this.currentBird.position.y = this.slingshot.position.y - 50 - 15;
+                } else {
+                    this.currentBird = null;
+                    setTimeout(() => this.checkGameOver(), 1000);
+                }
+                this.updateUI();
+            }
+
+            update() {
+                const currentTime = Date.now();
+                const deltaTime = Math.min((currentTime - this.lastTime) / 1000, 0.016);
+                this.lastTime = currentTime;
+
+                this.birds.forEach(bird => {
+                    if (bird.isLaunched) {
+                        bird.applyForce(this.gravity.multiply(bird.mass));
+                        bird.update(deltaTime);
+
+                        if (bird.position.y + bird.height > this.ground) {
+                            bird.position.y = this.ground - bird.height;
+                            bird.velocity.y *= -bird.restitution;
+                            if (Math.abs(bird.velocity.y) < 10) {
+                                bird.velocity.y = 0;
+                            }
+                        }
+
+                        if (bird.position.x > this.width || bird.position.y > this.height) {
+                            bird.isDestroyed = true;
+                        }
+                    }
+                });
+
+                this.pigs.forEach(pig => {
+                    pig.applyForce(this.gravity.multiply(pig.mass));
+                    pig.update(deltaTime);
+
+                    if (pig.position.y + pig.height > this.ground) {
+                        pig.position.y = this.ground - pig.height;
+                        pig.velocity.y *= -pig.restitution;
+                    }
+                });
+
+                this.blocks.forEach(block => {
+                    block.applyForce(this.gravity.multiply(block.mass));
+                    block.update(deltaTime);
+
+                    if (block.position.y + block.height > this.ground) {
+                        block.position.y = this.ground - block.height;
+                        block.velocity.y *= -block.restitution;
+                        block.angularVelocity *= 0.9;
+                    }
+                });
+
+                this.birds.forEach(bird => {
+                    if (!bird.isLaunched || bird.isDestroyed) return;
+
+                    this.pigs.forEach(pig => {
+                        if (pig.isDestroyed) return;
+                        if (bird.checkCollision(pig)) {
+                            bird.resolveCollision(pig);
+                            const damage = bird.velocity.magnitude() * 2;
+                            if (pig.takeDamage(damage)) {
+                                this.score += 100;
+                                this.updateUI();
+                            }
+                        }
+                    });
+
+                    this.blocks.forEach(block => {
+                        if (block.isDestroyed) return;
+                        if (bird.checkCollision(block)) {
+                            bird.resolveCollision(block);
+                            const damage = bird.velocity.magnitude() * 0.5;
+                            if (block.takeDamage(damage)) {
+                                this.score += 50;
+                                this.updateUI();
+                            }
+                        }
+                    });
+                });
+
+                this.pigs.forEach(pig => {
+                    if (pig.isDestroyed) return;
+                    this.blocks.forEach(block => {
+                        if (block.isDestroyed) return;
+                        if (pig.checkCollision(block)) {
+                            pig.resolveCollision(block);
+                        }
+                    });
+                });
+
+                for (let i = 0; i < this.blocks.length; i++) {
+                    for (let j = i + 1; j < this.blocks.length; j++) {
+                        if (this.blocks[i].isDestroyed || this.blocks[j].isDestroyed) continue;
+                        if (this.blocks[i].checkCollision(this.blocks[j])) {
+                            this.blocks[i].resolveCollision(this.blocks[j]);
+                        }
+                    }
+                }
+
+                const activePigs = this.pigs.filter(p => !p.isDestroyed).length;
+                if (activePigs === 0) {
+                    this.levelComplete();
+                }
+            }
+
+            draw() {
+                this.ctx.clearRect(0, 0, this.width, this.height);
+
+                this.ctx.fillStyle = '#654321';
+                this.ctx.fillRect(0, this.ground, this.width, this.height - this.ground);
+
+                this.ctx.fillStyle = '#90EE90';
+                for (let i = 0; i < 50; i++) {
+                    const x = Math.random() * this.width;
+                    const y = this.ground + Math.random() * 20;
+                    this.ctx.fillRect(x, y, 3, 10);
+                }
+
+                this.slingshot.draw(this.ctx, this.currentBird);
+
+                this.blocks.forEach(block => block.draw(this.ctx));
+                this.pigs.forEach(pig => pig.draw(this.ctx));
+                this.birds.forEach(bird => bird.draw(this.ctx));
+            }
+
+            updateUI() {
+                document.getElementById('levelDisplay').textContent = this.currentLevel;
+                document.getElementById('scoreDisplay').textContent = this.score;
+                document.getElementById('birdsDisplay').textContent = this.birds.filter(b => !b.isLaunched && !b.isDestroyed).length;
+                document.getElementById('pigsDisplay').textContent = this.pigs.filter(p => !p.isDestroyed).length;
+            }
+
+            checkGameOver() {
+                const activePigs = this.pigs.filter(p => !p.isDestroyed).length;
+                const activeBirds = this.birds.filter(b => !b.isLaunched && !b.isDestroyed).length;
+
+                if (activePigs > 0 && activeBirds === 0) {
+                    document.getElementById('finalScore').textContent = this.score;
+                    document.getElementById('gameOver').style.display = 'block';
+                }
+            }
+
+            levelComplete() {
+                const birdsRemaining = this.birds.filter(b => !b.isLaunched && !b.isDestroyed).length;
+                const bonus = birdsRemaining * 500;
+                this.score += bonus;
+
+                let stars = 1;
+                if (birdsRemaining >= 2) stars = 3;
+                else if (birdsRemaining >= 1) stars = 2;
+
+                document.getElementById('levelScore').textContent = this.score;
+                
+                for (let i = 1; i <= 3; i++) {
+                    const star = document.getElementById(`star${i}`);
+                    if (i <= stars) {
+                        star.classList.add('earned');
+                    } else {
+                        star.classList.remove('earned');
+                    }
+                }
+
+                document.getElementById('levelComplete').style.display = 'block';
+                this.updateUI();
+            }
+
+            nextLevel() {
+                document.getElementById('levelComplete').style.display = 'none';
+                this.currentLevel++;
+                this.loadLevel(this.currentLevel);
+            }
+
+            restart() {
+                document.getElementById('gameOver').style.display = 'none';
+                document.getElementById('levelComplete').style.display = 'none';
+                this.currentLevel = 1;
+                this.score = 0;
+                this.loadLevel(this.currentLevel);
+            }
+
+            gameLoop() {
+                this.update();
+                this.draw();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+
+        const game = new Game();
+    </script>
+</body>
+</html>
