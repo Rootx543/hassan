@@ -1,0 +1,2270 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TEF Master - Préparation TCF/TEF Canada</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --secondary: #ec4899;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --success-light: #34d399;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #0f0f13;
+            --dark-light: #16161d;
+            --dark-lighter: #1e1e28;
+            --dark-card: #1a1a23;
+            --gray-700: #374151;
+            --gray-600: #4b5563;
+            --gray-500: #6b7280;
+            --gray-400: #9ca3af;
+            --gray-300: #d1d5db;
+            --gray-200: #e5e7eb;
+            --white: #ffffff;
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+            --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+            --gradient-danger: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+            --gradient-cyan: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%);
+            --gradient-pink: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-full: 9999px;
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.25s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark);
+            color: var(--white);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* App Container - Full Height Layout */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh; /* Dynamic viewport height for mobile */
+            overflow: hidden;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Header - Compact */
+        .header {
+            background: var(--dark-light);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 0.5rem 1rem;
+            flex-shrink: 0;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: var(--white);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 900;
+        }
+
+        .logo-text {
+            font-size: 1rem;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--dark-lighter);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .stat-badge i {
+            font-size: 0.625rem;
+        }
+
+        .stat-badge.score i { color: var(--warning); }
+        .stat-badge.streak i { color: var(--danger); }
+
+        /* Navigation - Compact */
+        .nav-container {
+            background: var(--dark-light);
+            padding: 0.5rem;
+            flex-shrink: 0;
+            overflow-x: auto;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.25rem;
+            justify-content: center;
+        }
+
+        .nav-tab {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            border: none;
+            background: transparent;
+            color: var(--gray-400);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            transition: var(--transition-fast);
+        }
+
+        .nav-tab:hover {
+            color: var(--white);
+            background: var(--dark-lighter);
+        }
+
+        .nav-tab.active {
+            color: white;
+            background: var(--gradient-primary);
+        }
+
+        /* Main Content - Flexible */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0.75rem;
+        }
+
+        /* Sections */
+        .section {
+            display: none;
+            height: 100%;
+        }
+
+        .section.active {
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* ==================== QUESTION VIEW - OPTIMIZED ==================== */
+        .question-view {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            gap: 0.5rem;
+        }
+
+        /* Question Header - Minimal */
+        .q-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            background: var(--dark-card);
+            border-radius: var(--radius-md);
+            flex-shrink: 0;
+        }
+
+        .q-progress {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .q-number {
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: var(--primary-light);
+        }
+
+        .q-progress-bar {
+            width: 60px;
+            height: 4px;
+            background: var(--dark-lighter);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+        }
+
+        .q-progress-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            transition: width 0.3s ease;
+        }
+
+        .q-stats {
+            display: flex;
+            gap: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .q-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .q-stat.correct { color: var(--success); }
+        .q-stat.wrong { color: var(--danger); }
+
+        .q-timer {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.625rem;
+            background: var(--dark-lighter);
+            border-radius: var(--radius-full);
+            font-size: 0.8125rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .q-timer i {
+            color: var(--primary);
+            font-size: 0.75rem;
+        }
+
+        .q-timer.warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .q-timer.warning i { color: var(--warning); }
+
+        .q-timer.danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            animation: pulse 1s infinite;
+        }
+
+        .q-timer.danger i { color: var(--danger); }
+
+        /* Media Container - Image + Audio */
+        .q-media {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        /* Image Container - Compact */
+        .q-image-container {
+            flex: 1;
+            background: var(--dark-card);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            position: relative;
+            max-height: 25vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .q-image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .q-image-expand {
+            position: absolute;
+            bottom: 0.5rem;
+            right: 0.5rem;
+            width: 28px;
+            height: 28px;
+            background: rgba(0, 0, 0, 0.7);
+            border: none;
+            border-radius: var(--radius-sm);
+            color: white;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-fast);
+        }
+
+        .q-image-expand:hover {
+            background: var(--primary);
+        }
+
+        /* Audio Player - Compact Vertical */
+        .q-audio-container {
+            width: 60px;
+            background: var(--dark-card);
+            border-radius: var(--radius-lg);
+            padding: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .q-audio-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            border: none;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-fast);
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+        }
+
+        .q-audio-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .q-audio-btn.playing {
+            background: var(--gradient-danger);
+        }
+
+        .q-audio-time {
+            font-size: 0.625rem;
+            color: var(--gray-500);
+            font-weight: 500;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .q-audio-progress {
+            width: 4px;
+            height: 60px;
+            background: var(--dark-lighter);
+            border-radius: var(--radius-full);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .q-audio-progress-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--primary);
+            border-radius: var(--radius-full);
+            transition: height 0.1s linear;
+        }
+
+        /* Audio Only (No Image) */
+        .q-audio-only {
+            width: 100%;
+            background: var(--dark-card);
+            border-radius: var(--radius-lg);
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .q-audio-only .q-audio-btn {
+            flex-shrink: 0;
+        }
+
+        .q-audio-only-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+        }
+
+        .q-audio-only-label {
+            font-size: 0.75rem;
+            color: var(--gray-400);
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .q-audio-only-label i {
+            color: var(--primary);
+        }
+
+        .q-audio-only-track {
+            height: 4px;
+            background: var(--dark-lighter);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .q-audio-only-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .q-audio-only-time {
+            font-size: 0.6875rem;
+            color: var(--gray-500);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Instruction Text */
+        .q-instruction {
+            background: var(--dark-card);
+            border-radius: var(--radius-md);
+            padding: 0.625rem 0.875rem;
+            font-size: 0.875rem;
+            color: var(--gray-300);
+            line-height: 1.5;
+            flex-shrink: 0;
+            max-height: 15vh;
+            overflow-y: auto;
+        }
+
+        /* Answers Section - Flexible */
+        .q-answers {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .q-answers-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--white);
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .q-answer {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--dark-card);
+            border: 2px solid transparent;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            flex-shrink: 0;
+        }
+
+        .q-answer:hover:not(.disabled) {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .q-answer.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        .q-answer.correct {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.15);
+        }
+
+        .q-answer.wrong {
+            border-color: var(--danger);
+            background: rgba(239, 68, 68, 0.15);
+        }
+
+        .q-answer.disabled {
+            cursor: default;
+        }
+
+        .q-answer-letter {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background: var(--dark-lighter);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: var(--gray-400);
+            flex-shrink: 0;
+            transition: var(--transition-fast);
+        }
+
+        .q-answer.selected .q-answer-letter {
+            background: var(--primary);
+            color: white;
+        }
+
+        .q-answer.correct .q-answer-letter {
+            background: var(--success);
+            color: white;
+        }
+
+        .q-answer.wrong .q-answer-letter {
+            background: var(--danger);
+            color: white;
+        }
+
+        .q-answer-text {
+            flex: 1;
+            font-size: 0.8125rem;
+            color: var(--gray-300);
+            line-height: 1.4;
+        }
+
+        .q-answer-icon {
+            font-size: 1rem;
+            opacity: 0;
+        }
+
+        .q-answer.correct .q-answer-icon,
+        .q-answer.wrong .q-answer-icon {
+            opacity: 1;
+        }
+
+        .q-answer.correct .q-answer-icon { color: var(--success); }
+        .q-answer.wrong .q-answer-icon { color: var(--danger); }
+
+        /* Navigation Footer */
+        .q-nav {
+            display: flex;
+            gap: 0.5rem;
+            padding-top: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .q-nav-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            padding: 0.75rem;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .q-nav-btn.secondary {
+            background: var(--dark-card);
+            color: var(--gray-300);
+        }
+
+        .q-nav-btn.secondary:hover:not(:disabled) {
+            background: var(--dark-lighter);
+            color: white;
+        }
+
+        .q-nav-btn.primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .q-nav-btn.primary:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+
+        .q-nav-btn.success {
+            background: var(--gradient-success);
+            color: white;
+        }
+
+        .q-nav-btn.danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .q-nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* ==================== HOME SECTION ==================== */
+        .home-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding-bottom: 1rem;
+        }
+
+        .hero-compact {
+            background: var(--gradient-primary);
+            border-radius: var(--radius-xl);
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .hero-compact h1 {
+            font-size: 1.125rem;
+            font-weight: 800;
+            margin-bottom: 0.375rem;
+        }
+
+        .hero-compact p {
+            font-size: 0.8125rem;
+            opacity: 0.9;
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .category-card {
+            background: var(--dark-card);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            border: 1px solid transparent;
+        }
+
+        .category-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            color: white;
+        }
+
+        .category-card.co .category-icon { background: var(--gradient-cyan); }
+        .category-card.ce .category-icon { background: var(--gradient-success); }
+        .category-card.ee .category-icon { background: var(--gradient-pink); }
+        .category-card.eo .category-icon { background: var(--gradient-primary); }
+
+        .category-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .category-meta {
+            font-size: 0.6875rem;
+            color: var(--gray-500);
+        }
+
+        /* ==================== SERIES SELECTOR ==================== */
+        .selector-view {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            gap: 0.75rem;
+        }
+
+        .selector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .selector-back {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--dark-card);
+            border: none;
+            border-radius: var(--radius-md);
+            color: var(--gray-300);
+            font-size: 0.8125rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .selector-back:hover {
+            background: var(--dark-lighter);
+            color: white;
+        }
+
+        .selector-title {
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .selector-title-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: white;
+        }
+
+        .selector-title-icon.co { background: var(--gradient-cyan); }
+        .selector-title-icon.ce { background: var(--gradient-success); }
+        .selector-title-icon.ee { background: var(--gradient-pink); }
+        .selector-title-icon.eo { background: var(--gradient-primary); }
+
+        .series-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+            gap: 0.5rem;
+            flex: 1;
+            overflow-y: auto;
+            align-content: start;
+        }
+
+        .series-btn {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--dark-card);
+            border: 2px solid transparent;
+            border-radius: var(--radius-md);
+            color: var(--gray-400);
+            font-weight: 600;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            position: relative;
+        }
+
+        .series-btn:hover {
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .series-btn.selected {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+
+        .series-btn.completed::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 0.5rem;
+            color: var(--success);
+        }
+
+        .series-btn small {
+            font-size: 0.5rem;
+            opacity: 0.7;
+        }
+
+        .selector-footer {
+            flex-shrink: 0;
+        }
+
+        .start-btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.9375rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: var(--transition-fast);
+        }
+
+        .start-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .start-btn:not(:disabled):hover {
+            opacity: 0.9;
+        }
+
+        /* ==================== RESULTS ==================== */
+        .results-view {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .results-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .results-icon.excellent {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .results-icon.good {
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary);
+        }
+
+        .results-icon.average {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .results-icon.poor {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .results-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+
+        .results-subtitle {
+            font-size: 0.875rem;
+            color: var(--gray-400);
+            margin-bottom: 1.25rem;
+        }
+
+        .results-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 1.25rem;
+        }
+
+        .result-stat {
+            background: var(--dark-card);
+            padding: 0.875rem;
+            border-radius: var(--radius-md);
+        }
+
+        .result-stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .result-stat-label {
+            font-size: 0.6875rem;
+            color: var(--gray-500);
+        }
+
+        .results-actions {
+            display: flex;
+            gap: 0.5rem;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .result-btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+        }
+
+        .result-btn.primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .result-btn.secondary {
+            background: var(--dark-card);
+            color: var(--gray-300);
+        }
+
+        /* ==================== IMAGE MODAL ==================== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 100%;
+            max-height: 90vh;
+        }
+
+        .modal-content img {
+            max-width: 100%;
+            max-height: 85vh;
+            object-fit: contain;
+            border-radius: var(--radius-lg);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--dark-lighter);
+            border: none;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            background: var(--danger);
+        }
+
+        /* ==================== TOAST ==================== */
+        .toast-container {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 900;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            width: calc(100% - 2rem);
+            max-width: 350px;
+            pointer-events: none;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            background: var(--dark-card);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.3s ease;
+            width: 100%;
+            pointer-events: auto;
+        }
+
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error { border-left: 3px solid var(--danger); }
+        .toast.warning { border-left: 3px solid var(--warning); }
+        .toast.info { border-left: 3px solid var(--primary); }
+
+        .toast-icon { font-size: 1rem; }
+        .toast.success .toast-icon { color: var(--success); }
+        .toast.error .toast-icon { color: var(--danger); }
+        .toast.warning .toast-icon { color: var(--warning); }
+        .toast.info .toast-icon { color: var(--primary); }
+
+        .toast-message {
+            flex: 1;
+            font-size: 0.8125rem;
+            color: var(--gray-300);
+        }
+
+        /* ==================== LOADING ==================== */
+        .loading-view {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--dark-lighter);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            font-size: 0.875rem;
+            color: var(--gray-400);
+        }
+
+        /* ==================== RESPONSIVE ==================== */
+        @media (max-width: 380px) {
+            .header {
+                padding: 0.375rem 0.75rem;
+            }
+
+            .nav-tab {
+                padding: 0.375rem 0.5rem;
+                font-size: 0.6875rem;
+            }
+
+            .nav-tab span {
+                display: none;
+            }
+
+            .main-content {
+                padding: 0.5rem;
+            }
+
+            .q-answer {
+                padding: 0.625rem;
+            }
+
+            .q-answer-letter {
+                width: 28px;
+                height: 28px;
+                font-size: 0.75rem;
+            }
+
+            .q-answer-text {
+                font-size: 0.75rem;
+            }
+
+            .categories-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .q-image-container {
+                max-height: 30vh;
+            }
+
+            .q-answers {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+            }
+
+            .q-answers-title {
+                grid-column: 1 / -1;
+            }
+        }
+
+        /* Hide scrollbar but keep functionality */
+        .q-answers::-webkit-scrollbar,
+        .series-grid::-webkit-scrollbar,
+        .main-content::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .q-answers::-webkit-scrollbar-track,
+        .series-grid::-webkit-scrollbar-track,
+        .main-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .q-answers::-webkit-scrollbar-thumb,
+        .series-grid::-webkit-scrollbar-thumb,
+        .main-content::-webkit-scrollbar-thumb {
+            background: var(--gray-600);
+            border-radius: var(--radius-full);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <a href="#" class="logo" onclick="showHome(); return false;">
+                    <div class="logo-icon">TM</div>
+                    <span class="logo-text">TEF Master</span>
+                </a>
+                <div class="header-stats">
+                    <div class="stat-badge score">
+                        <i class="fas fa-trophy"></i>
+                        <span id="totalScore">0</span>
+                    </div>
+                    <div class="stat-badge streak">
+                        <i class="fas fa-fire"></i>
+                        <span id="currentStreak">0</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav-container">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showSection('home')" data-section="home">
+                    <i class="fas fa-home"></i>
+                    <span>Accueil</span>
+                </button>
+                <button class="nav-tab" onclick="showSection('co')" data-section="co">
+                    <i class="fas fa-headphones"></i>
+                    <span>CO</span>
+                </button>
+                <button class="nav-tab" onclick="showSection('ce')" data-section="ce">
+                    <i class="fas fa-book-open"></i>
+                    <span>CE</span>
+                </button>
+                <button class="nav-tab" onclick="showSection('ee')" data-section="ee">
+                    <i class="fas fa-pen"></i>
+                    <span>EE</span>
+                </button>
+                <button class="nav-tab" onclick="showSection('eo')" data-section="eo">
+                    <i class="fas fa-microphone"></i>
+                    <span>EO</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Home Section -->
+            <section id="section-home" class="section active">
+                <div class="home-content">
+                    <div class="hero-compact">
+                        <h1>🎓 Préparez votre TEF/TCF</h1>
+                        <p>+3000 questions officielles pour réussir</p>
+                    </div>
+
+                    <div class="categories-grid">
+                        <div class="category-card co" onclick="showSection('co')">
+                            <div class="category-icon">
+                                <i class="fas fa-headphones"></i>
+                            </div>
+                            <h3 class="category-title">Compréhension Orale</h3>
+                            <p class="category-meta">36 séries • ~1400 questions</p>
+                        </div>
+
+                        <div class="category-card ce" onclick="showSection('ce')">
+                            <div class="category-icon">
+                                <i class="fas fa-book-open"></i>
+                            </div>
+                            <h3 class="category-title">Compréhension Écrite</h3>
+                            <p class="category-meta">39 séries • ~1500 questions</p>
+                        </div>
+
+                        <div class="category-card ee" onclick="showSection('ee')">
+                            <div class="category-icon">
+                                <i class="fas fa-pen"></i>
+                            </div>
+                            <h3 class="category-title">Expression Écrite</h3>
+                            <p class="category-meta">4 séries • ~120 sujets</p>
+                        </div>
+
+                        <div class="category-card eo" onclick="showSection('eo')">
+                            <div class="category-icon">
+                                <i class="fas fa-microphone"></i>
+                            </div>
+                            <h3 class="category-title">Expression Orale</h3>
+                            <p class="category-meta">4 séries • ~260 sujets</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CO Section -->
+            <section id="section-co" class="section">
+                <div id="co-content"></div>
+            </section>
+
+            <!-- CE Section -->
+            <section id="section-ce" class="section">
+                <div id="ce-content"></div>
+            </section>
+
+            <!-- EE Section -->
+            <section id="section-ee" class="section">
+                <div id="ee-content"></div>
+            </section>
+
+            <!-- EO Section -->
+            <section id="section-eo" class="section">
+                <div id="eo-content"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="modal-overlay" id="imageModal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <img id="modalImage" src="" alt="Image agrandie">
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ==================== CONFIGURATION ====================
+        const API_BASE = 'https://api.packayoub.com/questions';
+        const CORS_PROXIES = [
+            'https://corsproxy.io/?',
+            'https://api.allorigins.win/raw?url='
+        ];
+
+        // ==================== STATE ====================
+        const state = {
+            currentSection: 'home',
+            co: createTestState(25 * 60, 36),
+            ce: createTestState(60 * 60, 39),
+            ee: { selectedSeries: null, selectedTask: null, subjects: [], currentIndex: 0, responses: {}, timer: null, timeLeft: 60 * 60 },
+            eo: { selectedSeries: null, selectedTask: null, subjects: [], currentIndex: 0, timer: null, timeLeft: 5 * 60, isRecording: false },
+            stats: { totalScore: 0, totalAnswered: 0, currentStreak: 0 }
+        };
+
+        function createTestState(time, seriesCount) {
+            return {
+                questions: [],
+                currentIndex: 0,
+                answers: {},
+                score: 0,
+                correct: 0,
+                wrong: 0,
+                timer: null,
+                timeLeft: time,
+                defaultTime: time,
+                selectedSeries: null,
+                completedSeries: [],
+                seriesCount: seriesCount,
+                view: 'selector' // selector, question, results
+            };
+        }
+
+        // ==================== API ====================
+        async function fetchWithProxy(url) {
+            try {
+                const response = await fetch(url);
+                if (response.ok) return await response.json();
+            } catch (e) {
+                console.log('Direct fetch failed');
+            }
+
+            for (const proxy of CORS_PROXIES) {
+                try {
+                    const response = await fetch(proxy + encodeURIComponent(url));
+                    if (response.ok) return await response.json();
+                } catch (e) {
+                    console.log('Proxy failed:', proxy);
+                }
+            }
+            throw new Error('All fetch attempts failed');
+        }
+
+        async function fetchQuestions(type, serieId, tache = null) {
+            let url = `${API_BASE}?type=${type}&id=${serieId}`;
+            if (tache) url += `&tache=${tache}`;
+            
+            try {
+                return await fetchWithProxy(url);
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Erreur de chargement', 'error');
+                return null;
+            }
+        }
+
+        // ==================== INITIALIZATION ====================
+        function init() {
+            loadStats();
+            loadCompletedSeries();
+            renderSelector('co');
+            renderSelector('ce');
+            renderExpressionSelector('ee');
+            renderExpressionSelector('eo');
+        }
+
+        // ==================== NAVIGATION ====================
+        function showSection(section) {
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.section === section);
+            });
+
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(`section-${section}`).classList.add('active');
+
+            state.currentSection = section;
+        }
+
+        function showHome() {
+            showSection('home');
+            ['co', 'ce', 'ee', 'eo'].forEach(type => {
+                if (state[type].timer) {
+                    clearInterval(state[type].timer);
+                    state[type].timer = null;
+                }
+            });
+        }
+
+        // ==================== SELECTOR VIEW ====================
+        function renderSelector(type) {
+            const container = document.getElementById(`${type}-content`);
+            const s = state[type];
+
+            let seriesHTML = '';
+            for (let i = 1; i <= s.seriesCount; i++) {
+                const isSelected = s.selectedSeries === `serie-${i}`;
+                const isCompleted = s.completedSeries.includes(i);
+                seriesHTML += `
+                    <button class="series-btn ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed' : ''}" 
+                            onclick="selectSeries('${type}', ${i})">
+                        ${i}
+                        <small>Série</small>
+                    </button>
+                `;
+            }
+
+            container.innerHTML = `
+                <div class="selector-view">
+                    <div class="selector-header">
+                        <button class="selector-back" onclick="showHome()">
+                            <i class="fas fa-arrow-left"></i>
+                            Retour
+                        </button>
+                        <h2 class="selector-title">
+                            <div class="selector-title-icon ${type}">
+                                <i class="fas fa-${type === 'co' ? 'headphones' : 'book-open'}"></i>
+                            </div>
+                            ${type === 'co' ? 'Compréhension Orale' : 'Compréhension Écrite'}
+                        </h2>
+                    </div>
+                    
+                    <div class="series-grid">
+                        ${seriesHTML}
+                    </div>
+                    
+                    <div class="selector-footer">
+                        <button class="start-btn" id="${type}-start-btn" onclick="startTest('${type}')" ${!s.selectedSeries ? 'disabled' : ''}>
+                            <i class="fas fa-play"></i>
+                            Commencer le test
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectSeries(type, num) {
+            state[type].selectedSeries = `serie-${num}`;
+            renderSelector(type);
+        }
+
+        // ==================== TEST LOGIC ====================
+        async function startTest(type) {
+            const s = state[type];
+            if (!s.selectedSeries) return;
+
+            const container = document.getElementById(`${type}-content`);
+            container.innerHTML = `
+                <div class="loading-view">
+                    <div class="loading-spinner"></div>
+                    <p class="loading-text">Chargement des questions...</p>
+                </div>
+            `;
+
+            const typeMap = { 'co': 'comprehension-orale', 'ce': 'comprehension-ecrite' };
+            const data = await fetchQuestions(typeMap[type], s.selectedSeries);
+
+            if (!data || !data.questions) {
+                container.innerHTML = `
+                    <div class="loading-view">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: var(--danger);"></i>
+                        <p class="loading-text">Erreur de chargement</p>
+                        <button class="start-btn" onclick="renderSelector('${type}')" style="max-width: 200px;">
+                            <i class="fas fa-arrow-left"></i> Retour
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            s.questions = data.questions;
+            s.currentIndex = 0;
+            s.answers = {};
+            s.score = 0;
+            s.correct = 0;
+            s.wrong = 0;
+            s.timeLeft = s.defaultTime;
+            s.view = 'question';
+
+            startTimer(type);
+            renderQuestion(type);
+            showToast(`${data.questions.length} questions chargées`, 'success');
+        }
+
+        // ==================== AUDIO MANAGEMENT ====================
+        let currentAudio = null;
+        let currentAudioType = null;
+
+        function setupAudio(type, audioUrl) {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+
+            currentAudio = new Audio(audioUrl);
+            currentAudioType = type;
+
+            currentAudio.addEventListener('loadedmetadata', () => updateAudioDisplay(type));
+            currentAudio.addEventListener('timeupdate', () => updateAudioDisplay(type));
+            currentAudio.addEventListener('ended', () => {
+                updatePlayButton(type, false);
+            });
+        }
+
+        function toggleAudio(type) {
+            if (!currentAudio) return;
+
+            if (currentAudio.paused) {
+                currentAudio.play();
+                updatePlayButton(type, true);
+            } else {
+                currentAudio.pause();
+                updatePlayButton(type, false);
+            }
+        }
+
+        function updatePlayButton(type, isPlaying) {
+            const btn = document.getElementById(`${type}-audio-btn`);
+            const icon = document.getElementById(`${type}-audio-icon`);
+            if (btn && icon) {
+                btn.classList.toggle('playing', isPlaying);
+                icon.className = `fas fa-${isPlaying ? 'pause' : 'play'}`;
+            }
+        }
+
+        function updateAudioDisplay(type) {
+            if (!currentAudio) return;
+
+            const timeEl = document.getElementById(`${type}-audio-time`);
+            const progressEl = document.getElementById(`${type}-audio-progress`);
+
+            if (timeEl) {
+                timeEl.textContent = `${formatTime(currentAudio.currentTime)} / ${formatTime(currentAudio.duration || 0)}`;
+            }
+
+            if (progressEl) {
+                const percent = (currentAudio.currentTime / currentAudio.duration) * 100 || 0;
+                // Check if vertical or horizontal
+                if (progressEl.classList.contains('q-audio-progress-fill')) {
+                    progressEl.style.height = `${percent}%`;
+                } else {
+                    progressEl.style.width = `${percent}%`;
+                }
+            }
+        }
+
+        function seekAudio(event, type) {
+            if (!currentAudio) return;
+            const rect = event.currentTarget.getBoundingClientRect();
+            const percent = (event.clientX - rect.left) / rect.width;
+            currentAudio.currentTime = percent * currentAudio.duration;
+        }
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // ==================== QUESTION RENDERING ====================
+        function renderQuestion(type) {
+            const container = document.getElementById(`${type}-content`);
+            const s = state[type];
+            const q = s.questions[s.currentIndex];
+            const answer = s.answers[s.currentIndex];
+            const progress = ((s.currentIndex + 1) / s.questions.length) * 100;
+
+            const hasImage = q.image && q.image.url;
+            const hasAudio = q.audio;
+
+            // Build media HTML
+            let mediaHTML = '';
+            
+            if (hasImage && hasAudio) {
+                // Both image and audio - side by side
+                mediaHTML = `
+                    <div class="q-media">
+                        <div class="q-image-container">
+                            <img src="${q.image.url}" alt="Question" onerror="this.parentElement.style.display='none'">
+                            <button class="q-image-expand" onclick="openModal('${q.image.url}')">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
+                        <div class="q-audio-container">
+                            <button class="q-audio-btn" id="${type}-audio-btn" onclick="toggleAudio('${type}')">
+                                <i class="fas fa-play" id="${type}-audio-icon"></i>
+                            </button>
+                            <div class="q-audio-time" id="${type}-audio-time">0:00</div>
+                            <div class="q-audio-progress">
+                                <div class="q-audio-progress-fill" id="${type}-audio-progress"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (hasImage) {
+                // Image only
+                mediaHTML = `
+                    <div class="q-image-container">
+                        <img src="${q.image.url}" alt="Question" onerror="this.parentElement.style.display='none'">
+                        <button class="q-image-expand" onclick="openModal('${q.image.url}')">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                `;
+            } else if (hasAudio) {
+                // Audio only - horizontal layout
+                mediaHTML = `
+                    <div class="q-audio-only">
+                        <button class="q-audio-btn" id="${type}-audio-btn" onclick="toggleAudio('${type}')">
+                            <i class="fas fa-play" id="${type}-audio-icon"></i>
+                        </button>
+                        <div class="q-audio-only-info">
+                            <div class="q-audio-only-label">
+                                <i class="fas fa-headphones"></i>
+                                Audio de la question
+                            </div>
+                            <div class="q-audio-only-track" onclick="seekAudio(event, '${type}')">
+                                <div class="q-audio-only-fill" id="${type}-audio-progress"></div>
+                            </div>
+                            <div class="q-audio-only-time" id="${type}-audio-time">0:00 / 0:00</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Build answers HTML
+            let answersHTML = q.answers.map((ans, i) => {
+                let classes = 'q-answer';
+                let icon = '';
+                
+                if (answer !== undefined) {
+                    classes += ' disabled';
+                    if (answer === i) {
+                        classes += ans.is_correct ? ' correct' : ' wrong';
+                    }
+                    if (ans.is_correct && answer !== i) {
+                        classes += ' correct';
+                    }
+                    icon = ans.is_correct 
+                        ? '<i class="fas fa-check-circle q-answer-icon"></i>' 
+                        : '<i class="fas fa-times-circle q-answer-icon"></i>';
+                }
+
+                return `
+                    <div class="${classes}" onclick="selectAnswer('${type}', ${i})">
+                        <span class="q-answer-letter">${ans.option}</span>
+                        <span class="q-answer-text">${ans.text || `Option ${ans.option}`}</span>
+                        ${icon}
+                    </div>
+                `;
+            }).join('');
+
+            // Navigation buttons
+            const isFirst = s.currentIndex === 0;
+            const isLast = s.currentIndex === s.questions.length - 1;
+
+            container.innerHTML = `
+                <div class="question-view">
+                    <div class="q-header">
+                        <div class="q-progress">
+                            <span class="q-number">Q${s.currentIndex + 1}/${s.questions.length}</span>
+                            <div class="q-progress-bar">
+                                <div class="q-progress-fill" style="width: ${progress}%"></div>
+                            </div>
+                            <div class="q-stats">
+                                <span class="q-stat correct"><i class="fas fa-check"></i> ${s.correct}</span>
+                                <span class="q-stat wrong"><i class="fas fa-times"></i> ${s.wrong}</span>
+                            </div>
+                        </div>
+                        <div class="q-timer" id="${type}-timer">
+                            <i class="fas fa-clock"></i>
+                            <span id="${type}-timer-display">${formatTimer(s.timeLeft)}</span>
+                        </div>
+                    </div>
+
+                    ${mediaHTML}
+
+                    ${q.instruction ? `<div class="q-instruction">${q.instruction}</div>` : ''}
+
+                    <div class="q-answers">
+                        <div class="q-answers-title">Cliquez sur votre réponse</div>
+                        ${answersHTML}
+                    </div>
+
+                    <div class="q-nav">
+                        <button class="q-nav-btn danger" onclick="stopTest('${type}')">
+                            <i class="fas fa-stop"></i>
+                            Arrêter
+                        </button>
+                        <button class="q-nav-btn secondary" onclick="prevQuestion('${type}')" ${isFirst ? 'disabled' : ''}>
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        ${isLast ? `
+                            <button class="q-nav-btn success" onclick="submitTest('${type}')">
+                                <i class="fas fa-check"></i>
+                                Terminer
+                            </button>
+                        ` : `
+                            <button class="q-nav-btn primary" onclick="nextQuestion('${type}')">
+                                Suivant
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        `}
+                    </div>
+                </div>
+            `;
+
+            // Setup audio if present
+            if (hasAudio) {
+                setupAudio(type, q.audio);
+            }
+        }
+
+        function selectAnswer(type, answerIndex) {
+            const s = state[type];
+            if (s.answers[s.currentIndex] !== undefined) return;
+
+            const q = s.questions[s.currentIndex];
+            const isCorrect = q.answers[answerIndex].is_correct;
+
+            s.answers[s.currentIndex] = answerIndex;
+
+            if (isCorrect) {
+                s.correct++;
+                s.score += q.points;
+                state.stats.currentStreak++;
+            } else {
+                s.wrong++;
+                state.stats.currentStreak = 0;
+            }
+
+            state.stats.totalAnswered++;
+            state.stats.totalScore += isCorrect ? q.points : 0;
+
+            updateStats();
+            saveStats();
+            renderQuestion(type);
+
+            showToast(isCorrect ? 'Bonne réponse ! 🎉' : 'Mauvaise réponse 😔', isCorrect ? 'success' : 'error');
+        }
+
+        function nextQuestion(type) {
+            const s = state[type];
+            if (s.currentIndex < s.questions.length - 1) {
+                s.currentIndex++;
+                renderQuestion(type);
+            }
+        }
+
+        function prevQuestion(type) {
+            const s = state[type];
+            if (s.currentIndex > 0) {
+                s.currentIndex--;
+                renderQuestion(type);
+            }
+        }
+
+        function stopTest(type) {
+            if (confirm('Voulez-vous vraiment arrêter le test ?')) {
+                if (state[type].timer) {
+                    clearInterval(state[type].timer);
+                    state[type].timer = null;
+                }
+                if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio = null;
+                }
+                state[type].view = 'selector';
+                renderSelector(type);
+            }
+        }
+
+        function submitTest(type) {
+            const s = state[type];
+            
+            if (s.timer) {
+                clearInterval(s.timer);
+                s.timer = null;
+            }
+            
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+
+            // Mark series completed
+            const seriesNum = parseInt(s.selectedSeries.replace('serie-', ''));
+            if (!s.completedSeries.includes(seriesNum)) {
+                s.completedSeries.push(seriesNum);
+                saveCompletedSeries();
+            }
+
+            const total = s.questions.length;
+            const percentage = Math.round((s.correct / total) * 100);
+            const maxScore = s.questions.reduce((sum, q) => sum + q.points, 0);
+
+            let resultClass, icon, title, subtitle;
+            if (percentage >= 80) {
+                resultClass = 'excellent'; icon = 'fa-trophy'; title = 'Excellent ! 🎉'; subtitle = 'Vous êtes prêt(e) !';
+            } else if (percentage >= 60) {
+                resultClass = 'good'; icon = 'fa-thumbs-up'; title = 'Bien joué ! 👍'; subtitle = 'Continuez !';
+            } else if (percentage >= 40) {
+                resultClass = 'average'; icon = 'fa-meh'; title = 'Pas mal 😊'; subtitle = 'Encore un effort !';
+            } else {
+                resultClass = 'poor'; icon = 'fa-frown'; title = 'À améliorer 📚'; subtitle = 'Réessayez !';
+            }
+
+            const container = document.getElementById(`${type}-content`);
+            container.innerHTML = `
+                <div class="results-view">
+                    <div class="results-icon ${resultClass}">
+                        <i class="fas ${icon}"></i>
+                    </div>
+                    <h2 class="results-title">${title}</h2>
+                    <p class="results-subtitle">${subtitle}</p>
+                    
+                    <div class="results-stats">
+                        <div class="result-stat">
+                            <div class="result-stat-value">${percentage}%</div>
+                            <div class="result-stat-label">Score</div>
+                        </div>
+                        <div class="result-stat">
+                            <div class="result-stat-value">${s.correct}/${total}</div>
+                            <div class="result-stat-label">Correctes</div>
+                        </div>
+                        <div class="result-stat">
+                            <div class="result-stat-value">${s.score}</div>
+                            <div class="result-stat-label">Points</div>
+                        </div>
+                        <div class="result-stat">
+                            <div class="result-stat-value">${maxScore}</div>
+                            <div class="result-stat-label">Maximum</div>
+                        </div>
+                    </div>
+
+                    <div class="results-actions">
+                        <button class="result-btn secondary" onclick="reviewTest('${type}')">
+                            <i class="fas fa-eye"></i>
+                            Revoir
+                        </button>
+                        <button class="result-btn primary" onclick="restartTest('${type}')">
+                            <i class="fas fa-redo"></i>
+                            Refaire
+                        </button>
+                    </div>
+                    <button class="result-btn secondary" onclick="renderSelector('${type}')" style="margin-top: 0.5rem; width: 100%; max-width: 300px;">
+                        <i class="fas fa-list"></i>
+                        Autre série
+                    </button>
+                </div>
+            `;
+        }
+
+        function reviewTest(type) {
+            state[type].currentIndex = 0;
+            renderQuestion(type);
+        }
+
+        function restartTest(type) {
+            startTest(type);
+        }
+
+        // ==================== EXPRESSION SECTIONS ====================
+        function renderExpressionSelector(type) {
+            const container = document.getElementById(`${type}-content`);
+            const s = state[type];
+            const seriesCount = 4;
+            const typeName = type === 'ee' ? 'Expression Écrite' : 'Expression Orale';
+            const icon = type === 'ee' ? 'pen' : 'microphone';
+
+            let seriesHTML = '';
+            for (let i = 1; i <= seriesCount; i++) {
+                const isSelected = s.selectedSeries === `serie-${i}`;
+                seriesHTML += `
+                    <button class="series-btn ${isSelected ? 'selected' : ''}" 
+                            onclick="selectExpressionSeries('${type}', ${i})">
+                        ${i}
+                        <small>Série</small>
+                    </button>
+                `;
+            }
+
+            const tasks = type === 'ee' 
+                ? [
+                    { id: 'tache-1', name: 'Tâche 1', desc: 'Message (60-120 mots)', icon: 'envelope' },
+                    { id: 'tache-2', name: 'Tâche 2', desc: 'Article (120-150 mots)', icon: 'newspaper' },
+                    { id: 'tache-3', name: 'Tâche 3', desc: 'Argumentation (200+ mots)', icon: 'balance-scale' }
+                ]
+                : [
+                    { id: 'tache-2', name: 'Tâche 2', desc: 'Jeu de rôle (5 min)', icon: 'comments' },
+                    { id: 'tache-3', name: 'Tâche 3', desc: 'Argumentation (5 min)', icon: 'bullhorn' }
+                ];
+
+            let tasksHTML = tasks.map(t => `
+                <button class="series-btn ${s.selectedTask === t.id ? 'selected' : ''}" 
+                        style="aspect-ratio: auto; padding: 0.75rem;"
+                        onclick="selectExpressionTask('${type}', '${t.id}')">
+                    <i class="fas fa-${t.icon}" style="font-size: 1rem; margin-bottom: 0.25rem;"></i>
+                    <span style="font-size: 0.75rem;">${t.name}</span>
+                    <small style="font-size: 0.5rem; opacity: 0.7;">${t.desc}</small>
+                </button>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="selector-view">
+                    <div class="selector-header">
+                        <button class="selector-back" onclick="showHome()">
+                            <i class="fas fa-arrow-left"></i>
+                            Retour
+                        </button>
+                        <h2 class="selector-title">
+                            <div class="selector-title-icon ${type}">
+                                <i class="fas fa-${icon}"></i>
+                            </div>
+                            ${typeName}
+                        </h2>
+                    </div>
+                    
+                    <div style="margin-bottom: 0.5rem; font-size: 0.75rem; color: var(--gray-400); font-weight: 600;">
+                        <i class="fas fa-layer-group"></i> Choisir une série
+                    </div>
+                    <div class="series-grid" style="flex: 0; margin-bottom: 1rem;">
+                        ${seriesHTML}
+                    </div>
+                    
+                    <div style="margin-bottom: 0.5rem; font-size: 0.75rem; color: var(--gray-400); font-weight: 600;">
+                        <i class="fas fa-tasks"></i> Choisir une tâche
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(${tasks.length}, 1fr); gap: 0.5rem; margin-bottom: 1rem;">
+                        ${tasksHTML}
+                    </div>
+                    
+                    <div class="selector-footer" style="margin-top: auto;">
+                        <button class="start-btn" onclick="startExpressionTest('${type}')" 
+                                ${!s.selectedSeries || !s.selectedTask ? 'disabled' : ''}>
+                            <i class="fas fa-play"></i>
+                            Commencer
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectExpressionSeries(type, num) {
+            state[type].selectedSeries = `serie-${num}`;
+            renderExpressionSelector(type);
+        }
+
+        function selectExpressionTask(type, task) {
+            state[type].selectedTask = task;
+            renderExpressionSelector(type);
+        }
+
+        async function startExpressionTest(type) {
+            const s = state[type];
+            if (!s.selectedSeries || !s.selectedTask) return;
+
+            const container = document.getElementById(`${type}-content`);
+            container.innerHTML = `
+                <div class="loading-view">
+                    <div class="loading-spinner"></div>
+                    <p class="loading-text">Chargement des sujets...</p>
+                </div>
+            `;
+
+            const typeMap = { 'ee': 'expression-ecrite', 'eo': 'expression-orale' };
+            const data = await fetchQuestions(typeMap[type], s.selectedSeries, s.selectedTask);
+
+            if (!data || !data.subjects || data.subjects.length === 0) {
+                container.innerHTML = `
+                    <div class="loading-view">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: var(--danger);"></i>
+                        <p class="loading-text">Aucun sujet disponible</p>
+                        <button class="start-btn" onclick="renderExpressionSelector('${type}')" style="max-width: 200px;">
+                            <i class="fas fa-arrow-left"></i> Retour
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            s.subjects = data.subjects;
+            s.currentIndex = 0;
+            s.responses = {};
+            s.timeLeft = type === 'ee' ? 60 * 60 : 5 * 60;
+
+            renderExpressionSubject(type);
+            showToast(`${data.subjects.length} sujets chargés`, 'success');
+        }
+
+        function renderExpressionSubject(type) {
+            const container = document.getElementById(`${type}-content`);
+            const s = state[type];
+            const subject = s.subjects[s.currentIndex];
+
+            // Subject navigation
+            let navBtns = '';
+            for (let i = 0; i < s.subjects.length; i++) {
+                const isActive = i === s.currentIndex;
+                const isDone = s.responses && s.responses[i];
+                navBtns += `
+                    <button class="series-btn ${isActive ? 'selected' : ''} ${isDone ? 'completed' : ''}" 
+                            style="aspect-ratio: 1; width: 36px; height: 36px;"
+                            onclick="goToSubject('${type}', ${i})">
+                        ${i + 1}
+                    </button>
+                `;
+            }
+
+            const isFirst = s.currentIndex === 0;
+            const isLast = s.currentIndex === s.subjects.length - 1;
+
+            let responseHTML = '';
+            if (type === 'ee') {
+                const saved = s.responses[s.currentIndex] || '';
+                const wordCount = saved.trim() ? saved.trim().split(/\s+/).length : 0;
+                responseHTML = `
+                    <textarea class="q-instruction" style="flex: 1; resize: none; min-height: 150px; font-family: inherit;" 
+                              id="response-textarea"
+                              placeholder="Rédigez votre réponse ici..."
+                              oninput="updateWordCount('${type}')">${saved}</textarea>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
+                        <span style="font-size: 0.75rem; color: var(--gray-500);">
+                            <i class="fas fa-file-word" style="color: var(--primary);"></i>
+                            <span id="word-count">${wordCount}</span> mots
+                        </span>
+                        <button class="q-nav-btn primary" style="flex: 0; padding: 0.5rem 1rem;" onclick="saveResponse('${type}')">
+                            <i class="fas fa-save"></i> Sauvegarder
+                        </button>
+                    </div>
+                `;
+            } else {
+                responseHTML = `
+                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--dark-card); border-radius: var(--radius-lg); padding: 1.5rem;">
+                        <button class="q-audio-btn ${s.isRecording ? 'playing' : ''}" 
+                                style="width: 60px; height: 60px; font-size: 1.5rem; margin-bottom: 0.75rem;"
+                                onclick="toggleRecording()">
+                            <i class="fas fa-${s.isRecording ? 'stop' : 'microphone'}"></i>
+                        </button>
+                        <p style="font-size: 0.875rem; color: ${s.isRecording ? 'var(--danger)' : 'var(--gray-400)'}; font-weight: 500;">
+                            ${s.isRecording ? '🔴 Enregistrement...' : 'Cliquez pour enregistrer'}
+                        </p>
+                        <p style="font-size: 0.6875rem; color: var(--gray-500); margin-top: 0.5rem;">
+                            <i class="fas fa-info-circle"></i> Préparation: 1 min | Parole: 3-4 min
+                        </p>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <div class="question-view">
+                    <div class="q-header">
+                        <div class="q-progress">
+                            <span class="q-number">Sujet ${s.currentIndex + 1}/${s.subjects.length}</span>
+                        </div>
+                        <button class="selector-back" style="padding: 0.375rem 0.625rem;" onclick="renderExpressionSelector('${type}')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div style="display: flex; gap: 0.375rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                        ${navBtns}
+                    </div>
+
+                    <div class="q-instruction" style="max-height: 20vh;">
+                        ${subject.content.replace(/\n/g, '<br>')}
+                    </div>
+
+                    ${responseHTML}
+
+                    <div class="q-nav">
+                        <button class="q-nav-btn secondary" onclick="prevSubject('${type}')" ${isFirst ? 'disabled' : ''}>
+                            <i class="fas fa-chevron-left"></i>
+                            Précédent
+                        </button>
+                        <button class="q-nav-btn primary" onclick="nextSubject('${type}')" ${isLast ? 'disabled' : ''}>
+                            Suivant
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function goToSubject(type, index) {
+            if (type === 'ee') {
+                const textarea = document.getElementById('response-textarea');
+                if (textarea) {
+                    state[type].responses[state[type].currentIndex] = textarea.value;
+                }
+            }
+            state[type].currentIndex = index;
+            renderExpressionSubject(type);
+        }
+
+        function nextSubject(type) {
+            if (state[type].currentIndex < state[type].subjects.length - 1) {
+                goToSubject(type, state[type].currentIndex + 1);
+            }
+        }
+
+        function prevSubject(type) {
+            if (state[type].currentIndex > 0) {
+                goToSubject(type, state[type].currentIndex - 1);
+            }
+        }
+
+        function updateWordCount(type) {
+            const textarea = document.getElementById('response-textarea');
+            const counter = document.getElementById('word-count');
+            if (textarea && counter) {
+                const text = textarea.value.trim();
+                counter.textContent = text ? text.split(/\s+/).length : 0;
+            }
+        }
+
+        function saveResponse(type) {
+            const textarea = document.getElementById('response-textarea');
+            if (textarea) {
+                state[type].responses[state[type].currentIndex] = textarea.value;
+                showToast('Réponse sauvegardée !', 'success');
+                renderExpressionSubject(type);
+            }
+        }
+
+        function toggleRecording() {
+            state.eo.isRecording = !state.eo.isRecording;
+            renderExpressionSubject('eo');
+        }
+
+        // ==================== TIMER ====================
+        function startTimer(type) {
+            if (state[type].timer) clearInterval(state[type].timer);
+
+            state[type].timer = setInterval(() => {
+                state[type].timeLeft--;
+                updateTimerDisplay(type);
+
+                if (state[type].timeLeft <= 0) {
+                    clearInterval(state[type].timer);
+                    submitTest(type);
+                    showToast('Temps écoulé !', 'warning');
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay(type) {
+            const display = document.getElementById(`${type}-timer-display`);
+            const container = document.getElementById(`${type}-timer`);
+            const timeLeft = state[type].timeLeft;
+
+            if (display) {
+                display.textContent = formatTimer(timeLeft);
+            }
+
+            if (container) {
+                container.classList.remove('warning', 'danger');
+                if (timeLeft <= 60) container.classList.add('danger');
+                else if (timeLeft <= 300) container.classList.add('warning');
+            }
+        }
+
+        function formatTimer(seconds) {
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            return `${mins}:${secs}`;
+        }
+
+        // ==================== MODAL ====================
+        function openModal(imageUrl) {
+            document.getElementById('modalImage').src = imageUrl;
+            document.getElementById('imageModal').classList.add('active');
+        }
+
+        function closeModal(event) {
+            if (!event || event.target.id === 'imageModal') {
+                document.getElementById('imageModal').classList.remove('active');
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // ==================== STATS ====================
+        function updateStats() {
+            document.getElementById('totalScore').textContent = state.stats.totalScore;
+            document.getElementById('currentStreak').textContent = state.stats.currentStreak;
+        }
+
+        function saveStats() {
+            localStorage.setItem('tefMasterStats', JSON.stringify(state.stats));
+        }
+
+        function loadStats() {
+            const saved = localStorage.getItem('tefMasterStats');
+            if (saved) {
+                state.stats = JSON.parse(saved);
+                updateStats();
+            }
+        }
+
+        function saveCompletedSeries() {
+            const data = {
+                co: state.co.completedSeries,
+                ce: state.ce.completedSeries
+            };
+            localStorage.setItem('tefMasterCompleted', JSON.stringify(data));
+        }
+
+        function loadCompletedSeries() {
+            const saved = localStorage.getItem('tefMasterCompleted');
+            if (saved) {
+                const data = JSON.parse(saved);
+                state.co.completedSeries = data.co || [];
+                state.ce.completedSeries = data.ce || [];
+            }
+        }
+
+        // ==================== TOAST ====================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = { 
+                success: 'fa-check-circle', 
+                error: 'fa-times-circle', 
+                warning: 'fa-exclamation-circle', 
+                info: 'fa-info-circle' 
+            };
+
+            toast.innerHTML = `
+                <i class="fas ${icons[type]} toast-icon"></i>
+                <span class="toast-message">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
