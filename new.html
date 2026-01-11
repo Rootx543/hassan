@@ -1,0 +1,2739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Intelcom Driver Pro - GPS</title>
+    
+    <!-- Leaflet Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- PDF Parser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
+    <style>
+        :root {
+            --primary: #094699;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --bg: #f4f6f8;
+            --card: #ffffff;
+            --text: #212529;
+            --gray: #6c757d;
+            --gps-blue: #4285F4;
+            --opened: #17a2b8;
+            --far-stop: #ff00ff;
+            --selected: #00c853;
+            --reorder: #ff6b35;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column;
+        }
+
+        header {
+            background: linear-gradient(135deg, #094699, #002d6b); color: white; padding: 12px 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15); z-index: 1000;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-shrink: 0;
+        }
+        header h1 { margin: 0; font-size: 18px; font-weight: 800; }
+        
+        .header-actions { display: flex; gap: 10px; }
+        .btn-header { 
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); 
+            color: white; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;
+        }
+
+        main { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; }
+
+        .card { 
+            background: var(--card); border-radius: 12px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 16px; margin-bottom: 16px; 
+        }
+        .hidden { display: none !important; }
+
+        .bottom-tabs {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        .bottom-tab {
+            flex: 1;
+            padding: 10px 5px;
+            text-align: center;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+        
+        .bottom-tab-icon { font-size: 22px; }
+        
+        .bottom-tab-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .bottom-tab.active { background: #e8f0fe; }
+        .bottom-tab.active .bottom-tab-label { color: var(--primary); }
+
+        #view-map {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            right: 0;
+            bottom: 60px;
+            z-index: 100;
+        }
+        
+        #map-container { 
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform: translate3d(0,0,0);
+            will-change: transform;
+        }
+        
+        .leaflet-pane { will-change: transform; }
+        .leaflet-marker-icon { will-change: transform; }
+        .leaflet-zoom-anim .leaflet-zoom-animated { transition: transform 0.25s cubic-bezier(0,0,0.25,1); }
+
+        #map { width: 100%; height: 100%; background: #e5e9ec; }
+        
+        #map-container.fullscreen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh !important;
+            z-index: 2000; margin: 0; border-radius: 0;
+        }
+        #map-container.fullscreen .map-controls { bottom: 40px; right: 20px; }
+
+        .map-controls { position: absolute; bottom: 20px; right: 10px; z-index: 999; display: flex; flex-direction: column; gap: 10px; }
+        
+        .fab { 
+            width: 44px; height: 44px; border-radius: 50%; border: none; 
+            background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.2); 
+            font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: 0.3s;
+        }
+        
+        .fab.active-loc { background: var(--gps-blue); color: white; }
+        .fab.active-select { background: var(--selected); color: white; }
+        .fab.active-reorder { background: var(--reorder); color: white; }
+        
+        .user-gps-marker {
+            background-color: var(--gps-blue);
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            animation: pulse-ring 2s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(66, 133, 244, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0); }
+        }
+
+        .map-status-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 60px;
+            background: rgba(255,255,255,0.95);
+            padding: 10px 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            z-index: 999;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .map-status-stats { display: flex; gap: 15px; }
+        .map-stat { text-align: center; }
+        .map-stat-val { font-size: 18px; font-weight: 800; color: var(--primary); }
+        .map-stat-lbl { font-size: 9px; color: #666; text-transform: uppercase; }
+        
+        .map-status-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Selection Mode Bar */
+        .select-mode-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #00c853, #00a844);
+            padding: 12px 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 200, 83, 0.4);
+            z-index: 1001;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .select-mode-bar.show {
+            display: flex;
+        }
+        
+        .select-mode-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+        
+        .select-mode-title {
+            font-weight: bold;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .select-mode-count {
+            background: rgba(255,255,255,0.3);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        
+        .select-mode-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .select-mode-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .select-mode-btn.primary {
+            background: white;
+            color: #00a844;
+        }
+        
+        .select-mode-btn.secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        .select-mode-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .select-mode-hint {
+            color: rgba(255,255,255,0.9);
+            font-size: 11px;
+            text-align: center;
+        }
+
+        /* Reorder Mode Bar */
+        .reorder-mode-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #ff6b35, #e85a2a);
+            padding: 12px 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+            z-index: 1001;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .reorder-mode-bar.show {
+            display: flex;
+        }
+        
+        .reorder-mode-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+        
+        .reorder-mode-title {
+            font-weight: bold;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .reorder-mode-count {
+            background: rgba(255,255,255,0.3);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        
+        .reorder-mode-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .reorder-mode-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .reorder-mode-btn.primary {
+            background: white;
+            color: #e85a2a;
+        }
+        
+        .reorder-mode-btn.secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        .reorder-mode-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .reorder-mode-hint {
+            color: rgba(255,255,255,0.9);
+            font-size: 11px;
+            text-align: center;
+        }
+        
+        .reorder-sequence-display {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: white;
+            font-size: 12px;
+            max-height: 60px;
+            overflow-y: auto;
+            word-wrap: break-word;
+        }
+
+        /* Toggle Switch for Far Stops */
+        .toggle-container {
+            position: absolute;
+            bottom: 80px;
+            left: 10px;
+            background: rgba(255,255,255,0.95);
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            background: #ccc;
+            border-radius: 11px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        
+        .toggle-switch.active {
+            background: #ff00ff;
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        
+        .toggle-switch.active::after {
+            left: 20px;
+        }
+
+        #dl-progress-container {
+            position: absolute; top: 70px; left: 50%; transform: translateX(-50%); 
+            width: 80%; z-index: 1000; background: rgba(255,255,255,0.9); 
+            padding: 8px; border-radius: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: none; text-align: center;
+        }
+        #dl-bar-bg { width: 100%; height: 6px; background: #ddd; border-radius: 3px; overflow: hidden; margin-top: 5px; }
+        #dl-bar-fill { width: 0%; height: 100%; background: var(--success); transition: width 0.2s; }
+        #dl-text { font-size: 11px; font-weight: bold; color: #333; }
+
+        .double-tap-hint {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .double-tap-hint.show { opacity: 1; }
+
+        #view-stops {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            right: 0;
+            bottom: 60px;
+            overflow-y: auto;
+            padding: 12px;
+            background: var(--bg);
+        }
+        
+        .stops-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 5px;
+        }
+        
+        .stops-header h2 { margin: 0; font-size: 18px; color: #333; }
+        
+        .stops-count {
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .stops-stats {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .stops-stat-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .stops-stat-badge.opened {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .stops-stat-badge.remaining {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        
+        .stops-stat-badge.far {
+            background: #f8d7ff;
+            color: #6b006b;
+            border: 1px solid #e066ff;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(9, 70, 153, 0.1);
+        }
+
+        .stop-item { 
+            display: flex; align-items: flex-start; gap: 12px; padding: 14px; 
+            border-bottom: 1px solid #f0f0f0; position: relative; transition: 0.3s;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        .stop-item.removed { opacity: 0.4; background: #ffe6e6; text-decoration: line-through; }
+        
+        .stop-item.opened { 
+            background: linear-gradient(135deg, #d1ecf1, #e8f4f8);
+            border-left: 4px solid var(--opened) !important;
+        }
+        
+        .stop-item.far-stop {
+            background: linear-gradient(135deg, #ffe6ff, #fff0ff);
+            border-left: 4px solid #ff00ff !important;
+        }
+        
+        .stop-item.opened .stop-seq { background: var(--opened); }
+        
+        .stop-item.cluster-0 { border-left: 4px solid #007bff; }
+        .stop-item.cluster-1 { border-left: 4px solid #6610f2; }
+        .stop-item.cluster-2 { border-left: 4px solid #e83e8c; }
+        .stop-item.cluster-3 { border-left: 4px solid #fd7e14; }
+        .stop-item.cluster-4 { border-left: 4px solid #28a745; }
+
+        .stop-seq { background: var(--primary); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; flex-shrink: 0; }
+        .stop-seq.multi { background: var(--warning); color: #222; border: 2px solid #b58900; }
+        .stop-seq.far { background: #ff00ff; color: white; border: 3px solid #cc00cc; box-shadow: 0 0 10px rgba(255,0,255,0.5); }
+
+        .stop-details { flex: 1; }
+        .stop-addr { font-size: 15px; font-weight: 600; line-height: 1.3; margin-bottom: 4px; color: #333; }
+        
+        .access-code { color: #dc3545; font-weight: 800; background: #ffeaea; padding: 2px 6px; border-radius: 4px; font-size: 13px; display: inline-block; margin-top: 4px; border: 1px solid #f5c6cb; }
+        .priority-badge { background: #dc3545; color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-left: 5px; }
+        .opened-badge { background: var(--opened); color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-left: 5px; }
+        .far-badge { background: #ff00ff; color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-left: 5px; }
+        
+        .multi-badge { display: inline-block; background: #ffc107; color: #222; font-weight: bold; font-size: 12px; padding: 3px 8px; border-radius: 12px; margin-top: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .distance-badge { display: inline-block; background: #ff00ff; color: white; font-weight: bold; font-size: 11px; padding: 2px 8px; border-radius: 12px; margin-top: 4px; margin-left: 5px; }
+        
+        .driving-order-badge {
+            display: inline-block;
+            background: var(--reorder);
+            color: white;
+            font-weight: bold;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 5px;
+        }
+
+        .action-row { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-action { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #dee2e6; background: white; font-size: 13px; font-weight: 600; color: #495057; text-align: center; text-decoration: none; cursor: pointer; min-width: 70px; }
+        
+        .btn-gps { border-color: #c3e6cb; color: #155724; background: #d4edda; }
+        .btn-addr { border-color: #d2e3fc; color: #094699; background: #e8f0fe; }
+        .btn-edit { border-color: #ffeeba; color: #856404; background: #fff3cd; }
+        .btn-restore { border-color: #c3e6cb; color: #155724; background: #d4edda; }
+        .btn-map { border-color: #d2e3fc; color: #094699; background: #e8f0fe; }
+        .btn-unmark { border-color: #f5c6cb; color: #721c24; background: #f8d7da; }
+
+        #view-analytics {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            right: 0;
+            bottom: 60px;
+            overflow-y: auto;
+            padding: 12px;
+            background: var(--bg);
+        }
+        
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-box { background: white; border: 1px solid #eee; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-val { font-size: 28px; font-weight: 900; color: var(--primary); }
+        .stat-lbl { font-size: 12px; color: #666; text-transform: uppercase; font-weight: bold; margin-top: 5px; }
+
+        .multi-group { background: white; border-left: 4px solid var(--warning); margin-bottom: 12px; border-radius: 8px; padding: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .mg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .mg-count { background: var(--warning); color: #222; font-weight: bold; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+        .mg-addr { font-weight: 600; color: #333; font-size: 14px; }
+        .mg-seqs { display: flex; gap: 5px; flex-wrap: wrap; }
+        .mg-seq { background: #eee; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold; color: #555; }
+
+        #view-distance {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            right: 0;
+            bottom: 60px;
+            overflow-y: auto;
+            padding: 12px;
+            background: var(--bg);
+        }
+        
+        .distance-header {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .distance-header h2 { margin: 0 0 5px 0; font-size: 18px; }
+        .distance-header p { margin: 0; font-size: 12px; opacity: 0.9; }
+        
+        .distance-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .distance-stat {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .distance-stat-val { font-size: 22px; font-weight: 900; color: var(--primary); }
+        .distance-stat-val.danger { color: var(--danger); }
+        .distance-stat-val.warning { color: #fd7e14; }
+        .distance-stat-val.success { color: var(--success); }
+        .distance-stat-lbl { font-size: 10px; color: #666; text-transform: uppercase; font-weight: bold; }
+        
+        .suggestion-card {
+            background: linear-gradient(135deg, #fff3cd, #ffeeba);
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .suggestion-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .suggestion-list { display: flex; flex-direction: column; gap: 10px; }
+        
+        .suggestion-item {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .suggestion-rank {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: var(--danger); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 14px;
+        }
+        
+        .suggestion-info { flex: 1; }
+        .suggestion-stops { font-weight: bold; color: #333; font-size: 14px; }
+        .suggestion-distance { color: var(--danger); font-weight: bold; font-size: 13px; }
+        .suggestion-addr { font-size: 11px; color: #666; margin-top: 3px; }
+        
+        .suggestion-time {
+            background: #dc3545; color: white;
+            padding: 4px 8px; border-radius: 12px;
+            font-size: 11px; font-weight: bold;
+        }
+        
+        .skip-btn {
+            background: var(--danger); color: white; border: none;
+            padding: 6px 12px; border-radius: 6px;
+            font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 8px;
+        }
+        .skip-btn:hover { background: #c82333; }
+        
+        .outlier-section {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .outlier-title {
+            font-weight: bold; color: #333; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        
+        .outlier-item {
+            display: flex; align-items: center; gap: 10px; padding: 10px;
+            background: #f8f9fa; border-radius: 8px; margin-bottom: 8px;
+            border-left: 4px solid var(--danger);
+        }
+        
+        .outlier-seq {
+            background: var(--danger); color: white;
+            width: 35px; height: 35px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 14px;
+        }
+        
+        .outlier-details { flex: 1; }
+        .outlier-addr { font-weight: 600; font-size: 13px; color: #333; }
+        .outlier-stats { font-size: 11px; color: #666; margin-top: 2px; }
+        
+        .outlier-badge {
+            background: #dc3545; color: white;
+            padding: 3px 8px; border-radius: 10px;
+            font-size: 10px; font-weight: bold;
+        }
+        
+        .time-saved-card {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            color: white; border-radius: 12px; padding: 15px;
+            text-align: center; margin-bottom: 15px;
+        }
+        
+        .time-saved-val { font-size: 36px; font-weight: 900; }
+        .time-saved-lbl { font-size: 12px; opacity: 0.9; }
+        
+        .distance-leg {
+            background: white; border-radius: 8px; padding: 10px 12px;
+            margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        .distance-leg.long { border-left: 4px solid var(--danger); background: #fff5f5; }
+        .distance-leg.medium { border-left: 4px solid var(--warning); background: #fffdf5; }
+        .distance-leg.short { border-left: 4px solid var(--success); }
+        
+        .leg-stops { font-weight: bold; font-size: 13px; color: #333; min-width: 80px; }
+        
+        .leg-bar-container {
+            flex: 1; height: 8px; background: #eee;
+            border-radius: 4px; overflow: hidden;
+        }
+        
+        .leg-bar { height: 100%; border-radius: 4px; transition: width 0.3s; }
+        .leg-bar.long { background: var(--danger); }
+        .leg-bar.medium { background: var(--warning); }
+        .leg-bar.short { background: var(--success); }
+        
+        .leg-distance { font-weight: bold; font-size: 12px; min-width: 60px; text-align: right; }
+        .leg-distance.long { color: var(--danger); }
+        .leg-distance.medium { color: #fd7e14; }
+        .leg-distance.short { color: var(--success); }
+
+        #notes-panel {
+            position: fixed; top: 0; right: -350px;
+            width: 320px; max-width: 90vw; height: 100vh;
+            background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.2);
+            z-index: 3000; transition: right 0.3s ease;
+            display: flex; flex-direction: column;
+        }
+        
+        #notes-panel.open { right: 0; }
+        
+        .notes-header {
+            background: linear-gradient(135deg, #094699, #002d6b);
+            color: white; padding: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        .notes-header h3 { margin: 0; font-size: 16px; }
+        
+        .notes-close {
+            background: rgba(255,255,255,0.2); border: none; color: white;
+            width: 32px; height: 32px; border-radius: 50%;
+            font-size: 18px; cursor: pointer;
+        }
+        
+        .notes-content { flex: 1; padding: 15px; overflow-y: auto; }
+        
+        .notes-textarea {
+            width: 100%; height: 200px; border: 1px solid #ddd;
+            border-radius: 8px; padding: 12px; font-size: 14px;
+            resize: vertical; font-family: inherit;
+        }
+        
+        .notes-save-btn {
+            width: 100%; padding: 12px; background: var(--success);
+            color: white; border: none; border-radius: 8px;
+            font-weight: bold; margin-top: 10px; cursor: pointer;
+        }
+        
+        .notes-overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.5); z-index: 2999; display: none;
+        }
+        
+        .notes-overlay.show { display: block; }
+
+        .remove-section {
+            margin-top: 20px; padding: 15px;
+            background: #fff5f5; border: 1px solid #f5c6cb; border-radius: 8px;
+        }
+        
+        .remove-section h4 { margin: 0 0 10px 0; color: #dc3545; font-size: 14px; }
+        
+        .remove-input {
+            width: 100%; padding: 10px; border: 1px solid #ddd;
+            border-radius: 6px; font-size: 14px; margin-bottom: 10px;
+        }
+        
+        .remove-btn {
+            width: 100%; padding: 10px; background: #dc3545;
+            color: white; border: none; border-radius: 6px;
+            font-weight: bold; cursor: pointer;
+        }
+        
+        .removed-list { margin-top: 15px; padding-top: 15px; border-top: 1px solid #f5c6cb; }
+        
+        .removed-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px; background: white; border-radius: 4px;
+            margin-bottom: 5px; font-size: 13px;
+        }
+        
+        .restore-btn {
+            background: var(--success); color: white; border: none;
+            padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;
+        }
+
+        .custom-marker { background: var(--primary); color: white; border: 2px solid white; border-radius: 50%; text-align: center; font-weight: bold; font-size: 12px; line-height: 26px; box-shadow: 0 3px 6px rgba(0,0,0,0.4); }
+        .custom-marker.multi { background: var(--warning); color: #222; border: 2px solid #222; z-index: 1000 !important; }
+        
+        @keyframes pulse-far {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 255, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(255, 0, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 255, 0); }
+        }
+        
+        .far-marker-glow {
+            animation: pulse-far 1.5s infinite;
+        }
+        
+        @keyframes pulse-selected {
+            0% { box-shadow: 0 0 0 0 rgba(0, 200, 83, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(0, 200, 83, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 200, 83, 0); }
+        }
+        
+        .selected-marker-glow {
+            animation: pulse-selected 1s infinite;
+        }
+        
+        @keyframes pulse-reorder {
+            0% { box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(255, 107, 53, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 107, 53, 0); }
+        }
+        
+        .reorder-marker-glow {
+            animation: pulse-reorder 1s infinite;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>📦 Driver GeoFix</h1>
+    <div class="header-actions">
+        <button class="btn-header" onclick="toggleNotesPanel()">📝 Notes</button>
+        <button class="btn-header" onclick="softReset()">🔄 Routes</button>
+        <button class="btn-header" onclick="hardReset()">📄 New</button>
+    </div>
+</header>
+
+<div class="notes-overlay" id="notes-overlay" onclick="toggleNotesPanel()"></div>
+<div id="notes-panel">
+    <div class="notes-header">
+        <h3>📝 Route Notes</h3>
+        <button class="notes-close" onclick="toggleNotesPanel()">✕</button>
+    </div>
+    <div class="notes-content">
+        <label style="font-weight:bold; display:block; margin-bottom:8px;">Quick Notes:</label>
+        <textarea id="route-notes" class="notes-textarea" placeholder="Add notes about your route here..."></textarea>
+        <button class="notes-save-btn" onclick="saveNotes()">💾 Save Notes</button>
+        
+        <div class="remove-section">
+            <h4>🚫 Mark Untrouvable (Not Found)</h4>
+            <input type="text" id="remove-seqs-input" class="remove-input" placeholder="Enter seq numbers (e.g., 5, 12, 23)">
+            <button class="remove-btn" onclick="removeStops()">Remove from Route</button>
+            <div class="removed-list" id="removed-list"></div>
+        </div>
+    </div>
+</div>
+
+<main>
+    <div id="view-upload" class="card">
+        <h2 style="font-size:18px; margin-top:0; color:#333;">Step 1: Import Manifest</h2>
+        <input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="handlePdf(this)">
+        <div onclick="document.getElementById('pdfInput').click()" style="padding:40px; text-align:center; border:2px dashed #ccc; border-radius:10px; cursor:pointer;">
+            <span style="font-size:40px;">📄</span><br>
+            <b>Upload PDF</b>
+        </div>
+    </div>
+
+    <div id="view-select" class="card hidden">
+        <h2 style="font-size:18px; margin-top:0;">Step 2: Confirm Route</h2>
+        <select id="routeSelect" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; background:white; margin-top:10px;">
+            <option value="">-- Select Route --</option>
+        </select>
+        <button onclick="confirmRoute()" style="width:100%; padding:15px; margin-top:20px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold;">
+            ✅ Load Route
+        </button>
+    </div>
+
+    <div id="view-map" class="hidden">
+        <div id="map-container">
+            <!-- Normal Status Bar -->
+            <div class="map-status-bar" id="normal-status-bar">
+                <div class="map-status-stats">
+                    <div class="map-stat">
+                        <div class="map-stat-val" id="map-stat-stops">0</div>
+                        <div class="map-stat-lbl">Stops</div>
+                    </div>
+                    <div class="map-stat">
+                        <div class="map-stat-val" id="map-stat-pkgs">0</div>
+                        <div class="map-stat-lbl">Packages</div>
+                    </div>
+                    <div class="map-stat">
+                        <div class="map-stat-val" id="map-stat-geo">0%</div>
+                        <div class="map-stat-lbl">Geocoded</div>
+                    </div>
+                    <div class="map-stat">
+                        <div class="map-stat-val" id="map-stat-far" style="color:#ff00ff;">0</div>
+                        <div class="map-stat-lbl">Far (4km+)</div>
+                    </div>
+                </div>
+                <button class="map-status-btn" onclick="retryErrors()">Retry Geo</button>
+            </div>
+            
+            <!-- Selection Mode Bar -->
+            <div class="select-mode-bar" id="select-mode-bar">
+                <div class="select-mode-header">
+                    <div class="select-mode-title">
+                        <span>🗺️ Select Stops for Google Maps</span>
+                    </div>
+                    <div class="select-mode-count" id="select-mode-count">0 selected</div>
+                </div>
+                <div class="select-mode-hint">👆 Tap markers to select/deselect stops</div>
+                <div class="select-mode-actions">
+                    <button class="select-mode-btn secondary" onclick="clearAllSelections()">Clear</button>
+                    <button class="select-mode-btn secondary" onclick="toggleSelectMode()">❌ Cancel</button>
+                    <button class="select-mode-btn primary" id="open-gmaps-btn" onclick="openSelectedInGoogleMaps()" disabled>
+                        🗺️ Open Maps
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Reorder Mode Bar -->
+            <div class="reorder-mode-bar" id="reorder-mode-bar">
+                <div class="reorder-mode-header">
+                    <div class="reorder-mode-title">
+                        <span>🔄 Reorder Stops</span>
+                    </div>
+                    <div class="reorder-mode-count" id="reorder-mode-count">0 tapped</div>
+                </div>
+                <div class="reorder-mode-hint" id="reorder-hint">👆 Tap stops in the order you want to drive them</div>
+                <div class="reorder-sequence-display" id="reorder-sequence-display" style="display:none;"></div>
+                <div class="reorder-mode-actions">
+                    <button class="reorder-mode-btn secondary" onclick="resetReorder()">↺ Reset</button>
+                    <button class="reorder-mode-btn secondary" onclick="toggleReorderMode()">❌ Cancel</button>
+                    <button class="reorder-mode-btn primary" id="confirm-reorder-btn" onclick="confirmReorder()" disabled>
+                        ✓ Confirm
+                    </button>
+                </div>
+            </div>
+
+            <!-- Far Stops Toggle -->
+            <div class="toggle-container" id="far-toggle-container">
+                <span>🚀 Far (4km+)</span>
+                <div class="toggle-switch active" id="far-toggle" onclick="toggleFarHighlight()"></div>
+            </div>
+
+            <div id="dl-progress-container">
+                <div id="dl-text">Downloading offline map...</div>
+                <div id="dl-bar-bg"><div id="dl-bar-fill"></div></div>
+            </div>
+
+            <div class="double-tap-hint" id="double-tap-hint">👆 Double-tap marker to open in Maps</div>
+
+            <div id="map"></div>
+            <div class="map-controls">
+                <button id="btn-reorder-mode" class="fab" onclick="toggleReorderMode()" title="Reorder Stops">🔄</button>
+                <button id="btn-select-mode" class="fab" onclick="toggleSelectMode()" title="Select for Google Maps">☑️</button>
+                <button id="btn-location" class="fab" onclick="toggleLocation()" title="Locate Me">📍</button>
+                <button class="fab" onclick="toggleFullscreen()" title="Full Screen">⛶</button>
+                <button class="fab" onclick="downloadOfflineArea()" title="Save Offline">💾</button>
+                <button class="fab" onclick="centerMap()" title="Reset View">🎯</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-stops" class="hidden">
+        <div class="stops-header">
+            <h2>📋 Stops List</h2>
+            <span class="stops-count" id="stops-count">0 stops</span>
+        </div>
+        <div class="stops-stats">
+            <span class="stops-stat-badge opened" id="opened-count">✅ 0 Opened</span>
+            <span class="stops-stat-badge remaining" id="remaining-count">📦 0 Remaining</span>
+            <span class="stops-stat-badge far" id="far-stops-count">🚀 0 Far (4km+)</span>
+        </div>
+        <input type="text" class="search-box" id="search-box" placeholder="🔍 Search address or stop #..." oninput="filterStops()">
+        <div id="stopList"></div>
+    </div>
+
+    <div id="view-analytics" class="hidden">
+        <h2 style="margin:0 0 15px 0; font-size:18px;">📊 Multi-Drop Analysis</h2>
+        <div class="stat-grid">
+            <div class="stat-box">
+                <div class="stat-val" id="stat-locations">0</div>
+                <div class="stat-lbl">Multi-Drop Locs</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-val" id="stat-packages">0</div>
+                <div class="stat-lbl">Total Dup Pkgs</div>
+            </div>
+        </div>
+        <h3 style="font-size:16px; margin:0 0 15px 0;">Grouped Locations</h3>
+        <div id="analytics-list">
+            <div style="text-align:center; padding:20px; color:#999;">No duplicates found.</div>
+        </div>
+    </div>
+
+    <div id="view-distance" class="hidden">
+        <div class="distance-header">
+            <h2>📏 Distance Analysis</h2>
+            <p>Identify long legs & optimize your route</p>
+        </div>
+        
+        <div class="distance-stats">
+            <div class="distance-stat">
+                <div class="distance-stat-val" id="dist-total">0</div>
+                <div class="distance-stat-lbl">Total KM</div>
+            </div>
+            <div class="distance-stat">
+                <div class="distance-stat-val danger" id="dist-longest">0</div>
+                <div class="distance-stat-lbl">Longest Leg</div>
+            </div>
+            <div class="distance-stat">
+                <div class="distance-stat-val success" id="dist-avg">0</div>
+                <div class="distance-stat-lbl">Avg Leg</div>
+            </div>
+        </div>
+        
+        <div class="time-saved-card" id="time-saved-card" style="display:none;">
+            <div class="time-saved-val" id="time-saved-val">0 min</div>
+            <div class="time-saved-lbl">Potential time saved by skipping suggested stops</div>
+        </div>
+        
+        <div class="suggestion-card" id="suggestion-card">
+            <div class="suggestion-title">💡 Skip Suggestions to Save Time</div>
+            <div class="suggestion-list" id="suggestion-list">
+                <div style="text-align:center; color:#856404; font-size:13px;">Analyzing route...</div>
+            </div>
+        </div>
+        
+        <div class="outlier-section">
+            <div class="outlier-title">🎯 Outlier Stops (Far from cluster)</div>
+            <div id="outlier-list">
+                <div style="text-align:center; color:#999; font-size:13px;">No outliers detected</div>
+            </div>
+        </div>
+        
+        <div class="outlier-section">
+            <div class="outlier-title">📊 All Route Legs</div>
+            <div id="legs-list">
+                <div style="text-align:center; color:#999; font-size:13px;">Loading...</div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div class="bottom-tabs hidden" id="bottom-tabs">
+    <button class="bottom-tab active" onclick="switchTab('map')" id="tab-map">
+        <span class="bottom-tab-icon">🗺️</span>
+        <span class="bottom-tab-label">Map</span>
+    </button>
+    <button class="bottom-tab" onclick="switchTab('stops')" id="tab-stops">
+        <span class="bottom-tab-icon">📋</span>
+        <span class="bottom-tab-label">Stops</span>
+    </button>
+    <button class="bottom-tab" onclick="switchTab('distance')" id="tab-distance">
+        <span class="bottom-tab-icon">📏</span>
+        <span class="bottom-tab-label">Distance</span>
+    </button>
+    <button class="bottom-tab" onclick="switchTab('analytics')" id="tab-analytics">
+        <span class="bottom-tab-icon">📊</span>
+        <span class="bottom-tab-label">Duplicates</span>
+    </button>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const DB_NAME = "DriverFixMapDB";
+    const STORE_NAME = "tiles";
+    const FAR_DISTANCE_THRESHOLD = 4;
+    let db = null;
+
+    function initDB() {
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onupgradeneeded = (e) => {
+            const d = e.target.result;
+            if (!d.objectStoreNames.contains(STORE_NAME)) d.createObjectStore(STORE_NAME);
+        };
+        request.onsuccess = (e) => db = e.target.result;
+        request.onerror = (e) => console.error("DB Error", e);
+    }
+    initDB();
+
+    async function saveTile(key, blob) {
+        if (!db) return;
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).put(blob, key);
+    }
+
+    async function getTile(key) {
+        if (!db) return null;
+        return new Promise((resolve) => {
+            const tx = db.transaction(STORE_NAME, "readonly");
+            const req = tx.objectStore(STORE_NAME).get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    }
+
+    const OfflineLayer = L.TileLayer.extend({
+        createTile: function (coords, done) {
+            const tile = document.createElement('img');
+            const key = `${coords.x}_${coords.y}_${coords.z}`;
+            tile.alt = '';
+            tile.setAttribute('role', 'presentation');
+            getTile(key).then(blob => {
+                if (blob) {
+                    const url = URL.createObjectURL(blob);
+                    tile.src = url;
+                    tile.onload = () => { URL.revokeObjectURL(url); done(null, tile); };
+                } else {
+                    tile.src = this.getTileUrl(coords);
+                    tile.onload = () => done(null, tile);
+                    tile.onerror = () => done(new Error('Failed'), tile);
+                }
+            });
+            return tile;
+        }
+    });
+
+    let appData = { routes: {}, activeRouteId: null, stops: [], completedStops: [], removedStops: [], openedStops: [], notes: '', customOrder: [], highlightFarStops: true };
+    let map = null, markersGroup = null, routeLine = null, reorderLine = null;
+    let isGeocodingActive = false;
+    let notesOpen = false;
+    let currentTab = 'map';
+    let searchQuery = '';
+    let distanceData = { legs: [], outliers: [], suggestions: [] };
+    let scrollPositions = { stops: 0, analytics: 0, distance: 0 };
+    let userMarker = null, userCircle = null, hasLocation = false;
+    let markerTapTracking = new Map();
+    let farStopsSet = new Set();
+    
+    // Selection Mode Variables
+    let isSelectMode = false;
+    let selectedStops = new Set();
+    
+    // Reorder Mode Variables
+    let isReorderMode = false;
+    let reorderSequence = []; // Array of arrays: each element is [seq1, seq2, ...] for grouped stops
+
+    const clusterColors = ['#007bff', '#6610f2', '#e83e8c', '#fd7e14', '#28a745', '#20c997', '#17a2b8'];
+
+    window.onload = () => {
+        if(localStorage.getItem('driverFocus_v3')) {
+            try {
+                appData = JSON.parse(localStorage.getItem('driverFocus_v3'));
+                if (!appData.completedStops) appData.completedStops = [];
+                if (!appData.removedStops) appData.removedStops = [];
+                if (!appData.openedStops) appData.openedStops = [];
+                if (!appData.notes) appData.notes = '';
+                if (!appData.customOrder) appData.customOrder = [];
+                if (appData.highlightFarStops === undefined) appData.highlightFarStops = true;
+                if(appData.stops.length) restoreSession();
+            } catch(e) { localStorage.removeItem('driverFocus_v3'); }
+        }
+    };
+    
+    function saveState() { localStorage.setItem('driverFocus_v3', JSON.stringify(appData)); }
+
+    // ==================== FAR STOPS TOGGLE ====================
+    
+    function toggleFarHighlight() {
+        appData.highlightFarStops = !appData.highlightFarStops;
+        const toggle = document.getElementById('far-toggle');
+        if (appData.highlightFarStops) {
+            toggle.classList.add('active');
+        } else {
+            toggle.classList.remove('active');
+        }
+        saveState();
+        updateMapMarkers();
+    }
+    
+    function updateFarToggleUI() {
+        const toggle = document.getElementById('far-toggle');
+        if (appData.highlightFarStops) {
+            toggle.classList.add('active');
+        } else {
+            toggle.classList.remove('active');
+        }
+    }
+
+    // ==================== SELECTION MODE FUNCTIONS ====================
+    
+    function toggleSelectMode() {
+        if (isReorderMode) toggleReorderMode(); // Exit reorder mode first
+        
+        isSelectMode = !isSelectMode;
+        const selectBtn = document.getElementById('btn-select-mode');
+        const normalBar = document.getElementById('normal-status-bar');
+        const selectBar = document.getElementById('select-mode-bar');
+        const farToggle = document.getElementById('far-toggle-container');
+        
+        if (isSelectMode) {
+            selectBtn.classList.add('active-select');
+            normalBar.style.display = 'none';
+            selectBar.classList.add('show');
+            farToggle.style.display = 'none';
+            showHint('👆 Tap on markers to select stops');
+        } else {
+            selectBtn.classList.remove('active-select');
+            normalBar.style.display = 'flex';
+            selectBar.classList.remove('show');
+            farToggle.style.display = 'flex';
+            selectedStops.clear();
+        }
+        updateMapMarkers();
+        updateSelectionUI();
+    }
+    
+    function showHint(text) {
+        const hint = document.getElementById('double-tap-hint');
+        hint.textContent = text;
+        hint.classList.add('show');
+        setTimeout(() => hint.classList.remove('show'), 3000);
+    }
+    
+    function toggleStopSelection(seq) {
+        if (selectedStops.has(seq)) {
+            selectedStops.delete(seq);
+        } else {
+            selectedStops.add(seq);
+        }
+        updateSelectionUI();
+        updateMapMarkers();
+    }
+    
+    function updateSelectionUI() {
+        const count = selectedStops.size;
+        document.getElementById('select-mode-count').textContent = `${count} selected`;
+        
+        const openBtn = document.getElementById('open-gmaps-btn');
+        openBtn.disabled = count === 0;
+    }
+    
+    function clearAllSelections() {
+        selectedStops.clear();
+        updateSelectionUI();
+        updateMapMarkers();
+    }
+    
+    function openSelectedInGoogleMaps() {
+        if (selectedStops.size === 0) {
+            alert('Please select at least one stop');
+            return;
+        }
+        
+        const stops = appData.stops
+            .filter(s => selectedStops.has(s.seq) && s.lat && s.lon)
+            .sort((a, b) => a.seq - b.seq);
+        
+        if (stops.length === 0) {
+            alert('No valid stops selected');
+            return;
+        }
+        
+        let url;
+        
+        if (stops.length === 1) {
+            url = `https://www.google.com/maps/dir/?api=1&destination=${stops[0].lat},${stops[0].lon}&travelmode=driving`;
+        } else {
+            const origin = `${stops[0].lat},${stops[0].lon}`;
+            const destination = `${stops[stops.length - 1].lat},${stops[stops.length - 1].lon}`;
+            const waypoints = stops.slice(1, -1).map(s => `${s.lat},${s.lon}`).join('|');
+            
+            if (waypoints) {
+                url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&waypoints=${encodeURIComponent(waypoints)}&travelmode=driving`;
+            } else {
+                url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
+            }
+        }
+        
+        window.open(url, '_blank');
+        toggleSelectMode();
+    }
+
+    // ==================== REORDER MODE FUNCTIONS ====================
+    
+    function toggleReorderMode() {
+        if (isSelectMode) toggleSelectMode(); // Exit select mode first
+        
+        isReorderMode = !isReorderMode;
+        const reorderBtn = document.getElementById('btn-reorder-mode');
+        const normalBar = document.getElementById('normal-status-bar');
+        const reorderBar = document.getElementById('reorder-mode-bar');
+        const farToggle = document.getElementById('far-toggle-container');
+        
+        if (isReorderMode) {
+            reorderBtn.classList.add('active-reorder');
+            normalBar.style.display = 'none';
+            reorderBar.classList.add('show');
+            farToggle.style.display = 'none';
+            reorderSequence = [];
+            updateReorderUI();
+            showHint('👆 Tap stops in the order you want to drive');
+        } else {
+            reorderBtn.classList.remove('active-reorder');
+            normalBar.style.display = 'flex';
+            reorderBar.classList.remove('show');
+            farToggle.style.display = 'flex';
+            reorderSequence = [];
+            if (reorderLine) {
+                map.removeLayer(reorderLine);
+                reorderLine = null;
+            }
+        }
+        updateMapMarkers();
+    }
+    
+    function getStopGroup(stop) {
+        // Get all seq numbers at this location (including duplicates)
+        const allSeqs = [stop.seq];
+        if (stop.duplicates && stop.duplicates.length > 0) {
+            stop.duplicates.forEach(dupSeq => {
+                if (!appData.removedStops.includes(dupSeq)) {
+                    allSeqs.push(dupSeq);
+                }
+            });
+        }
+        return allSeqs.sort((a, b) => a - b);
+    }
+    
+    function isGroupInReorderSequence(group) {
+        // Check if any seq from this group is already in reorder sequence
+        return reorderSequence.some(reorderGroup => 
+            reorderGroup.some(seq => group.includes(seq))
+        );
+    }
+    
+    function getReorderPosition(group) {
+        // Get the position of this group in reorder sequence (1-indexed)
+        for (let i = 0; i < reorderSequence.length; i++) {
+            if (reorderSequence[i].some(seq => group.includes(seq))) {
+                return i + 1;
+            }
+        }
+        return -1;
+    }
+    
+    function addStopToReorder(stop) {
+        const group = getStopGroup(stop);
+        
+        if (isGroupInReorderSequence(group)) {
+            // Remove this group and all groups after it
+            const pos = getReorderPosition(group);
+            reorderSequence = reorderSequence.slice(0, pos - 1);
+        } else {
+            // Add this group
+            reorderSequence.push(group);
+        }
+        
+        updateReorderUI();
+        updateReorderLine();
+        updateMapMarkers();
+    }
+    
+    function updateReorderUI() {
+        const totalActiveStops = appData.stops.filter(s => 
+            !appData.removedStops.includes(s.seq) && s.lat && s.lon
+        ).length;
+        
+        // Count unique locations (groups)
+        const locationMap = new Map();
+        appData.stops.filter(s => !appData.removedStops.includes(s.seq) && s.lat && s.lon).forEach(s => {
+            const key = `${s.lat.toFixed(4)},${s.lon.toFixed(4)}`;
+            if (!locationMap.has(key)) locationMap.set(key, s);
+        });
+        const totalLocations = locationMap.size;
+        
+        document.getElementById('reorder-mode-count').textContent = `${reorderSequence.length} tapped`;
+        
+        const confirmBtn = document.getElementById('confirm-reorder-btn');
+        confirmBtn.disabled = reorderSequence.length < 2;
+        
+        const sequenceDisplay = document.getElementById('reorder-sequence-display');
+        const hint = document.getElementById('reorder-hint');
+        
+        if (reorderSequence.length > 0) {
+            sequenceDisplay.style.display = 'block';
+            hint.style.display = 'none';
+            
+            // Build display string
+            const displayParts = reorderSequence.map(group => {
+                if (group.length === 1) {
+                    return `#${group[0]}`;
+                } else {
+                    return `[${group.join(',')}]`;
+                }
+            });
+            sequenceDisplay.textContent = displayParts.join(' → ');
+        } else {
+            sequenceDisplay.style.display = 'none';
+            hint.style.display = 'block';
+        }
+    }
+    
+    function updateReorderLine() {
+        if (reorderLine) {
+            map.removeLayer(reorderLine);
+            reorderLine = null;
+        }
+        
+        if (reorderSequence.length < 2) return;
+        
+        const points = [];
+        reorderSequence.forEach(group => {
+            const stop = appData.stops.find(s => group.includes(s.seq) && s.lat);
+            if (stop) {
+                points.push([stop.lat, stop.lon]);
+            }
+        });
+        
+        if (points.length >= 2) {
+            reorderLine = L.polyline(points, {
+                color: '#ff6b35',
+                weight: 5,
+                opacity: 0.9,
+                dashArray: '10, 10'
+            }).addTo(map);
+        }
+    }
+    
+    function resetReorder() {
+        reorderSequence = [];
+        if (reorderLine) {
+            map.removeLayer(reorderLine);
+            reorderLine = null;
+        }
+        updateReorderUI();
+        updateMapMarkers();
+    }
+    
+    function confirmReorder() {
+        if (reorderSequence.length < 2) return;
+        
+        // Get all active stops
+        const activeStops = appData.stops.filter(s => 
+            !appData.removedStops.includes(s.seq) && s.lat && s.lon
+        );
+        
+        // Find the first and last tapped stops' original positions
+        const allTappedSeqs = reorderSequence.flat();
+        const firstTappedSeq = reorderSequence[0][0];
+        const lastTappedSeq = reorderSequence[reorderSequence.length - 1][0];
+        
+        // Get current order (either custom or original)
+        let currentOrder;
+        if (appData.customOrder && appData.customOrder.length > 0) {
+            currentOrder = appData.customOrder.filter(seq => 
+                activeStops.some(s => s.seq === seq)
+            );
+        } else {
+            currentOrder = activeStops.map(s => s.seq).sort((a, b) => a - b);
+        }
+        
+        // Find positions in current order
+        const firstTappedStop = appData.stops.find(s => s.seq === firstTappedSeq);
+        const lastTappedStop = appData.stops.find(s => s.seq === lastTappedSeq);
+        
+        // Get the position of first tapped stop in current order
+        let insertPosition = currentOrder.findIndex(seq => allTappedSeqs.includes(seq));
+        if (insertPosition === -1) insertPosition = 0;
+        
+        // Remove all tapped stops from current order
+        const remainingOrder = currentOrder.filter(seq => !allTappedSeqs.includes(seq));
+        
+        // Build new order: before + tapped sequence + after
+        const beforeStops = remainingOrder.slice(0, insertPosition);
+        const afterStops = remainingOrder.slice(insertPosition);
+        
+        // Flatten tapped sequence
+        const tappedOrder = reorderSequence.flat();
+        
+        // Combine
+        const newOrder = [...beforeStops, ...tappedOrder, ...afterStops];
+        
+        // Save custom order
+        appData.customOrder = newOrder;
+        saveState();
+        
+        // Exit reorder mode
+        toggleReorderMode();
+        
+        // Recalculate and update
+        calculateFarStops();
+        updateMapMarkers();
+        renderList();
+        
+        showHint('✅ Route order updated!');
+    }
+    
+    function getStopDrivingOrder(seq) {
+        if (!appData.customOrder || appData.customOrder.length === 0) return -1;
+        return appData.customOrder.indexOf(seq);
+    }
+
+    // ==================== END REORDER MODE FUNCTIONS ====================
+
+    function markStopOpened(seq) {
+        const stop = appData.stops.find(s => s.seq === seq);
+        if (!stop) return;
+        
+        const allSeqsToMark = [seq];
+        
+        if (stop.duplicates && stop.duplicates.length > 0) {
+            stop.duplicates.forEach(dupSeq => {
+                if (!appData.removedStops.includes(dupSeq)) {
+                    allSeqsToMark.push(dupSeq);
+                }
+            });
+        }
+        
+        let changed = false;
+        allSeqsToMark.forEach(s => {
+            if (!appData.openedStops.includes(s)) {
+                appData.openedStops.push(s);
+                changed = true;
+            }
+        });
+        
+        if (changed) {
+            saveState();
+            renderList();
+            updateOpenedStats();
+            updateMapMarkers();
+        }
+    }
+    
+    function unmarkStopOpened(seq) {
+        const stop = appData.stops.find(s => s.seq === seq);
+        if (!stop) return;
+        
+        const allSeqsToUnmark = [seq];
+        
+        if (stop.duplicates && stop.duplicates.length > 0) {
+            stop.duplicates.forEach(dupSeq => {
+                allSeqsToUnmark.push(dupSeq);
+            });
+        }
+        
+        appData.openedStops = appData.openedStops.filter(s => !allSeqsToUnmark.includes(s));
+        saveState();
+        renderList();
+        updateOpenedStats();
+        updateMapMarkers();
+    }
+    
+    function updateOpenedStats() {
+        const activeStops = appData.stops.filter(s => !appData.removedStops.includes(s.seq));
+        const openedCount = appData.openedStops.filter(seq => 
+            activeStops.some(s => s.seq === seq)
+        ).length;
+        const remainingCount = activeStops.length - openedCount;
+        
+        document.getElementById('opened-count').textContent = `✅ ${openedCount} Opened`;
+        document.getElementById('remaining-count').textContent = `📦 ${remainingCount} Remaining`;
+        
+        const farCount = [...farStopsSet].filter(seq => !appData.removedStops.includes(seq)).length;
+        document.getElementById('far-stops-count').textContent = `🚀 ${farCount} Far (4km+)`;
+    }
+
+    function haversineDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+
+    function calculateFarStops() {
+        farStopsSet.clear();
+        const activeStops = appData.stops.filter(s => !appData.removedStops.includes(s.seq) && s.lat && s.lon);
+        if (activeStops.length < 2) return;
+
+        // Use custom order if available
+        let sortedStops;
+        if (appData.customOrder && appData.customOrder.length > 0) {
+            sortedStops = appData.customOrder
+                .map(seq => activeStops.find(s => s.seq === seq))
+                .filter(s => s);
+        } else {
+            sortedStops = [...activeStops].sort((a, b) => a.seq - b.seq);
+        }
+        
+        for (let i = 1; i < sortedStops.length; i++) {
+            const prev = sortedStops[i - 1];
+            const curr = sortedStops[i];
+            const distance = haversineDistance(prev.lat, prev.lon, curr.lat, curr.lon);
+            
+            if (distance >= FAR_DISTANCE_THRESHOLD) {
+                farStopsSet.add(curr.seq);
+                curr.distanceFromPrev = distance;
+                curr.prevSeq = prev.seq;
+            }
+        }
+    }
+
+    function analyzeDistances() {
+        const activeStops = appData.stops.filter(s => !appData.removedStops.includes(s.seq) && s.lat && s.lon);
+        if (activeStops.length < 2) {
+            distanceData = { legs: [], outliers: [], suggestions: [], totalDistance: 0, avgDistance: 0 };
+            return;
+        }
+
+        // Use custom order if available
+        let sortedStops;
+        if (appData.customOrder && appData.customOrder.length > 0) {
+            sortedStops = appData.customOrder
+                .map(seq => activeStops.find(s => s.seq === seq))
+                .filter(s => s);
+        } else {
+            sortedStops = [...activeStops].sort((a, b) => a.seq - b.seq);
+        }
+        
+        const legs = [];
+        for (let i = 0; i < sortedStops.length - 1; i++) {
+            const from = sortedStops[i];
+            const to = sortedStops[i + 1];
+            const distance = haversineDistance(from.lat, from.lon, to.lat, to.lon);
+            legs.push({
+                fromSeq: from.seq, toSeq: to.seq,
+                fromAddr: from.cleanAddress, toAddr: to.cleanAddress,
+                distance: distance,
+                fromLat: from.lat, fromLon: from.lon,
+                toLat: to.lat, toLon: to.lon
+            });
+        }
+
+        const totalDistance = legs.reduce((sum, leg) => sum + leg.distance, 0);
+        const avgDistance = totalDistance / legs.length;
+        const maxDistance = Math.max(...legs.map(l => l.distance));
+
+        const outliers = [];
+        sortedStops.forEach((stop, idx) => {
+            if (idx === 0 || idx === sortedStops.length - 1) return;
+            const prev = sortedStops[idx - 1];
+            const next = sortedStops[idx + 1];
+            const distWith = haversineDistance(prev.lat, prev.lon, stop.lat, stop.lon) +
+                            haversineDistance(stop.lat, stop.lon, next.lat, next.lon);
+            const distWithout = haversineDistance(prev.lat, prev.lon, next.lat, next.lon);
+            const extraDistance = distWith - distWithout;
+            if (extraDistance > avgDistance * 1.5) {
+                outliers.push({
+                    seq: stop.seq, address: stop.cleanAddress,
+                    extraDistance: extraDistance,
+                    percentIncrease: (extraDistance / distWithout) * 100,
+                    lat: stop.lat, lon: stop.lon
+                });
+            }
+        });
+
+        outliers.sort((a, b) => b.extraDistance - a.extraDistance);
+
+        const suggestions = [];
+        const detourAnalysis = [];
+        sortedStops.forEach((stop, idx) => {
+            if (idx === 0 || idx === sortedStops.length - 1) return;
+            const prev = sortedStops[idx - 1];
+            const next = sortedStops[idx + 1];
+            const distWith = haversineDistance(prev.lat, prev.lon, stop.lat, stop.lon) +
+                            haversineDistance(stop.lat, stop.lon, next.lat, next.lon);
+            const distWithout = haversineDistance(prev.lat, prev.lon, next.lat, next.lon);
+            const timeSaved = (distWith - distWithout) / 30 * 60;
+            detourAnalysis.push({
+                seq: stop.seq, address: stop.cleanAddress,
+                distanceSaved: distWith - distWithout, timeSaved: timeSaved,
+                lat: stop.lat, lon: stop.lon,
+                prevSeq: prev.seq, nextSeq: next.seq
+            });
+        });
+
+        detourAnalysis.sort((a, b) => b.timeSaved - a.timeSaved);
+        const topDetours = detourAnalysis.slice(0, 5).filter(d => d.timeSaved > 2);
+
+        topDetours.forEach((detour, idx) => {
+            suggestions.push({
+                rank: idx + 1, type: 'detour',
+                seq: detour.seq, address: detour.address,
+                timeSaved: detour.timeSaved, distanceSaved: detour.distanceSaved,
+                reason: `Skipping saves ${detour.distanceSaved.toFixed(1)} km`,
+                lat: detour.lat, lon: detour.lon
+            });
+        });
+
+        distanceData = {
+            legs, outliers, suggestions,
+            totalDistance, avgDistance, maxDistance,
+            potentialTimeSaved: suggestions.reduce((sum, s) => sum + s.timeSaved, 0)
+        };
+    }
+
+    function renderDistanceView() {
+        analyzeDistances();
+        document.getElementById('dist-total').textContent = distanceData.totalDistance ? distanceData.totalDistance.toFixed(1) : '0';
+        document.getElementById('dist-longest').textContent = distanceData.maxDistance ? distanceData.maxDistance.toFixed(1) : '0';
+        document.getElementById('dist-avg').textContent = distanceData.avgDistance ? distanceData.avgDistance.toFixed(1) : '0';
+
+        const timeSavedCard = document.getElementById('time-saved-card');
+        if (distanceData.potentialTimeSaved > 0) {
+            timeSavedCard.style.display = 'block';
+            document.getElementById('time-saved-val').textContent = Math.round(distanceData.potentialTimeSaved) + ' min';
+        } else {
+            timeSavedCard.style.display = 'none';
+        }
+
+        const suggestionList = document.getElementById('suggestion-list');
+        if (distanceData.suggestions.length === 0) {
+            suggestionList.innerHTML = '<div style="text-align:center; color:#856404; font-size:13px;">✅ Route is well optimized!</div>';
+        } else {
+            suggestionList.innerHTML = distanceData.suggestions.map(s => `
+                <div class="suggestion-item">
+                    <div class="suggestion-rank">${s.rank}</div>
+                    <div class="suggestion-info">
+                        <div class="suggestion-stops">Stop #${s.seq}</div>
+                        <div class="suggestion-distance">+${s.distanceSaved.toFixed(1)} km detour</div>
+                        <div class="suggestion-addr">${s.address.substring(0, 40)}...</div>
+                        <button class="skip-btn" onclick="skipStop(${s.seq})">🚫 Skip</button>
+                        <button class="skip-btn" style="background:#094699; margin-left:5px;" onclick="focusOnStop(${s.lat}, ${s.lon})">🗺️</button>
+                    </div>
+                    <div class="suggestion-time">~${Math.round(s.timeSaved)} min</div>
+                </div>
+            `).join('');
+        }
+
+        const outlierList = document.getElementById('outlier-list');
+        if (distanceData.outliers.length === 0) {
+            outlierList.innerHTML = '<div style="text-align:center; color:#999; font-size:13px;">No outliers detected</div>';
+        } else {
+            outlierList.innerHTML = distanceData.outliers.slice(0, 5).map(o => `
+                <div class="outlier-item" onclick="focusOnStop(${o.lat}, ${o.lon})" style="cursor:pointer;">
+                    <div class="outlier-seq">${o.seq}</div>
+                    <div class="outlier-details">
+                        <div class="outlier-addr">${o.address.substring(0, 35)}...</div>
+                        <div class="outlier-stats">Adds +${o.extraDistance.toFixed(1)} km</div>
+                    </div>
+                    <div class="outlier-badge">+${Math.round(o.percentIncrease)}%</div>
+                </div>
+            `).join('');
+        }
+
+        const legsList = document.getElementById('legs-list');
+        if (distanceData.legs.length === 0) {
+            legsList.innerHTML = '<div style="text-align:center; color:#999; font-size:13px;">Not enough stops</div>';
+        } else {
+            const maxLegDist = distanceData.maxDistance || 1;
+            legsList.innerHTML = distanceData.legs.map(leg => {
+                const percent = (leg.distance / maxLegDist) * 100;
+                let category = 'short';
+                if (leg.distance >= FAR_DISTANCE_THRESHOLD) category = 'long';
+                else if (leg.distance > distanceData.avgDistance * 1.2) category = 'medium';
+                return `
+                    <div class="distance-leg ${category}" onclick="showLegOnMap(${leg.fromLat}, ${leg.fromLon}, ${leg.toLat}, ${leg.toLon})" style="cursor:pointer;">
+                        <div class="leg-stops">#${leg.fromSeq} → #${leg.toSeq}</div>
+                        <div class="leg-bar-container"><div class="leg-bar ${category}" style="width:${percent}%"></div></div>
+                        <div class="leg-distance ${category}">${leg.distance.toFixed(1)} km</div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+
+    function skipStop(seq) {
+        if (confirm(`Mark stop #${seq} to skip?`)) {
+            if (!appData.removedStops.includes(seq)) {
+                appData.removedStops.push(seq);
+                // Also remove from custom order
+                if (appData.customOrder) {
+                    appData.customOrder = appData.customOrder.filter(s => s !== seq);
+                }
+                saveState();
+                calculateFarStops();
+                renderDistanceView();
+                updateMapMarkers();
+                renderList();
+                renderRemovedList();
+            }
+        }
+    }
+
+    function showLegOnMap(fromLat, fromLon, toLat, toLon) {
+        switchTab('map');
+        setTimeout(() => {
+            const bounds = L.latLngBounds([[fromLat, fromLon], [toLat, toLon]]);
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }, 100);
+    }
+
+    function toggleNotesPanel() {
+        notesOpen = !notesOpen;
+        const panel = document.getElementById('notes-panel');
+        const overlay = document.getElementById('notes-overlay');
+        if (notesOpen) {
+            panel.classList.add('open');
+            overlay.classList.add('show');
+            document.getElementById('route-notes').value = appData.notes || '';
+            renderRemovedList();
+        } else {
+            panel.classList.remove('open');
+            overlay.classList.remove('show');
+        }
+    }
+    
+    function saveNotes() {
+        appData.notes = document.getElementById('route-notes').value;
+        saveState();
+        alert('Notes saved!');
+    }
+    
+    function removeStops() {
+        const input = document.getElementById('remove-seqs-input').value;
+        if (!input.trim()) return;
+        const seqNumbers = input.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+        if (seqNumbers.length === 0) { alert('Please enter valid sequence numbers'); return; }
+        
+        let removedCount = 0;
+        seqNumbers.forEach(seq => {
+            const stop = appData.stops.find(s => s.seq === seq);
+            if (stop && !appData.removedStops.includes(seq)) {
+                appData.removedStops.push(seq);
+                // Also remove from custom order
+                if (appData.customOrder) {
+                    appData.customOrder = appData.customOrder.filter(s => s !== seq);
+                }
+                removedCount++;
+            }
+        });
+        
+        if (removedCount > 0) {
+            document.getElementById('remove-seqs-input').value = '';
+            saveState();
+            calculateFarStops();
+            renderRemovedList();
+            updateMapMarkers();
+            renderList();
+            if (currentTab === 'distance') renderDistanceView();
+            alert(`${removedCount} stop(s) removed`);
+        } else {
+            alert('No valid stops found');
+        }
+    }
+    
+    function restoreStop(seq) {
+        appData.removedStops = appData.removedStops.filter(s => s !== seq);
+        saveState();
+        calculateFarStops();
+        renderRemovedList();
+        updateMapMarkers();
+        renderList();
+        if (currentTab === 'distance') renderDistanceView();
+    }
+    
+    function renderRemovedList() {
+        const container = document.getElementById('removed-list');
+        if (appData.removedStops.length === 0) {
+            container.innerHTML = '<div style="color:#999; font-size:12px; text-align:center; padding:10px;">No removed stops</div>';
+            return;
+        }
+        container.innerHTML = '<div style="font-weight:bold; margin-bottom:8px; color:#dc3545;">Removed Stops:</div>';
+        appData.removedStops.forEach(seq => {
+            const stop = appData.stops.find(s => s.seq === seq);
+            if (stop) {
+                const div = document.createElement('div');
+                div.className = 'removed-item';
+                div.innerHTML = `
+                    <span><strong>#${seq}</strong> - ${stop.cleanAddress.substring(0, 25)}...</span>
+                    <button class="restore-btn" onclick="restoreStop(${seq})">Restore</button>
+                `;
+                container.appendChild(div);
+            }
+        });
+    }
+
+    function saveScrollPosition(tabName) {
+        const viewElement = document.getElementById('view-' + tabName);
+        if (viewElement) scrollPositions[tabName] = viewElement.scrollTop;
+    }
+    
+    function restoreScrollPosition(tabName) {
+        const viewElement = document.getElementById('view-' + tabName);
+        if (viewElement && scrollPositions[tabName] !== undefined) {
+            setTimeout(() => { viewElement.scrollTop = scrollPositions[tabName]; }, 10);
+        }
+    }
+
+    function switchTab(tab) {
+        if (currentTab !== 'map') saveScrollPosition(currentTab);
+        currentTab = tab;
+        
+        document.getElementById('view-map').classList.add('hidden');
+        document.getElementById('view-stops').classList.add('hidden');
+        document.getElementById('view-analytics').classList.add('hidden');
+        document.getElementById('view-distance').classList.add('hidden');
+        document.querySelectorAll('.bottom-tab').forEach(t => t.classList.remove('active'));
+        
+        if(tab === 'map') {
+            document.getElementById('view-map').classList.remove('hidden');
+            document.getElementById('tab-map').classList.add('active');
+            setTimeout(() => { if(map) map.invalidateSize(); }, 100);
+        } else if(tab === 'stops') {
+            document.getElementById('view-stops').classList.remove('hidden');
+            document.getElementById('tab-stops').classList.add('active');
+            renderList();
+            updateOpenedStats();
+            restoreScrollPosition('stops');
+        } else if(tab === 'analytics') {
+            document.getElementById('view-analytics').classList.remove('hidden');
+            document.getElementById('tab-analytics').classList.add('active');
+            renderAnalytics();
+            restoreScrollPosition('analytics');
+        } else if(tab === 'distance') {
+            document.getElementById('view-distance').classList.remove('hidden');
+            document.getElementById('tab-distance').classList.add('active');
+            renderDistanceView();
+            restoreScrollPosition('distance');
+        }
+    }
+
+    function filterStops() {
+        searchQuery = document.getElementById('search-box').value.toLowerCase();
+        renderList();
+    }
+
+    function hardReset() {
+        if(confirm("Load a new PDF? This will delete the current route.")) {
+            localStorage.removeItem('driverFocus_v3');
+            location.reload();
+        }
+    }
+
+    function softReset() {
+        if(confirm("Choose a different route number from this PDF?")) {
+            document.getElementById('view-map').classList.add('hidden');
+            document.getElementById('view-stops').classList.add('hidden');
+            document.getElementById('view-analytics').classList.add('hidden');
+            document.getElementById('view-distance').classList.add('hidden');
+            document.getElementById('bottom-tabs').classList.add('hidden');
+            document.getElementById('view-select').classList.remove('hidden');
+            appData.stops = [];
+            appData.completedStops = [];
+            appData.removedStops = [];
+            appData.openedStops = [];
+            appData.notes = '';
+            appData.customOrder = [];
+            scrollPositions = { stops: 0, analytics: 0, distance: 0 };
+            farStopsSet.clear();
+            selectedStops.clear();
+            reorderSequence = [];
+            isSelectMode = false;
+            isReorderMode = false;
+            saveState();
+        }
+    }
+
+    async function handlePdf(input) {
+        if(!input.files[0]) return;
+        document.querySelector('#view-upload div').innerText = "Reading PDF...";
+        try {
+            const buff = await input.files[0].arrayBuffer();
+            const pdf = await pdfjsLib.getDocument(buff).promise;
+            let fullText = "";
+            for(let i=1; i<=pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                fullText += content.items.map(s => s.str).join(" ") + " |PAGE_BREAK| ";
+            }
+            parseData(fullText);
+            document.getElementById('view-upload').classList.add('hidden');
+            document.getElementById('view-select').classList.remove('hidden');
+            populateDropdown();
+        } catch(e) { alert("PDF Error"); location.reload(); }
+    }
+
+    function parseData(text) {
+        text = text.replace(/\s+/g, ' ');
+        appData.routes = {};
+        const routeHeaders = text.split(/Route\s*-\s*([A-Z]{2,5}\d{2,5})/gi);
+        
+        for(let i=1; i<routeHeaders.length; i+=2) {
+            const id = routeHeaders[i];
+            const chunk = routeHeaders[i+1];
+            const rowRegex = /((?:D11|RET|GDI|ESI|CRI|YW0|JY2|INT|IEN|STR|AMZ)[A-Z0-9]*)\s+([A-Z0-9]+)\s+(\b\d{1,3}\b)/gi;
+            const items = [];
+            let match;
+            while(match = rowRegex.exec(chunk)) {
+                items.push({ code: match[1], seq: parseInt(match[3]), idx: match.index + match[0].length });
+            }
+            
+            for(let k=0; k<items.length; k++) {
+                const curr = items[k];
+                const next = items[k+1];
+                let rawAddr = chunk.substring(curr.idx, next ? next.idx - next.code.length - 15 : curr.idx + 350);
+                
+                let accessCode = null;
+                const codeMatch = rawAddr.match(/(?:code|buzzer|entree|porte|acc?s)[:#\s]*(\d{3,})/i);
+                if(codeMatch) accessCode = codeMatch[1];
+
+                let isPriority = /URGENT|12:00|17:00|PRIORIT/i.test(rawAddr);
+
+                const dim = rawAddr.match(/(\d+\.?\d*\s*(?:CM|IN)\s*X)/i);
+                if(dim) rawAddr = rawAddr.substring(0, dim.index);
+                let cleanAddr = rawAddr.replace(/Appartement\s*\d+[A-Z]?/gi, '')
+                    .replace(/App\s*\d+[A-Z]?/gi, '').replace(/Unit\s*\d+[A-Z]?/gi, '')
+                    .replace(/#\s*\d+[A-Z]?/gi, '').replace(/Code\s*[:#]?\s*\d+/gi, '')
+                    .replace(/\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/g, '').replace(/SIG\s*$/, '')
+                    .replace(/\|PAGE_BREAK\|/g, '').trim();
+
+                const fsa = cleanAddr.match(/[A-Z]\d[A-Z]/) ? cleanAddr.match(/[A-Z]\d[A-Z]/)[0] : "UNK";
+
+                if(cleanAddr.length > 5) {
+                    if(!appData.routes[id]) appData.routes[id] = [];
+                    if(!appData.routes[id].some(s => s.seq === curr.seq)) {
+                        appData.routes[id].push({
+                            seq: curr.seq, address: rawAddr, cleanAddress: cleanAddr,
+                            lat: null, lon: null, status: 'pending', duplicates: [],
+                            accessCode: accessCode, isPriority: isPriority, fsa: fsa
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    function populateDropdown() {
+        const sel = document.getElementById('routeSelect');
+        sel.innerHTML = '<option value="">-- Select --</option>';
+        Object.keys(appData.routes).sort().forEach(id => {
+            const opt = document.createElement('option');
+            opt.value = id; opt.text = `${id} (${appData.routes[id].length} stops)`;
+            sel.appendChild(opt);
+        });
+    }
+
+    function confirmRoute() {
+        const id = document.getElementById('routeSelect').value;
+        if(!id) return;
+        appData.activeRouteId = id;
+        appData.stops = appData.routes[id].sort((a,b) => a.seq - b.seq);
+        appData.completedStops = [];
+        appData.removedStops = [];
+        appData.openedStops = [];
+        appData.notes = '';
+        appData.customOrder = [];
+        scrollPositions = { stops: 0, analytics: 0, distance: 0 };
+        farStopsSet.clear();
+        selectedStops.clear();
+        reorderSequence = [];
+        saveState(); 
+        restoreSession();
+    }
+
+    function restoreSession() {
+        document.getElementById('view-upload').classList.add('hidden');
+        document.getElementById('view-select').classList.add('hidden');
+        document.getElementById('bottom-tabs').classList.remove('hidden');
+        
+        initMap(); 
+        detectDuplicates();
+        calculateFarStops();
+        updateFarToggleUI();
+        switchTab('map');
+        renderList();
+        updateMapMarkers(); 
+        startGeocodingQueue();
+        
+        const hint = document.getElementById('double-tap-hint');
+        setTimeout(() => {
+            hint.classList.add('show');
+            setTimeout(() => hint.classList.remove('show'), 4000);
+        }, 2000);
+    }
+
+    function initMap() {
+        if(map) return;
+        
+        const googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{maxZoom:20,subdomains:['mt0','mt1','mt2','mt3']});
+        const googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{maxZoom:20,subdomains:['mt0','mt1','mt2','mt3']});
+        const offlineLayer = new OfflineLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OSM' });
+
+        map = L.map('map', { 
+            center: [46.8139, -71.2080], zoom: 11, layers: [googleStreets],
+            preferCanvas: true, wheelDebounceTime: 100,
+            markerZoomAnimation: true, doubleClickZoom: false
+        });
+        
+        L.control.layers({ "Google Streets": googleStreets, "Google Satellite": googleHybrid, "Offline Mode": offlineLayer }).addTo(map);
+        markersGroup = L.featureGroup().addTo(map);
+        map.on('locationfound', onLocationFound);
+        map.on('locationerror', onLocationError);
+    }
+
+    function toggleLocation() {
+        if (!hasLocation) {
+            map.locate({setView: false, maxZoom: 16, watch: true, enableHighAccuracy: true});
+            document.getElementById('btn-location').classList.add('active-loc');
+        } else {
+            if(userMarker) map.panTo(userMarker.getLatLng());
+        }
+    }
+
+    function onLocationFound(e) {
+        const radius = e.accuracy / 2;
+        if (userMarker) {
+            userMarker.setLatLng(e.latlng);
+            userCircle.setLatLng(e.latlng);
+            userCircle.setRadius(radius);
+        } else {
+            const icon = L.divIcon({ className: 'user-gps-marker', iconSize: [20, 20], iconAnchor: [10, 10] });
+            userMarker = L.marker(e.latlng, {icon: icon, zIndexOffset: 2000}).addTo(map);
+            userCircle = L.circle(e.latlng, { radius: radius, color: '#4285F4', weight: 1, fillOpacity: 0.1 }).addTo(map);
+            if (!hasLocation) { map.panTo(e.latlng); hasLocation = true; }
+        }
+    }
+
+    function onLocationError(e) {
+        alert("Could not access location.");
+        document.getElementById('btn-location').classList.remove('active-loc');
+    }
+
+    let renderLoopId = null, lastRenderCount = 0;
+
+    function startRenderLoop() {
+        if(renderLoopId) clearInterval(renderLoopId);
+        renderLoopId = setInterval(() => {
+            const validCount = appData.stops.filter(s => s.lat && s.status === 'success').length;
+            if(validCount > lastRenderCount || isGeocodingActive) {
+                detectDuplicates();
+                calculateFarStops();
+                updateMapMarkers(); 
+                if(currentTab === 'stops') renderList();
+                if(currentTab === 'distance') renderDistanceView();
+                lastRenderCount = validCount;
+                updateMapStats();
+                saveState();
+            }
+            if(!isGeocodingActive && validCount === lastRenderCount) {
+                clearInterval(renderLoopId); 
+                renderLoopId = null;
+            }
+        }, 1500);
+    }
+
+    function updateMapStats() {
+        const activeStops = appData.stops.filter(s => !appData.removedStops.includes(s.seq));
+        const geocoded = activeStops.filter(s => s.lat).length;
+        const total = activeStops.length;
+        const percent = total > 0 ? Math.round((geocoded / total) * 100) : 0;
+        
+        const locationMap = new Map();
+        activeStops.forEach(s => {
+            if (s.lat) {
+                const key = `${s.lat.toFixed(4)},${s.lon.toFixed(4)}`;
+                if (!locationMap.has(key)) locationMap.set(key, 0);
+                locationMap.set(key, locationMap.get(key) + 1);
+            }
+        });
+        
+        document.getElementById('map-stat-stops').textContent = locationMap.size;
+        document.getElementById('map-stat-pkgs').textContent = total;
+        document.getElementById('map-stat-geo').textContent = percent + '%';
+        
+        const farCount = [...farStopsSet].filter(seq => !appData.removedStops.includes(seq)).length;
+        document.getElementById('map-stat-far').textContent = farCount;
+    }
+
+    function updateMapMarkers() {
+        markersGroup.clearLayers();
+        markerTapTracking.clear();
+        if(routeLine) map.removeLayer(routeLine);
+        
+        calculateFarStops();
+        
+        const activeStops = appData.stops.filter(s => !appData.removedStops.includes(s.seq));
+        const valid = activeStops.filter(s => s.lat);
+        const fsaMap = getFsaColorMap();
+
+        // Build route order for drawing line
+        let orderedStops;
+        if (appData.customOrder && appData.customOrder.length > 0) {
+            orderedStops = appData.customOrder
+                .map(seq => valid.find(s => s.seq === seq))
+                .filter(s => s);
+            // Add any stops not in custom order
+            valid.forEach(s => {
+                if (!orderedStops.some(os => os.seq === s.seq)) {
+                    orderedStops.push(s);
+                }
+            });
+        } else {
+            orderedStops = [...valid].sort((a, b) => a.seq - b.seq);
+        }
+        
+        const points = [];
+
+        valid.forEach(s => {
+            const isMerged = s.duplicates && s.duplicates.some(dupSeq => dupSeq < s.seq && !appData.removedStops.includes(dupSeq));
+            if(isMerged) return;
+
+            const activeDuplicates = s.duplicates.filter(d => !appData.removedStops.includes(d));
+            const isMulti = activeDuplicates.length > 0;
+            
+            const allSeqsInGroup = [s.seq, ...activeDuplicates].sort((a,b) => a-b);
+            const isOpened = allSeqsInGroup.some(seq => appData.openedStops.includes(seq));
+            const isFar = farStopsSet.has(s.seq);
+            const isSelected = selectedStops.has(s.seq);
+            const stopGroup = getStopGroup(s);
+            const isInReorder = isReorderMode && isGroupInReorderSequence(stopGroup);
+            const reorderPos = isReorderMode ? getReorderPosition(stopGroup) : -1;
+            
+            // Determine marker color
+            let color;
+            if (isReorderMode && isInReorder) {
+                color = '#ff6b35'; // Orange for reorder
+            } else if (isSelected) {
+                color = '#00c853'; // Green for selected
+            } else if (isOpened) {
+                color = '#17a2b8';
+            } else if (s.isPriority) {
+                color = '#dc3545';
+            } else if (isFar && appData.highlightFarStops) {
+                color = '#ff00ff';
+            } else {
+                color = fsaMap[s.fsa] || '#094699';
+            }
+            
+            const packageCount = isMulti ? allSeqsInGroup.length : 1;
+            
+            // Determine glow effect
+            let glowClass = '';
+            if (isReorderMode && isInReorder) {
+                glowClass = 'reorder-marker-glow';
+            } else if (isSelected) {
+                glowClass = 'selected-marker-glow';
+            } else if (isFar && !isOpened && appData.highlightFarStops) {
+                glowClass = 'far-marker-glow';
+            }
+            
+            const borderColor = isReorderMode && isInReorder ? '#cc5522' : 
+                               (isSelected ? '#00a844' : 
+                               (isFar && !isOpened && appData.highlightFarStops ? '#cc00cc' : 
+                               (isOpened ? '#0c5460' : 'white')));
+            const borderWidth = (isReorderMode && isInReorder) || isSelected ? '4px' : 
+                               (isFar && !isOpened && appData.highlightFarStops ? '3px' : '2px');
+            
+            // Marker content
+            let markerContent;
+            if (isReorderMode && isInReorder) {
+                markerContent = reorderPos;
+            } else if (isMulti) {
+                markerContent = `📦`;
+            } else {
+                markerContent = s.seq;
+            }
+            
+            const markerHtml = `<div class="${glowClass}" style="background:${color}; width:30px; height:30px; border-radius:50%; border:${borderWidth} solid ${borderColor}; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px; box-shadow:0 2px 8px rgba(0,0,0,0.4);">${markerContent}</div>`;
+            
+            const icon = L.divIcon({ className: 'custom-marker', html: markerHtml, iconSize: [30, 30], iconAnchor: [15, 15] });
+            const safeAddr = s.cleanAddress.replace(/'/g, "\\'");
+
+            // Build popup content
+            let popup = `<b>Stop #${s.seq}</b>`;
+            if (isOpened) popup += ' <span style="color:#17a2b8;">✅ Opened</span>';
+            if (isFar) popup += ` <span style="color:#ff00ff; font-weight:bold;">🚀 ${s.distanceFromPrev ? s.distanceFromPrev.toFixed(1) : '4+'}km</span>`;
+            popup += `<br>${s.cleanAddress}`;
+            if(s.accessCode) popup += `<br><span class="access-code">🔑 Code: ${s.accessCode}</span>`;
+
+            if (isMulti) {
+                popup += `<div style="margin-top:8px; padding:8px; background:#fff3cd; border:1px solid #ffeeba; border-radius:4px;">
+                            <strong style="color:#856404; display:block; font-size:13px;">📦 ${packageCount} Packages</strong>
+                            <div style="font-size:12px; color:#856404; margin-top:4px;">Stops: #${allSeqsInGroup.join(', #')}</div>
+                         </div>`;
+            }
+            
+            if (!isSelectMode && !isReorderMode) {
+                popup += `<br><button onclick="openMapAndMark(${s.lat},${s.lon}, '${safeAddr}', ${s.seq})" style="width:100%; margin-top:8px; background:#1a73e8; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer;">Navigate 🧭</button>`;
+            }
+
+            const marker = L.marker([s.lat, s.lon], {icon, zIndexOffset: (isReorderMode && isInReorder) ? 2500 : (isSelected ? 2000 : (isFar ? 1500 : 1000))}).bindPopup(popup);
+            
+            marker.on('click', function(e) {
+                L.DomEvent.stopPropagation(e);
+                
+                if (isReorderMode) {
+                    addStopToReorder(s);
+                } else if (isSelectMode) {
+                    toggleStopSelection(s.seq);
+                } else {
+                    const now = Date.now();
+                    const markerId = `${s.lat}_${s.lon}_${s.seq}`;
+                    const lastTap = markerTapTracking.get(markerId) || 0;
+                    
+                    if (now - lastTap < 350) {
+                        markerTapTracking.delete(markerId);
+                        openMapAndMark(s.lat, s.lon, s.cleanAddress, s.seq);
+                    } else {
+                        markerTapTracking.set(markerId, now);
+                        setTimeout(() => {
+                            if (markerTapTracking.get(markerId) === now) markerTapTracking.delete(markerId);
+                        }, 400);
+                    }
+                }
+            });
+            
+            marker.on('dblclick', function(e) {
+                L.DomEvent.stopPropagation(e);
+                L.DomEvent.preventDefault(e);
+                if (!isSelectMode && !isReorderMode) {
+                    openMapAndMark(s.lat, s.lon, s.cleanAddress, s.seq);
+                }
+            });
+            
+            marker.addTo(markersGroup);
+        });
+
+        // Draw route line based on order
+        orderedStops.forEach(s => {
+            const isMerged = s.duplicates && s.duplicates.some(dupSeq => dupSeq < s.seq && !appData.removedStops.includes(dupSeq));
+            if (!isMerged) {
+                points.push([s.lat, s.lon]);
+            }
+        });
+
+        if(points.length) {
+            routeLine = L.polyline(points, {color: 'red', weight: 4, opacity: 0.8, dashArray: '5, 10'}).addTo(map);
+            if(!map.hasFit && points.length > 1) { 
+                map.fitBounds(markersGroup.getBounds(), {padding:[50,50]}); 
+                map.hasFit = true; 
+            }
+        }
+        
+        if(userMarker) userMarker.addTo(map);
+        if(userCircle) userCircle.addTo(map);
+        updateMapStats();
+        updateOpenedStats();
+    }
+
+    function downloadOfflineArea() {
+        if(markersGroup.getLayers().length === 0) { alert("Wait for stops to load first."); return; }
+        if(!confirm("Download map area for offline use?")) return;
+
+        const bounds = markersGroup.getBounds();
+        const north = bounds.getNorth() + 0.01, south = bounds.getSouth() - 0.01;
+        const east = bounds.getEast() + 0.01, west = bounds.getWest() - 0.01;
+        const zooms = [12, 13, 14, 15, 16]; 
+        const tiles = [];
+
+        zooms.forEach(z => {
+            const top = lat2tile(north, z), bottom = lat2tile(south, z);
+            const left = long2tile(west, z), right = long2tile(east, z);
+            for(let x = left; x <= right; x++) {
+                for(let y = top; y <= bottom; y++) tiles.push({x, y, z});
+            }
+        });
+        downloadTiles(tiles);
+    }
+
+    function lat2tile(lat, zoom) { return Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)); }
+    function long2tile(lon, zoom) { return Math.floor((lon + 180) / 360 * Math.pow(2, zoom)); }
+
+    async function downloadTiles(tiles) {
+        const container = document.getElementById('dl-progress-container');
+        const fill = document.getElementById('dl-bar-fill');
+        const text = document.getElementById('dl-text');
+        container.style.display = 'block';
+        
+        let completed = 0, total = tiles.length;
+        text.innerText = `Downloading ${total} tiles...`;
+
+        const chunkSize = 10;
+        for (let i = 0; i < tiles.length; i += chunkSize) {
+            const chunk = tiles.slice(i, i + chunkSize);
+            await Promise.all(chunk.map(async (t) => {
+                const key = `${t.x}_${t.y}_${t.z}`;
+                const existing = await getTile(key);
+                if(!existing) {
+                    try {
+                        const res = await fetch(`https://tile.openstreetmap.org/${t.z}/${t.x}/${t.y}.png`);
+                        if(res.ok) await saveTile(key, await res.blob());
+                    } catch(e) {}
+                }
+                completed++;
+                fill.style.width = (completed / total * 100) + "%";
+            }));
+        }
+
+        setTimeout(() => { container.style.display = 'none'; alert("Map Saved!"); }, 500);
+    }
+
+    function toggleFullscreen() {
+        const el = document.getElementById('map-container');
+        el.classList.toggle('fullscreen');
+        setTimeout(() => { 
+            map.invalidateSize(); 
+            if(markersGroup.getLayers().length) map.fitBounds(markersGroup.getBounds());
+        }, 300);
+    }
+
+    function centerMap() { if(markersGroup.getLayers().length) map.fitBounds(markersGroup.getBounds()); }
+    
+    function focusOnStop(lat, lon) {
+        if (lat && lon) {
+            switchTab('map');
+            setTimeout(() => {
+                map.setView([lat, lon], 17);
+                markersGroup.eachLayer(layer => {
+                    if (layer.getLatLng) {
+                        const pos = layer.getLatLng();
+                        if (Math.abs(pos.lat - lat) < 0.0001 && Math.abs(pos.lng - lon) < 0.0001) layer.openPopup();
+                    }
+                });
+            }, 100);
+        }
+    }
+    
+    function openMapAndMark(lat, lon, address, seq) {
+        if (seq) markStopOpened(seq);
+        openMap(lat, lon, address);
+    }
+    
+    function openMap(lat, lon, address) {
+        let query = '';
+        if (lat && lon) query = `${lat},${lon}`;
+        else if (address) query = address;
+        else return;
+
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        
+        if (isAndroid) {
+            window.location.href = lat && lon ? `geo:${lat},${lon}?q=${lat},${lon}` : `geo:0,0?q=${encodeURIComponent(query)}`;
+        } else if (isIOS) {
+            window.location.href = `maps://?q=${encodeURIComponent(query)}`;
+        } else {
+            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
+        }
+    }
+
+    async function startGeocodingQueue() {
+        let pending = appData.stops.filter(s => !s.lat && s.status !== 'error');
+        if(pending.length === 0) return;
+        
+        isGeocodingActive = true;
+        startRenderLoop(); 
+
+        const CONCURRENCY = 3; 
+        for (let i = 0; i < pending.length; i += CONCURRENCY) {
+            const chunk = pending.slice(i, i + CONCURRENCY);
+            await Promise.all(chunk.map(s => geocodeStop(s)));
+            await new Promise(r => setTimeout(r, 200)); 
+        }
+
+        isGeocodingActive = false;
+        calculateFarStops();
+        updateMapMarkers(); 
+        renderList();
+        saveState();
+    }
+
+    async function geocodeStop(stop) {
+        try {
+            const res = await fetch(`https://geoegl.msp.gouv.qc.ca/apis/icherche/geocode?type=adresses&limit=1&geometry=true&q=${encodeURIComponent(stop.cleanAddress)}`);
+            const data = await res.json();
+            if(data.features?.length) {
+                stop.lat = data.features[0].geometry.coordinates[1];
+                stop.lon = data.features[0].geometry.coordinates[0];
+                stop.status = 'success';
+            } else stop.status = 'error';
+        } catch(e) { stop.status = 'error'; }
+    }
+
+    function detectDuplicates() {
+        appData.stops.forEach(s => s.duplicates = []);
+        const locMap = {};
+        appData.stops.forEach(s => {
+            const key = s.lat ? `${s.lat.toFixed(4)},${s.lon.toFixed(4)}` : s.cleanAddress;
+            if(!locMap[key]) locMap[key] = [];
+            locMap[key].push(s.seq);
+        });
+        appData.stops.forEach(s => {
+            const key = s.lat ? `${s.lat.toFixed(4)},${s.lon.toFixed(4)}` : s.cleanAddress;
+            if(locMap[key] && locMap[key].length > 1) {
+                s.duplicates = locMap[key].filter(seq => seq !== s.seq);
+            }
+        });
+    }
+
+    async function editAddress(seq) {
+        const stop = appData.stops.find(s => s.seq === seq);
+        if (!stop) return;
+        const newAddr = prompt("Edit Address for Stop #" + stop.seq, stop.cleanAddress);
+        if (newAddr && newAddr.trim() !== "" && newAddr !== stop.cleanAddress) {
+            stop.cleanAddress = newAddr.trim();
+            stop.lat = null; stop.lon = null; stop.status = 'pending';
+            renderList();
+            await geocodeStop(stop);
+            detectDuplicates();
+            calculateFarStops();
+            updateMapMarkers();
+            renderList();
+            if(currentTab === 'distance') renderDistanceView();
+            saveState();
+        }
+    }
+
+    function renderAnalytics() {
+        const container = document.getElementById('analytics-list');
+        container.innerHTML = '';
+        const processedKeys = new Set();
+        let totalMultiLocations = 0, totalExtraPackages = 0;
+        const groups = [];
+
+        const activeStops = appData.stops.filter(s => !appData.removedStops.includes(s.seq));
+        activeStops.forEach(s => {
+            const activeDuplicates = s.duplicates.filter(d => !appData.removedStops.includes(d));
+            if (activeDuplicates.length > 0) {
+                const key = s.lat ? `${s.lat.toFixed(4)},${s.lon.toFixed(4)}` : s.cleanAddress;
+                if (!processedKeys.has(key)) {
+                    processedKeys.add(key);
+                    const allSeqs = [s.seq, ...activeDuplicates].sort((a,b) => a-b);
+                    groups.push({ address: s.cleanAddress, seqs: allSeqs, count: allSeqs.length, lat: s.lat, lon: s.lon });
+                    totalMultiLocations++;
+                    totalExtraPackages += activeDuplicates.length;
+                }
+            }
+        });
+
+        document.getElementById('stat-locations').innerText = totalMultiLocations;
+        document.getElementById('stat-packages').innerText = totalExtraPackages;
+
+        if(groups.length === 0) {
+                        container.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">No multi-drop locations found.</div>';
+            return;
+        }
+
+        groups.sort((a, b) => b.count - a.count);
+        groups.forEach(g => {
+            const div = document.createElement('div');
+            div.className = 'multi-group';
+            div.style.cursor = 'pointer';
+            let seqTags = g.seqs.map(num => `<span class="mg-seq">#${num}</span>`).join('');
+            div.innerHTML = `<div class="mg-header"><div class="mg-addr">${g.address}</div><div class="mg-count">${g.count} pkgs</div></div><div class="mg-seqs">${seqTags}</div>`;
+            div.onclick = () => focusOnStop(g.lat, g.lon);
+            container.appendChild(div);
+        });
+    }
+
+    function getFsaColorMap() {
+        const fsas = [...new Set(appData.stops.map(s => s.fsa))];
+        const map = {};
+        fsas.forEach((f, i) => map[f] = clusterColors[i % clusterColors.length]);
+        return map;
+    }
+
+    function renderList() {
+        const container = document.getElementById('stopList');
+        container.innerHTML = '';
+        const fsaMap = getFsaColorMap();
+        const processedSeqs = new Set(); 
+
+        // Get stops in correct order (custom or original)
+        let sortedStops;
+        if (appData.customOrder && appData.customOrder.length > 0) {
+            // Build ordered list from custom order
+            const customOrderedStops = appData.customOrder
+                .map(seq => appData.stops.find(s => s.seq === seq))
+                .filter(s => s);
+            
+            // Add any stops not in custom order at the end
+            const remainingStops = appData.stops.filter(s => 
+                !appData.customOrder.includes(s.seq)
+            ).sort((a, b) => a.seq - b.seq);
+            
+            sortedStops = [...customOrderedStops, ...remainingStops];
+        } else {
+            sortedStops = [...appData.stops].sort((a,b) => a.seq - b.seq);
+        }
+        
+        if (searchQuery) {
+            sortedStops = sortedStops.filter(s => 
+                s.cleanAddress.toLowerCase().includes(searchQuery) ||
+                s.seq.toString().includes(searchQuery) ||
+                (s.accessCode && s.accessCode.includes(searchQuery))
+            );
+        }
+        
+        const activeCount = appData.stops.filter(s => !appData.removedStops.includes(s.seq)).length;
+        document.getElementById('stops-count').textContent = `${activeCount} stops`;
+
+        let drivingPosition = 0;
+        sortedStops.forEach((stop) => {
+            if (processedSeqs.has(stop.seq)) return;
+
+            const isRemoved = appData.removedStops.includes(stop.seq);
+            const activeDuplicates = stop.duplicates ? stop.duplicates.filter(d => !appData.removedStops.includes(d)) : [];
+            const isMulti = activeDuplicates.length > 0 && !isRemoved;
+            
+            const allSeqsInGroup = [stop.seq, ...activeDuplicates].sort((a,b) => a-b);
+            const isOpened = allSeqsInGroup.some(seq => appData.openedStops.includes(seq));
+            const isFar = farStopsSet.has(stop.seq);
+            
+            if (!isRemoved) {
+                drivingPosition++;
+                processedSeqs.add(stop.seq);
+                activeDuplicates.forEach(d => processedSeqs.add(d));
+            }
+
+            const packageCount = isMulti ? allSeqsInGroup.length : 1;
+            const displaySeq = allSeqsInGroup[0];
+            const colorIndex = Object.keys(fsaMap).indexOf(stop.fsa) % clusterColors.length;
+            const safeAddr = stop.cleanAddress.replace(/'/g, "\\'");
+
+            // Check if this stop has a different driving order than its manifest number
+            const hasCustomOrder = appData.customOrder && appData.customOrder.length > 0;
+            const showDrivingOrder = hasCustomOrder && !isRemoved && drivingPosition !== displaySeq;
+
+            const div = document.createElement('div');
+            let itemClass = `stop-item cluster-${colorIndex}`;
+            if (isRemoved) itemClass += ' removed';
+            if (isOpened) itemClass += ' opened';
+            if (isFar && !isRemoved && !isOpened && appData.highlightFarStops) itemClass += ' far-stop';
+            div.className = itemClass;
+            div.setAttribute('data-seq', stop.seq);
+            
+            div.innerHTML = `
+                <div class="stop-seq ${isMulti ? 'multi' : ''} ${isFar && !isOpened && appData.highlightFarStops ? 'far' : ''}">${displaySeq}</div>
+                <div class="stop-details">
+                    <div class="stop-addr">
+                        ${stop.address}
+                        ${stop.isPriority ? '<span class="priority-badge">URGENT</span>' : ''}
+                        ${isOpened ? '<span class="opened-badge">OPENED</span>' : ''}
+                        ${isFar && !isRemoved && appData.highlightFarStops ? `<span class="far-badge">🚀 ${stop.distanceFromPrev ? stop.distanceFromPrev.toFixed(1) + 'km' : '4+km'}</span>` : ''}
+                        ${isRemoved ? '<span class="priority-badge" style="background:#6c757d;">REMOVED</span>' : ''}
+                        ${showDrivingOrder ? `<span class="driving-order-badge">Drive #${drivingPosition}</span>` : ''}
+                    </div>
+                    ${stop.accessCode ? `<div class="access-code">🔑 Code: ${stop.accessCode}</div>` : ''}
+                    ${isMulti ? `<div class="multi-badge">📦 ${packageCount} Colis (Stops: #${allSeqsInGroup.join(', #')})</div>` : ''}
+                    ${isFar && !isRemoved && appData.highlightFarStops ? `<div class="distance-badge">⚠️ Far from Stop #${stop.prevSeq || 'previous'}</div>` : ''}
+
+                    <div class="action-row">
+                        ${!isRemoved && stop.lat ? `<button onclick="focusOnStop(${stop.lat}, ${stop.lon})" class="btn-action btn-map">🗺️ Map</button>` : ''}
+                        ${!isRemoved && stop.lat ? `<button onclick="openMapAndMark(${stop.lat}, ${stop.lon}, null, ${stop.seq})" class="btn-action btn-gps">🧭 GPS</button>` : ''}
+                        ${!isRemoved ? `<button onclick="openMapAndMark(null, null, '${safeAddr}', ${stop.seq})" class="btn-action btn-addr">📍 Addr</button>` : ''}
+                        ${!isRemoved ? `<button class="btn-action btn-edit" onclick="editAddress(${stop.seq})">✏️</button>` : ''}
+                        ${isOpened && !isRemoved ? `<button class="btn-action btn-unmark" onclick="unmarkStopOpened(${stop.seq})">↩️</button>` : ''}
+                        ${isRemoved ? `<button class="btn-action btn-restore" onclick="restoreStop(${stop.seq})">↩️ Restore</button>` : ''}
+                    </div>
+                </div>`;
+            
+            container.appendChild(div);
+        });
+        
+        if (sortedStops.length === 0 && searchQuery) {
+            container.innerHTML = '<div style="text-align:center; padding:30px; color:#999;">No stops match your search.</div>';
+        }
+        
+        updateOpenedStats();
+    }
+
+    function clearCustomOrder() {
+        if (confirm('Reset to original manifest order?')) {
+            appData.customOrder = [];
+            saveState();
+            calculateFarStops();
+            updateMapMarkers();
+            renderList();
+            showHint('✅ Order reset to manifest sequence');
+        }
+    }
+
+    function retryErrors() { 
+        appData.stops.forEach(s => { if(s.status==='error') s.status='pending'; }); 
+        startGeocodingQueue(); 
+    }
+</script>
+</body>
+</html>
+
