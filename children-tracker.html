@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Children's Location Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        input[type="email"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="email"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        button:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .link-container {
+            background: #f7f9fc;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .link-container.show {
+            display: block;
+        }
+
+        .tracking-link {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 2px solid #667eea;
+            word-break: break-all;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .copy-btn {
+            background: #48bb78;
+            margin-top: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #38a169;
+        }
+
+        .child-screen {
+            text-align: center;
+        }
+
+        .child-screen .icon {
+            font-size: 80px;
+            margin: 20px 0;
+        }
+
+        .allow-btn {
+            background: #48bb78;
+        }
+
+        .allow-btn:hover:not(:disabled) {
+            background: #38a169;
+        }
+
+        .info-text {
+            color: #666;
+            line-height: 1.6;
+            margin: 15px 0;
+            font-size: 15px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .success-message {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+            font-weight: 500;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #742a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .note {
+            background: #fff5e6;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .note-title {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 5px;
+        }
+
+        .note-text {
+            color: #78350f;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .setup-box {
+            background: #e0e7ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .setup-box h3 {
+            color: #3730a3;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .setup-box ol {
+            margin-left: 20px;
+            color: #4338ca;
+        }
+
+        .setup-box li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .setup-box a {
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .setup-box a:hover {
+            text-decoration: underline;
+        }
+
+        .setup-box code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 13px;
+            color: #667eea;
+        }
+
+        .config-inputs {
+            margin-top: 15px;
+        }
+
+        .config-inputs input {
+            margin-bottom: 10px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .save-config-btn {
+            background: #48bb78;
+            margin-top: 10px;
+            max-width: 200px;
+        }
+
+        .template-example {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 13px;
+            border: 1px solid #cbd5e0;
+        }
+
+        .template-example pre {
+            background: #f7f9fc;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Parent View - Generate Link -->
+        <div id="parentView" class="card">
+            <h1>📍 Children's Location Tracker</h1>
+            <p class="subtitle">Generate a tracking link and receive your child's location via email when they click it.</p>
+            
+            <div class="input-group">
+                <label for="parentEmail">Your Email Address:</label>
+                <input type="email" id="parentEmail" placeholder="your.email@example.com" required>
+            </div>
+
+            <div class="input-group">
+                <label for="childName">Child's Name (Optional):</label>
+                <input type="text" id="childName" placeholder="e.g., Sarah">
+            </div>
+
+            <button id="generateBtn" onclick="generateLink()">
+                Generate Tracking Link
+            </button>
+            
+            <div id="linkContainer" class="link-container">
+                <h2>📤 Share This Link</h2>
+                <div class="tracking-link" id="trackingLink"></div>
+                <button class="copy-btn" onclick="copyLink()">📋 Copy Link</button>
+                <p class="info-text">Send this link to your child via text, email, WhatsApp, or any messaging app. When they open it and share their location, you'll receive an email with their GPS coordinates, address, and a Google Maps link.</p>
+            </div>
+
+            <div class="success-message" id="successMessage">
+                ✅ <strong>Link generated successfully!</strong> Share it with your child.
+            </div>
+
+            <!-- EmailJS Setup Section -->
+            <div class="setup-box">
+                <h3>⚙️ EmailJS Setup (Required First Time)</h3>
+                <ol>
+                    <li>Go to <a href="https://www.emailjs.com/docs/introduction/how-does-emailjs-work/" target="_blank">EmailJS.com</a> and create a FREE account</li>
+                    <li>Add an email service (Gmail, Outlook, etc.)</li>
+                    <li>Create a new email template with these exact variable names:
+                        <div class="template-example">
+                            <strong>Template Example:</strong>
+                            <pre>Subject: 📍 Location Update from {{child_name}}
+
+Hello,
+
+Your child {{child_name}} has shared their location with you.
+
+📍 Location Details:
+-------------------
+Latitude: {{latitude}}
+Longitude: {{longitude}}
+Address: {{address}}
+Timestamp: {{timestamp}}
+
+🗺️ View on Google Maps:
+{{maps_link}}
+
+This location was shared via the Children's Location Tracker app.
+</pre>
+                        </div>
+                    </li>
+                    <li>Copy your credentials and paste them below:</li>
+                </ol>
+
+                <div class="config-inputs">
+                    <input type="text" id="publicKey" placeholder="Public Key (from EmailJS Account)">
+                    <input type="text" id="serviceId" placeholder="Service ID (from EmailJS Services)">
+                    <input type="text" id="templateId" placeholder="Template ID (from EmailJS Templates)">
+                    <button class="save-config-btn" onclick="saveConfig()">💾 Save Configuration</button>
+                </div>
+
+                <div class="success-message" id="configSuccess" style="margin-top: 15px;">
+                    ✅ Configuration saved! You can now generate tracking links.
+                </div>
+            </div>
+
+            <div class="note">
+                <div class="note-title">📧 What You'll Receive in Email:</div>
+                <div class="note-text">
+                    • GPS Coordinates (Latitude & Longitude)<br>
+                    • Full Street Address<br>
+                    • Clickable Google Maps Link<br>
+                    • Exact Date & Time<br>
+                    • Child's Name
+                </div>
+            </div>
+        </div>
+
+        <!-- Child View - Share Location -->
+        <div id="childView" class="card hidden">
+            <div class="child-screen">
+                <div class="icon">📱</div>
+                <h1>Location Sharing Request</h1>
+                <p class="info-text" id="requestMessage">Your parent has requested to see your location for safety purposes.</p>
+                <p class="info-text">Click the button below to share your current location. Your parent will receive it via email instantly.</p>
+                <button class="allow-btn" id="shareBtn" onclick="shareLocation()">
+                    📍 Allow Location Sharing
+                </button>
+                <div class="success-message" id="childSuccessMessage">
+                    ✅ <strong>Location sent successfully!</strong><br>
+                    Your parent has received your location via email.
+                </div>
+                <div class="error-message" id="childErrorMessage">
+                    ❌ <strong>Error:</strong> <span id="errorText"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration storage
+        let config = {
+            publicKey: '',
+            serviceId: '',
+            templateId: ''
+        };
+
+        // Load saved configuration
+        function loadConfig() {
+            const saved = localStorage.getItem('emailjs_config');
+            if (saved) {
+                config = JSON.parse(saved);
+                document.getElementById('publicKey').value = config.publicKey;
+                document.getElementById('serviceId').value = config.serviceId;
+                document.getElementById('templateId').value = config.templateId;
+                
+                if (config.publicKey) {
+                    emailjs.init(config.publicKey);
+                }
+            }
+        }
+
+        // Save configuration
+        function saveConfig() {
+            config.publicKey = document.getElementById('publicKey').value.trim();
+            config.serviceId = document.getElementById('serviceId').value.trim();
+            config.templateId = document.getElementById('templateId').value.trim();
+
+            if (!config.publicKey || !config.serviceId || !config.templateId) {
+                alert('❌ Please fill in all three fields!');
+                return;
+            }
+
+            localStorage.setItem('emailjs_config', JSON.stringify(config));
+            emailjs.init(config.publicKey);
+            
+            document.getElementById('configSuccess').classList.add('show');
+            setTimeout(() => {
+                document.getElementById('configSuccess').classList.remove('show');
+            }, 3000);
+        }
+
+        let trackingData = {};
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            loadConfig();
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const trackId = urlParams.get('track');
+            
+            if (trackId) {
+                // Child view
+                showChildView(trackId);
+            }
+        });
+
+        function showChildView(trackId) {
+            document.getElementById('parentView').classList.add('hidden');
+            document.getElementById('childView').classList.remove('hidden');
+            
+            // Decode tracking data
+            try {
+                const decoded = atob(trackId);
+                trackingData = JSON.parse(decoded);
+                
+                if (trackingData.childName) {
+                    document.getElementById('requestMessage').textContent = 
+                        `Hi ${trackingData.childName}! Your parent has requested to see your location for safety purposes.`;
+                }
+            } catch (e) {
+                console.error('Error decoding tracking data:', e);
+                document.getElementById('errorText').textContent = 'Invalid tracking link';
+                document.getElementById('childErrorMessage').classList.add('show');
+            }
+        }
+
+        function generateLink() {
+            const email = document.getElementById('parentEmail').value.trim();
+            const childName = document.getElementById('childName').value.trim() || 'Your Child';
+            
+            if (!email || !isValidEmail(email)) {
+                alert('❌ Please enter a valid email address');
+                return;
+            }
+
+            if (!config.publicKey || !config.serviceId || !config.templateId) {
+                alert('⚠️ Please configure EmailJS first! See the setup instructions above.');
+                return;
+            }
+
+            // Create tracking data
+            const data = {
+                parentEmail: email,
+                childName: childName,
+                timestamp: new Date().toISOString()
+            };
+
+            // Encode data in URL
+            const encoded = btoa(JSON.stringify(data));
+            const baseUrl = window.location.href.split('?')[0];
+            const trackingUrl = `${baseUrl}?track=${encoded}`;
+
+            // Display the link
+            document.getElementById('trackingLink').textContent = trackingUrl;
+            document.getElementById('linkContainer').classList.add('show');
+            document.getElementById('successMessage').classList.add('show');
+            
+            setTimeout(() => {
+                document.getElementById('successMessage').classList.remove('show');
+            }, 5000);
+        }
+
+        function copyLink() {
+            const linkText = document.getElementById('trackingLink').textContent;
+            navigator.clipboard.writeText(linkText).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        async function shareLocation() {
+            const btn = document.getElementById('shareBtn');
+            btn.disabled = true;
+            btn.innerHTML = 'Getting Location<span class="loading"></span>';
+
+            try {
+                // Get GPS location
+                const position = await new Promise((resolve, reject) => {
+                    if (!navigator.geolocation) {
+                        reject(new Error('Geolocation is not supported by your browser'));
+                        return;
+                    }
+                    
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    });
+                });
+
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+                
+                // Get address using reverse geocoding
+                btn.innerHTML = 'Getting Address<span class="loading"></span>';
+                const address = await getAddress(latitude, longitude);
+                
+                // Create Google Maps link
+                const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                
+                // Get formatted timestamp
+                const timestamp = new Date().toLocaleString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+
+                // Send email via EmailJS
+                btn.innerHTML = 'Sending Email<span class="loading"></span>';
+                
+                const templateParams = {
+                    child_name: trackingData.childName,
+                    parent_email: trackingData.parentEmail,
+                    latitude: latitude.toFixed(6),
+                    longitude: longitude.toFixed(6),
+                    address: address,
+                    maps_link: mapsLink,
+                    timestamp: timestamp
+                };
+
+                await emailjs.send(
+                    config.serviceId,
+                    config.templateId,
+                    templateParams
+                );
+
+                // Success!
+                btn.classList.add('hidden');
+                document.getElementById('childSuccessMessage').classList.add('show');
+
+            } catch (error) {
+                console.error('Error:', error);
+                btn.disabled = false;
+                btn.innerHTML = '📍 Allow Location Sharing';
+                
+                let errorMessage = 'Unknown error occurred';
+                
+                if (error.code === 1) {
+                    errorMessage = 'Location permission denied. Please allow location access.';
+                } else if (error.code === 2) {
+                    errorMessage = 'Location unavailable. Please check your GPS settings.';
+                } else if (error.code === 3) {
+                    errorMessage = 'Location request timed out. Please try again.';
+                } else if (error.text) {
+                    errorMessage = `Email error: ${error.text}`;
+                } else {
+                    errorMessage = error.message || 'Could not get location';
+                }
+                
+                document.getElementById('errorText').textContent = errorMessage;
+                document.getElementById('childErrorMessage').classList.add('show');
+            }
+        }
+
+        async function getAddress(lat, lng) {
+            try {
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+                    {
+                        headers: {
+                            'User-Agent': 'ChildrenLocationTracker/1.0'
+                        }
+                    }
+                );
+                
+                const data = await response.json();
+                
+                if (data.display_name) {
+                    return data.display_name;
+                }
+                
+                return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            } catch (error) {
+                console.error('Geocoding error:', error);
+                return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            }
+        }
+
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+    </script>
+</body>
+</html>
