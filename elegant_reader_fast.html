@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elegant Reader</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Scheherazade+New:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #f5f3ed;
+            --page-color: #fefdfb;
+            --text-color: #1a1a1a;
+            --highlight: #c89b5c;
+            --selection: #ffefd5;
+            --shadow: rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Crimson Text', serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .page-container {
+            background-color: var(--page-color);
+            min-height: 100vh;
+            padding: 20px 16px 140px 16px;
+            max-width: 100%;
+        }
+
+        /* INPUT SECTION */
+        #input-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 70vh;
+            padding: 20px;
+        }
+
+        h1 {
+            font-family: 'Crimson Text', serif;
+            font-style: italic;
+            font-size: 2.5rem;
+            color: #4a4a4a;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        textarea {
+            width: 100%;
+            max-width: 600px;
+            height: 250px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'Crimson Text', serif;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            background: rgba(255,255,255,0.7);
+            resize: vertical;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus { 
+            border-color: var(--highlight);
+            box-shadow: 0 0 0 3px rgba(200, 155, 92, 0.1);
+        }
+
+        .start-btn {
+            margin-top: 25px;
+            background-color: var(--highlight);
+            color: white;
+            border: none;
+            padding: 16px 50px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Lato', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(200, 155, 92, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .start-btn:active { 
+            transform: scale(0.98);
+        }
+
+        /* READING SECTION */
+        #reading-section {
+            display: none;
+            animation: fadeIn 0.6s ease;
+            padding: 5px;
+        }
+
+        #book-content {
+            font-size: 1.15rem;
+            line-height: 1.5;
+            color: var(--text-color);
+            text-align: left;
+            font-weight: 400;
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+
+        /* Paragraph styling */
+        #book-content .paragraph {
+            margin-bottom: 0.6em;
+            display: block;
+        }
+
+        /* Section headers */
+        #book-content .section-header {
+            font-weight: 700;
+            margin-top: 1em;
+            margin-bottom: 0.4em;
+            color: #333;
+            font-size: 1.05em;
+        }
+
+        /* List items */
+        #book-content .list-item {
+            padding-left: 1.2em;
+            margin-bottom: 0.25em;
+            display: block;
+            position: relative;
+        }
+
+        #book-content .list-item::before {
+            content: "–";
+            position: absolute;
+            left: 0;
+            color: var(--highlight);
+            font-weight: 600;
+        }
+
+        /* Quoted text */
+        #book-content .quoted {
+            color: #2c5530;
+        }
+
+        /* INTERACTIVE WORDS */
+        .word {
+            cursor: pointer;
+            border-radius: 3px;
+            padding: 0px 1px;
+            transition: background-color 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+            display: inline;
+        }
+
+        .word:active {
+            background-color: rgba(0,0,0,0.08);
+        }
+
+        .word.active {
+            background-color: var(--selection);
+            text-decoration: underline;
+            text-decoration-color: var(--highlight);
+            text-decoration-thickness: 2px;
+            text-underline-offset: 2px;
+        }
+
+        /* BOTTOM BAR */
+        .translation-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            transform: translateY(100%);
+            width: 100%;
+            background: white;
+            padding: 14px 16px;
+            border-radius: 18px 18px 0 0;
+            box-shadow: 0 -4px 25px var(--shadow);
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .translation-bar.show {
+            transform: translateY(0);
+        }
+
+        /* HEADER ROW */
+        .bar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .word-audio-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .selected-word {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--highlight);
+            font-family: 'Crimson Text', serif;
+        }
+
+        .audio-btn {
+            background: linear-gradient(135deg, #f8f8f8 0%, #e8e8e8 100%);
+            width: 40px; 
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        
+        .audio-btn:active { 
+            transform: scale(0.92);
+        }
+
+        .audio-btn.playing {
+            background: linear-gradient(135deg, var(--highlight) 0%, #b8894c 100%);
+            animation: pulse 0.6s ease infinite;
+        }
+
+        .audio-btn.error {
+            background: #ffebee;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 2px 6px rgba(200, 155, 92, 0.3); }
+            50% { transform: scale(1.08); box-shadow: 0 4px 12px rgba(200, 155, 92, 0.5); }
+        }
+
+        .close-x {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #888;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .close-x:active {
+            background: #e0e0e0;
+            transform: scale(0.95);
+        }
+
+        /* CONTEXT */
+        .context-line {
+            font-size: 0.78rem;
+            color: #777;
+            font-style: italic;
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+            border-radius: 8px;
+            line-height: 1.4;
+            display: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-left: 3px solid #ddd;
+        }
+
+        .context-line.show {
+            display: block;
+        }
+
+        /* TRANSLATION ROW */
+        .translation-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .trans-box {
+            flex: 1;
+            background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+            padding: 12px 14px;
+            border-radius: 10px;
+            border-left: 3px solid var(--highlight);
+        }
+
+        .trans-label {
+            font-family: 'Lato', sans-serif;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: #999;
+            letter-spacing: 1.2px;
+            margin-bottom: 5px;
+            display: block;
+            font-weight: 700;
+        }
+
+        .trans-text {
+            font-size: 1.05rem;
+            font-weight: 500;
+            color: var(--text-color);
+            line-height: 1.4;
+        }
+
+        /* Arabic */
+        .arabic-text {
+            font-family: 'Scheherazade New', serif;
+            font-size: 1.25rem;
+            line-height: 1.5;
+            direction: rtl;
+            text-align: right;
+        }
+
+        /* LOADER */
+        .loader { 
+            display: inline-block; 
+            width: 14px; 
+            height: 14px; 
+            border: 2px solid #f0f0f0; 
+            border-radius: 50%; 
+            border-top-color: var(--highlight); 
+            animation: spin 0.8s linear infinite; 
+        }
+        
+        @keyframes spin { 
+            100% { transform: rotate(360deg); } 
+        }
+
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(20px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        /* BACKDROP */
+        .overlay-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.12);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 999;
+        }
+
+        .overlay-backdrop.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Hidden audio element */
+        #hidden-audio {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (min-width: 600px) {
+            .translation-bar {
+                max-width: 480px;
+                left: 50%;
+                transform: translateX(-50%) translateY(100%);
+                border-radius: 18px 18px 0 0;
+            }
+            
+            .translation-bar.show {
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-container">
+        
+        <!-- INPUT SECTION -->
+        <div id="input-section">
+            <h1>📖 The Reader</h1>
+            <textarea id="user-text" placeholder="Paste your French text here and tap any word to see its translation..."></textarea>
+            <button class="start-btn" onclick="initializeBook()">Start Reading</button>
+        </div>
+
+        <!-- READING SECTION -->
+        <div id="reading-section">
+            <div id="book-content"></div>
+        </div>
+
+        <!-- BACKDROP -->
+        <div id="backdrop" class="overlay-backdrop" onclick="closePopup()"></div>
+
+        <!-- TRANSLATION BAR -->
+        <div id="popup" class="translation-bar">
+            <div class="bar-header">
+                <div class="word-audio-group">
+                    <span id="display-word" class="selected-word">Word</span>
+                    <button id="audio-btn" class="audio-btn" onclick="playPronunciation()" title="Listen in French">🔊</button>
+                </div>
+                <button class="close-x" onclick="closePopup()">✕</button>
+            </div>
+            
+            <div id="context-display" class="context-line"></div>
+            
+            <div class="translation-row">
+                <div class="trans-box">
+                    <span class="trans-label">🇸🇦 Arabic</span>
+                    <div id="res-ar" class="trans-text arabic-text">...</div>
+                </div>
+                <div class="trans-box">
+                    <span class="trans-label">🇬🇧 English</span>
+                    <div id="res-en" class="trans-text">...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden audio element for Google TTS fallback -->
+        <audio id="hidden-audio" preload="auto"></audio>
+
+    </div>
+
+    <script>
+        const API_KEY = "AIzaSyAY9cdpzvrOxupBBUCbUTyfCdU0c5PGjq4"; 
+        const MODEL = "gemini-2.5-flash";
+        const API_URL = `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent?key=${API_KEY}`;
+
+        let currentWord = "";
+        let voicesLoaded = false;
+        let frenchVoice = null;
+        let allVoices = [];
+
+        // ============== VOICE LOADING ==============
+        function loadVoices() {
+            return new Promise((resolve) => {
+                const loadAndSet = () => {
+                    allVoices = speechSynthesis.getVoices();
+                    if (allVoices.length > 0) {
+                        voicesLoaded = true;
+                        // Prefer high-quality French voices
+                        frenchVoice = allVoices.find(v => v.lang === 'fr-FR' && v.localService === false) ||
+                                      allVoices.find(v => v.lang === 'fr-FR') ||
+                                      allVoices.find(v => v.lang.startsWith('fr'));
+                        console.log("✓ Voices loaded:", allVoices.length, "| French:", frenchVoice?.name || "none");
+                        resolve(allVoices);
+                        return true;
+                    }
+                    return false;
+                };
+
+                // Try immediately
+                if (loadAndSet()) return;
+
+                // Wait for voiceschanged event
+                speechSynthesis.onvoiceschanged = () => loadAndSet();
+
+                // Fallback timeout
+                setTimeout(() => {
+                    if (!voicesLoaded) {
+                        loadAndSet();
+                        resolve(allVoices);
+                    }
+                }, 1500);
+            });
+        }
+
+        // Initialize on load
+        if ('speechSynthesis' in window) {
+            loadVoices();
+            // Chrome needs this hack
+            speechSynthesis.getVoices();
+        }
+
+        // ============== TEXT PROCESSING ==============
+        function initializeBook() {
+            const rawText = document.getElementById('user-text').value;
+            if (!rawText.trim()) return alert("Please paste some text first.");
+
+            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('reading-section').style.display = 'block';
+
+            const contentDiv = document.getElementById('book-content');
+            const lines = rawText.split(/\n/);
+            let htmlOutput = '';
+
+            lines.forEach((line) => {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) return;
+                
+                // Detect line type
+                const isBoldHeader = /^\*\*.*\*\*$/.test(trimmedLine);
+                const isListItem = trimmedLine.startsWith('- ') || trimmedLine.startsWith('-«');
+                
+                let lineClass = 'paragraph';
+                let lineContent = trimmedLine;
+                
+                if (isBoldHeader) {
+                    lineClass = 'section-header';
+                    lineContent = trimmedLine.replace(/\*\*/g, '');
+                } else if (isListItem) {
+                    lineClass = 'list-item';
+                    lineContent = trimmedLine.substring(trimmedLine.indexOf('-') + 1).trim();
+                }
+                
+                let lineHTML = `<div class="${lineClass}">`;
+                
+                // Tokenize carefully
+                const tokens = lineContent.split(/(\s+|(?=[.!?,;:'"«»()\[\]{}])|(?<=[.!?,;:'"«»()\[\]{}]))/);
+                
+                tokens.forEach(token => {
+                    if (!token) return;
+                    
+                    if (/[a-zA-ZÀ-ÿ]/.test(token)) {
+                        const escapedToken = token.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                        const escapedSentence = lineContent.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        lineHTML += `<span class="word" data-sentence="${escapedSentence}" onclick="handleWordClick(this, '${escapedToken}')">${token}</span>`;
+                    } else {
+                        // Style quotes
+                        if (token === '«' || token === '»') {
+                            lineHTML += `<span class="quoted">${token}</span>`;
+                        } else {
+                            lineHTML += token;
+                        }
+                    }
+                });
+                
+                lineHTML += '</div>';
+                htmlOutput += lineHTML;
+            });
+
+            contentDiv.innerHTML = htmlOutput;
+        }
+
+        // ============== WORD CLICK ==============
+        function handleWordClick(element, word) {
+            document.querySelectorAll('.word').forEach(w => w.classList.remove('active'));
+            element.classList.add('active');
+
+            const popup = document.getElementById('popup');
+            const backdrop = document.getElementById('backdrop');
+            const audioBtn = document.getElementById('audio-btn');
+            
+            popup.classList.add('show');
+            backdrop.classList.add('show');
+            audioBtn.classList.remove('playing', 'error');
+            
+            document.getElementById('display-word').innerText = word;
+            document.getElementById('res-ar').innerHTML = '<div class="loader"></div>';
+            document.getElementById('res-en').innerHTML = '<div class="loader"></div>';
+
+            currentWord = word;
+
+            const context = element.dataset.sentence || word;
+            const contextDisplay = document.getElementById('context-display');
+            contextDisplay.classList.add('show');
+            contextDisplay.innerText = `"${context}"`;
+
+            translateWithContext(word, context);
+        }
+
+        function closePopup() {
+            document.getElementById('popup').classList.remove('show');
+            document.getElementById('backdrop').classList.remove('show');
+            document.querySelectorAll('.word').forEach(w => w.classList.remove('active'));
+            
+            // Stop any playing audio
+            window.speechSynthesis.cancel();
+            document.getElementById('hidden-audio').pause();
+        }
+
+        // ============== TRANSLATION ==============
+        async function translateWithContext(word, context) {
+            const prompt = `You are a French language teacher. I'm reading this French sentence:
+"${context}"
+
+The student clicked on the word: "${word}"
+
+Provide translations in this EXACT format (no extra text):
+ARABIC: [Arabic translation]
+ENGLISH: [English translation]
+
+Be concise - one or two words maximum.`;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    console.error("API Error:", data.error);
+                    document.getElementById('res-ar').innerText = "Error";
+                    document.getElementById('res-en').innerText = "Error";
+                    return;
+                }
+
+                const result = data.candidates[0].content.parts[0].text.trim();
+                
+                const arabicMatch = result.match(/ARABIC:\s*(.+?)(?=ENGLISH:|$)/s);
+                const englishMatch = result.match(/ENGLISH:\s*(.+?)$/s);
+                
+                document.getElementById('res-ar').innerText = arabicMatch ? arabicMatch[1].trim() : "—";
+                document.getElementById('res-en').innerText = englishMatch ? englishMatch[1].trim() : "—";
+
+            } catch (error) {
+                console.error("Translation Error:", error);
+                document.getElementById('res-ar').innerText = "Error";
+                document.getElementById('res-en').innerText = "Error";
+            }
+        }
+
+        // ============== AUDIO PLAYBACK ==============
+        async function playPronunciation() {
+            if (!currentWord) return;
+            
+            const audioBtn = document.getElementById('audio-btn');
+            audioBtn.classList.remove('error');
+            audioBtn.classList.add('playing');
+
+            // Try Method 1: Web Speech API
+            const webSpeechWorked = await tryWebSpeechAPI();
+            
+            if (!webSpeechWorked) {
+                // Try Method 2: Google Translate TTS
+                const googleTTSWorked = await tryGoogleTTS();
+                
+                if (!googleTTSWorked) {
+                    audioBtn.classList.remove('playing');
+                    audioBtn.classList.add('error');
+                    console.error("All TTS methods failed");
+                }
+            }
+        }
+
+        // Method 1: Web Speech API
+        function tryWebSpeechAPI() {
+            return new Promise(async (resolve) => {
+                if (!('speechSynthesis' in window)) {
+                    resolve(false);
+                    return;
+                }
+
+                // Ensure voices are loaded
+                if (!voicesLoaded || allVoices.length === 0) {
+                    await loadVoices();
+                }
+
+                // Cancel any previous
+                window.speechSynthesis.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(currentWord);
+                utterance.lang = 'fr-FR';
+                utterance.rate = 0.85;
+                utterance.pitch = 1;
+                utterance.volume = 1;
+
+                if (frenchVoice) {
+                    utterance.voice = frenchVoice;
+                }
+
+                let resolved = false;
+
+                utterance.onend = () => {
+                    document.getElementById('audio-btn').classList.remove('playing');
+                    if (!resolved) { resolved = true; resolve(true); }
+                };
+
+                utterance.onerror = (e) => {
+                    console.warn("Web Speech API error:", e.error);
+                    document.getElementById('audio-btn').classList.remove('playing');
+                    if (!resolved) { resolved = true; resolve(false); }
+                };
+
+                // Timeout fallback
+                setTimeout(() => {
+                    if (!resolved) {
+                        resolved = true;
+                        resolve(false);
+                    }
+                }, 3000);
+
+                // Small delay for Chrome
+                setTimeout(() => {
+                    try {
+                        window.speechSynthesis.speak(utterance);
+                        
+                        // Chrome bug: check if actually speaking
+                        setTimeout(() => {
+                            if (!window.speechSynthesis.speaking && !resolved) {
+                                resolved = true;
+                                resolve(false);
+                            }
+                        }, 200);
+                    } catch (e) {
+                        console.warn("Speech error:", e);
+                        if (!resolved) { resolved = true; resolve(false); }
+                    }
+                }, 100);
+            });
+        }
+
+        // Method 2: Google Translate TTS (fallback)
+        function tryGoogleTTS() {
+            return new Promise((resolve) => {
+                const audio = document.getElementById('hidden-audio');
+                const encodedWord = encodeURIComponent(currentWord);
+                
+                // Google Translate TTS URL
+                const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=fr&client=tw-ob&q=${encodedWord}`;
+                
+                audio.src = url;
+                
+                audio.oncanplaythrough = () => {
+                    audio.play()
+                        .then(() => {
+                            console.log("✓ Google TTS playing");
+                        })
+                        .catch(e => {
+                            console.warn("Google TTS play error:", e);
+                            resolve(false);
+                        });
+                };
+
+                audio.onended = () => {
+                    document.getElementById('audio-btn').classList.remove('playing');
+                    resolve(true);
+                };
+
+                audio.onerror = (e) => {
+                    console.warn("Google TTS load error:", e);
+                    document.getElementById('audio-btn').classList.remove('playing');
+                    resolve(false);
+                };
+
+                // Timeout
+                setTimeout(() => {
+                    if (audio.readyState < 3) {
+                        resolve(false);
+                    }
+                }, 3000);
+
+                audio.load();
+            });
+        }
+
+        // ============== UI HELPERS ==============
+        // Prevent body scroll when popup is open
+        const observer = new MutationObserver(() => {
+            document.body.style.overflow = document.getElementById('popup').classList.contains('show') ? 'hidden' : '';
+        });
+        observer.observe(document.getElementById('popup'), { attributes: true, attributeFilter: ['class'] });
+
+        // Handle escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closePopup();
+        });
+    </script>
+</body>
+</html>
