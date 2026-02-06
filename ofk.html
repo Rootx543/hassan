@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Permission Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .granted { background-color: #ff6b6b; color: white; }
+        .denied { background-color: #51cf66; color: white; }
+        .prompt { background-color: #ffd43b; }
+        button {
+            background-color: #4dabf7;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #339af0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Location Permission Test</h1>
+    
+    <div class="box">
+        <h2>Automatic Check (No Permission Required)</h2>
+        <p><strong>IP-based Location:</strong></p>
+        <div id="ip-location">Checking...</div>
+    </div>
+
+    <div class="box">
+        <h2>Permission Status Check</h2>
+        <p>Current permission state:</p>
+        <div id="permission-status">Checking...</div>
+    </div>
+
+    <div class="box">
+        <h2>Manual GPS Location Test</h2>
+        <p>Click the button below. If you see a permission dialog, that's NORMAL and SAFE.</p>
+        <button onclick="getGPSLocation()">Request GPS Location</button>
+        <div id="gps-result" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="box">
+        <h2>⚠️ What This Test Shows:</h2>
+        <ul>
+            <li><strong>IP Location:</strong> Always works, no permission needed (city level)</li>
+            <li><strong>Permission Status:</strong> Shows if a site already has GPS access</li>
+            <li><strong>GPS Test:</strong> Should show permission dialog if not already granted</li>
+        </ul>
+        <p><strong style="color: red;">🚨 RED FLAG:</strong> If GPS coordinates appear WITHOUT you clicking the button or seeing a permission dialog, something is wrong!</p>
+    </div>
+
+    <script>
+        // Check IP-based location (always works, no permission)
+        fetch('https://ipapi.co/json/')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('ip-location').innerHTML = `
+                    <strong>City:</strong> ${data.city}, ${data.region}, ${data.country_name}<br>
+                    <strong>Approximate Coordinates:</strong> ${data.latitude}, ${data.longitude}<br>
+                    <em style="color: green;">✓ This is NORMAL - no permission needed</em>
+                `;
+            })
+            .catch(error => {
+                document.getElementById('ip-location').innerHTML = 'Could not fetch IP location';
+            });
+
+        // Check current permission status
+        if (navigator.permissions) {
+            navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
+                let statusText = '';
+                let statusClass = '';
+                
+                if (result.state === 'granted') {
+                    statusText = '🚨 GRANTED - This page already has GPS access!';
+                    statusClass = 'granted';
+                } else if (result.state === 'denied') {
+                    statusText = '✓ DENIED - This page cannot access GPS (good!)';
+                    statusClass = 'denied';
+                } else {
+                    statusText = '⚠️ PROMPT - Will ask for permission when requested';
+                    statusClass = 'prompt';
+                }
+                
+                document.getElementById('permission-status').innerHTML = 
+                    `<div class="status ${statusClass}">${statusText}</div>`;
+            });
+        } else {
+            document.getElementById('permission-status').innerHTML = 
+                'Permission API not supported';
+        }
+
+        // Manual GPS location request
+        function getGPSLocation() {
+            const resultDiv = document.getElementById('gps-result');
+            resultDiv.innerHTML = 'Requesting location...';
+            
+            if (!navigator.geolocation) {
+                resultDiv.innerHTML = '❌ Geolocation not supported by your browser';
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    resultDiv.innerHTML = `
+                        <div style="background-color: #ffe066; padding: 10px; border-radius: 4px;">
+                            <strong>📍 GPS Coordinates:</strong><br>
+                            Latitude: ${position.coords.latitude}<br>
+                            Longitude: ${position.coords.longitude}<br>
+                            Accuracy: ±${position.coords.accuracy} meters<br>
+                            <em>You should have seen a permission dialog before this appeared!</em>
+                        </div>
+                    `;
+                },
+                function(error) {
+                    let errorMsg = '';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = '✓ Permission denied (good - you're protected!)';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = 'Location unavailable';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = 'Request timeout';
+                            break;
+                    }
+                    resultDiv.innerHTML = `<div style="color: green;">${errorMsg}</div>`;
+                }
+            );
+        }
+    </script>
+</body>
+</html>
