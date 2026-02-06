@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔒 Advanced Location Security Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .box {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .box h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .critical { 
+            background-color: #ff0000; 
+            color: white;
+            border: 3px solid #cc0000;
+            animation: pulse 1.5s infinite;
+        }
+        .warning { 
+            background-color: #ff6b6b; 
+            color: white; 
+        }
+        .safe { 
+            background-color: #51cf66; 
+            color: white; 
+        }
+        .info { 
+            background-color: #4dabf7; 
+            color: white; 
+        }
+        .alert { 
+            background-color: #ffd43b; 
+            color: #333;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s;
+            margin: 5px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .log-entry {
+            background-color: #f8f9fa;
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .log-entry.error {
+            border-left-color: #ff0000;
+            background-color: #ffe0e0;
+        }
+        .log-entry.success {
+            border-left-color: #51cf66;
+            background-color: #e0ffe0;
+        }
+        .coordinate-display {
+            background: #f1f3f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .metric {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        #security-log {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .hidden {
+            display: none;
+        }
+        .blink {
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 ADVANCED LOCATION SECURITY AUDIT</h1>
+
+        <!-- Real-time Monitoring -->
+        <div class="box">
+            <h2>🚨 REAL-TIME THREAT DETECTION</h2>
+            <div id="threat-level" class="status info">Initializing security scan...</div>
+            <div class="grid">
+                <div class="metric">
+                    <div class="metric-label">Access Attempts</div>
+                    <div class="metric-value" id="access-attempts">0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Permission Checks</div>
+                    <div class="metric-value" id="permission-checks">0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Security Score</div>
+                    <div class="metric-value" id="security-score">100</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Environment Detection -->
+        <div class="box">
+            <h2>🔍 BROWSER ENVIRONMENT ANALYSIS</h2>
+            <div id="environment-info"></div>
+        </div>
+
+        <!-- Permission Analysis -->
+        <div class="box">
+            <h2>🛡️ PERMISSION STATE ANALYSIS</h2>
+            <div id="permission-analysis"></div>
+        </div>
+
+        <!-- API Monitoring -->
+        <div class="box">
+            <h2>📡 GEOLOCATION API MONITORING</h2>
+            <div id="api-monitoring"></div>
+            <button onclick="testAPIIntegrity()">🔬 Test API Integrity</button>
+        </div>
+
+        <!-- IP Location -->
+        <div class="box">
+            <h2>🌍 IP-BASED LOCATION (No Permission Required)</h2>
+            <div id="ip-location">Fetching...</div>
+        </div>
+
+        <!-- GPS Test -->
+        <div class="box">
+            <h2>📍 CONTROLLED GPS TEST</h2>
+            <p style="margin-bottom: 15px;">This button will request your exact GPS location. You SHOULD see a permission dialog.</p>
+            <button onclick="requestGPSLocation()">🎯 Request GPS Location (Safe Test)</button>
+            <div id="gps-result" style="margin-top: 15px;"></div>
+        </div>
+
+        <!-- Stealth Detection -->
+        <div class="box">
+            <h2>🕵️ STEALTH ACCESS DETECTION</h2>
+            <p style="margin-bottom: 15px;">Monitoring for unauthorized location access attempts...</p>
+            <div id="stealth-detection"></div>
+        </div>
+
+        <!-- Security Log -->
+        <div class="box">
+            <h2>📋 SECURITY EVENT LOG</h2>
+            <div id="security-log"></div>
+        </div>
+
+        <!-- Browser Fingerprint -->
+        <div class="box">
+            <h2>🔐 BROWSER FINGERPRINT & METADATA</h2>
+            <div id="fingerprint-data"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // Security monitoring variables
+        let accessAttempts = 0;
+        let permissionChecks = 0;
+        let securityScore = 100;
+        let logEntries = [];
+        let monitoringInterval;
+        let initialPermissionState = null;
+
+        // Log function
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = `[${timestamp}] ${message}`;
+            logEntries.unshift(entry);
+            
+            const logDiv = document.getElementById('security-log');
+            const entryDiv = document.createElement('div');
+            entryDiv.className = `log-entry ${type}`;
+            entryDiv.textContent = entry;
+            logDiv.insertBefore(entryDiv, logDiv.firstChild);
+            
+            // Keep only last 20 entries
+            if (logDiv.children.length > 20) {
+                logDiv.removeChild(logDiv.lastChild);
+            }
+        }
+
+        // Update metrics
+        function updateMetrics() {
+            document.getElementById('access-attempts').textContent = accessAttempts;
+            document.getElementById('permission-checks').textContent = permissionChecks;
+            document.getElementById('security-score').textContent = securityScore;
+        }
+
+        // Detect environment
+        function detectEnvironment() {
+            const info = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                vendor: navigator.vendor,
+                language: navigator.language,
+                onLine: navigator.onLine,
+                cookieEnabled: navigator.cookieEnabled,
+                doNotTrack: navigator.doNotTrack,
+                hardwareConcurrency: navigator.hardwareConcurrency,
+                maxTouchPoints: navigator.maxTouchPoints,
+                screenWidth: screen.width,
+                screenHeight: screen.height,
+                windowWidth: window.innerWidth,
+                windowHeight: window.innerHeight,
+                colorDepth: screen.colorDepth,
+                pixelRatio: window.devicePixelRatio,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                referrer: document.referrer || 'Direct visit'
+            };
+
+            // Detect in-app browser
+            const ua = navigator.userAgent.toLowerCase();
+            let browserType = 'Standard Browser';
+            let isInApp = false;
+
+            if (ua.includes('fban') || ua.includes('fbav')) {
+                browserType = '🚨 FACEBOOK IN-APP BROWSER DETECTED';
+                isInApp = true;
+            } else if (ua.includes('instagram')) {
+                browserType = '🚨 INSTAGRAM IN-APP BROWSER DETECTED';
+                isInApp = true;
+            } else if (ua.includes('tiktok')) {
+                browserType = '🚨 TIKTOK IN-APP BROWSER DETECTED';
+                isInApp = true;
+            } else if (ua.includes('line')) {
+                browserType = '🚨 LINE IN-APP BROWSER DETECTED';
+                isInApp = true;
+            } else if (ua.includes('wechat') || ua.includes('micromessenger')) {
+                browserType = '🚨 WECHAT IN-APP BROWSER DETECTED';
+                isInApp = true;
+            } else if (ua.includes('whatsapp')) {
+                browserType = '🚨 WHATSAPP IN-APP BROWSER DETECTED';
+                isInApp = true;
+            } else if (ua.includes('twitter')) {
+                browserType = '🚨 TWITTER IN-APP BROWSER DETECTED';
+                isInApp = true;
+            } else if (ua.includes('linkedin')) {
+                browserType = '🚨 LINKEDIN IN-APP BROWSER DETECTED';
+                isInApp = true;
+            }
+
+            let html = `<div class="status ${isInApp ? 'critical' : 'safe'}">${browserType}</div>`;
+            
+            if (isInApp) {
+                html += `<div class="status warning">⚠️ WARNING: In-app browsers may share the parent app's location permission!</div>`;
+                securityScore -= 30;
+                log('In-app browser detected - security risk elevated', 'error');
+            }
+
+            html += '<div class="grid">';
+            for (const [key, value] of Object.entries(info)) {
+                html += `
+                    <div class="metric">
+                        <div class="metric-label">${key}</div>
+                        <div class="metric-value" style="font-size: 14px; word-break: break-all;">${value}</div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+
+            document.getElementById('environment-info').innerHTML = html;
+            log(`Environment detected: ${browserType}`);
+        }
+
+        // Check permission state
+        async function checkPermissions() {
+            permissionChecks++;
+            updateMetrics();
+
+            if (!navigator.permissions) {
+                document.getElementById('permission-analysis').innerHTML = 
+                    '<div class="status alert">⚠️ Permissions API not available</div>';
+                log('Permissions API not supported');
+                return;
+            }
+
+            try {
+                const result = await navigator.permissions.query({ name: 'geolocation' });
+                
+                let html = '';
+                let statusClass = '';
+                
+                if (initialPermissionState === null) {
+                    initialPermissionState = result.state;
+                }
+
+                switch(result.state) {
+                    case 'granted':
+                        html = '<div class="status critical blink">🚨🚨🚨 CRITICAL: LOCATION ACCESS IS GRANTED! 🚨🚨🚨</div>';
+                        html += '<div class="status warning">This page can access your GPS without asking!</div>';
+                        html += '<div class="status warning">How to fix: Revoke permissions in browser settings</div>';
+                        securityScore = 0;
+                        log('CRITICAL: Geolocation permission is GRANTED!', 'error');
+                        
+                        // Try to get location automatically
+                        setTimeout(stealthLocationCheck, 1000);
+                        break;
+                    case 'denied':
+                        html = '<div class="status safe">✅ SAFE: Location access is DENIED</div>';
+                        html += '<div class="status info">Your location is protected</div>';
+                        log('Safe: Geolocation permission is DENIED', 'success');
+                        break;
+                    case 'prompt':
+                        html = '<div class="status info">ℹ️ Permission will be requested when needed</div>';
+                        html += '<div class="status safe">✅ No automatic access granted</div>';
+                        log('Neutral: Geolocation permission is in PROMPT state', 'info');
+                        break;
+                }
+
+                // Monitor for permission changes
+                result.onchange = function() {
+                    log(`Permission state changed from ${initialPermissionState} to ${this.state}`, 'error');
+                    checkPermissions();
+                    if (this.state === 'granted') {
+                        alert('⚠️ SECURITY ALERT: Location permission was just granted!');
+                    }
+                };
+
+                document.getElementById('permission-analysis').innerHTML = html;
+            } catch (error) {
+                log(`Error checking permissions: ${error.message}`, 'error');
+            }
+        }
+
+        // Monitor API integrity
+        function testAPIIntegrity() {
+            let html = '<div class="coordinate-display">';
+            
+            // Check if geolocation exists
+            html += `<strong>navigator.geolocation exists:</strong> ${!!navigator.geolocation}<br>`;
+            
+            // Check if it's been tampered with
+            html += `<strong>getCurrentPosition type:</strong> ${typeof navigator.geolocation?.getCurrentPosition}<br>`;
+            html += `<strong>watchPosition type:</strong> ${typeof navigator.geolocation?.watchPosition}<br>`;
+            
+            // Check for proxy or wrapper
+            const isNative = navigator.geolocation?.getCurrentPosition.toString().includes('[native code]');
+            html += `<strong>Is native API:</strong> ${isNative ? '✅ Yes' : '🚨 NO - API may be wrapped!'}<br>`;
+            
+            if (!isNative) {
+                html += '<div class="status warning">⚠️ WARNING: Geolocation API may have been modified!</div>';
+                securityScore -= 20;
+                log('API integrity check failed - API may be wrapped', 'error');
+            }
+            
+            html += '</div>';
+            document.getElementById('api-monitoring').innerHTML += html;
+            log('API integrity test completed');
+        }
+
+        // Stealth location check (detects if location is accessed without user action)
+        function stealthLocationCheck() {
+            log('Running stealth access detection...', 'info');
+            
+            if (!navigator.geolocation) {
+                document.getElementById('stealth-detection').innerHTML = 
+                    '<div class="status info">Geolocation API not available</div>';
+                return;
+            }
+
+            // This should ONLY work if permission is already granted
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    accessAttempts++;
+                    updateMetrics();
+                    
+                    const html = `
+                        <div class="status critical blink">
+                            🚨🚨🚨 UNAUTHORIZED ACCESS DETECTED! 🚨🚨🚨
+                        </div>
+                        <div class="status warning">
+                            Your location was accessed WITHOUT you clicking anything!
+                        </div>
+                        <div class="coordinate-display">
+                            <strong>Latitude:</strong> ${position.coords.latitude}<br>
+                            <strong>Longitude:</strong> ${position.coords.longitude}<br>
+                            <strong>Accuracy:</strong> ±${position.coords.accuracy}m<br>
+                            <strong>Timestamp:</strong> ${new Date(position.timestamp).toLocaleString()}
+                        </div>
+                        <div class="status critical">
+                            ⚠️ This means a website or app has automatic access to your GPS!
+                        </div>
+                    `;
+                    document.getElementById('stealth-detection').innerHTML = html;
+                    securityScore = 0;
+                    updateMetrics();
+                    log(`UNAUTHORIZED ACCESS: Location obtained without user interaction! Lat: ${position.coords.latitude}, Lon: ${position.coords.longitude}`, 'error');
+                    alert('🚨 SECURITY BREACH: Your GPS location was accessed automatically without permission!');
+                },
+                function(error) {
+                    const html = `<div class="status safe">✅ No unauthorized access detected</div>
+                                  <div class="status info">Location cannot be accessed without explicit permission</div>`;
+                    document.getElementById('stealth-detection').innerHTML = html;
+                    log('Stealth detection: No unauthorized access (Good!)', 'success');
+                },
+                { timeout: 5000, maximumAge: 0 }
+            );
+        }
+
+        // Manual GPS request
+        function requestGPSLocation() {
+            log('User initiated GPS location request');
+            const resultDiv = document.getElementById('gps-result');
+            resultDiv.innerHTML = '<div class="status info">⏳ Requesting location... You should see a permission dialog.</div>';
+            
+            if (!navigator.geolocation) {
+                resultDiv.innerHTML = '<div class="status warning">❌ Geolocation not supported</div>';
+                log('Geolocation not supported', 'error');
+                return;
+            }
+
+            accessAttempts++;
+            updateMetrics();
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const html = `
+                        <div class="status safe">✅ Location obtained with permission</div>
+                        <div class="coordinate-display">
+                            <strong>Latitude:</strong> ${position.coords.latitude}<br>
+                            <strong>Longitude:</strong> ${position.coords.longitude}<br>
+                            <strong>Accuracy:</strong> ±${position.coords.accuracy} meters<br>
+                            <strong>Altitude:</strong> ${position.coords.altitude || 'N/A'}<br>
+                            <strong>Speed:</strong> ${position.coords.speed || 'N/A'}<br>
+                            <strong>Heading:</strong> ${position.coords.heading || 'N/A'}<br>
+                            <strong>Timestamp:</strong> ${new Date(position.timestamp).toLocaleString()}
+                        </div>
+                        <div class="status info">
+                            ℹ️ You should have seen a permission dialog before this appeared
+                        </div>
+                    `;
+                    resultDiv.innerHTML = html;
+                    log(`GPS location obtained: ${position.coords.latitude}, ${position.coords.longitude}`, 'success');
+                },
+                function(error) {
+                    let errorMsg = '';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = '✅ Permission denied - You are protected!';
+                            log('GPS request denied by user (Good!)', 'success');
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = '❌ Location unavailable';
+                            log('Location unavailable', 'error');
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = '⏱️ Request timeout';
+                            log('Location request timeout', 'error');
+                            break;
+                    }
+                    resultDiv.innerHTML = `<div class="status ${error.code === error.PERMISSION_DENIED ? 'safe' : 'warning'}">${errorMsg}</div>`;
+                },
+                { 
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0 
+                }
+            );
+        }
+
+        // IP-based location
+        async function fetchIPLocation() {
+            try {
+                const response = await fetch('https://ipapi.co/json/');
+                const data = await response.json();
+                
+                const html = `
+                    <div class="status info">ℹ️ This information is obtained from your IP address (no permission needed)</div>
+                    <div class="coordinate-display">
+                        <strong>IP Address:</strong> ${data.ip}<br>
+                        <strong>Country:</strong> ${data.country_name} (${data.country_code})<br>
+                        <strong>Region:</strong> ${data.region}<br>
+                        <strong>City:</strong> ${data.city}<br>
+                        <strong>Postal Code:</strong> ${data.postal}<br>
+                        <strong>Coordinates:</strong> ${data.latitude}, ${data.longitude}<br>
+                        <strong>Timezone:</strong> ${data.timezone}<br>
+                        <strong>ISP:</strong> ${data.org}<br>
+                        <strong>ASN:</strong> ${data.asn}
+                    </div>
+                    <div class="status safe">✅ This is NORMAL - all websites can see this information</div>
+                `;
+                document.getElementById('ip-location').innerHTML = html;
+                log(`IP location fetched: ${data.city}, ${data.country_name}`);
+            } catch (error) {
+                document.getElementById('ip-location').innerHTML = 
+                    '<div class="status warning">Could not fetch IP location</div>';
+                log(`Error fetching IP location: ${error.message}`, 'error');
+            }
+        }
+
+        // Browser fingerprinting
+        function generateFingerprint() {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl');
+            
+            const fingerprint = {
+                canvas: canvas.toDataURL(),
+                webgl: gl ? {
+                    vendor: gl.getParameter(gl.VENDOR),
+                    renderer: gl.getParameter(gl.RENDERER)
+                } : 'Not available',
+                plugins: Array.from(navigator.plugins).map(p => p.name),
+                mimeTypes: Array.from(navigator.mimeTypes).map(m => m.type),
+                fonts: 'Detection requires additional library',
+                audioContext: typeof AudioContext !== 'undefined',
+                battery: 'battery' in navigator,
+                deviceMemory: navigator.deviceMemory || 'Not available',
+                connection: navigator.connection ? {
+                    effectiveType: navigator.connection.effectiveType,
+                    downlink: navigator.connection.downlink,
+                    rtt: navigator.connection.rtt
+                } : 'Not available'
+            };
+
+            let html = '<div class="coordinate-display">';
+            html += `<strong>Plugins (${fingerprint.plugins.length}):</strong> ${fingerprint.plugins.slice(0, 5).join(', ')}...<br>`;
+            html += `<strong>WebGL Vendor:</strong> ${fingerprint.webgl.vendor || 'N/A'}<br>`;
+            html += `<strong>WebGL Renderer:</strong> ${fingerprint.webgl.renderer || 'N/A'}<br>`;
+            html += `<strong>Audio Context:</strong> ${fingerprint.audioContext}<br>`;
+            html += `<strong>Device Memory:</strong> ${fingerprint.deviceMemory} GB<br>`;
+            html += `<strong>Connection Type:</strong> ${fingerprint.connection.effectiveType || 'N/A'}<br>`;
+            html += '</div>';
+
+            document.getElementById('fingerprint-data').innerHTML = html;
+            log('Browser fingerprint generated');
+        }
+
+        // Update threat level
+        function updateThreatLevel() {
+            const threatDiv = document.getElementById('threat-level');
+            
+            if (securityScore >= 80) {
+                threatDiv.className = 'status safe';
+                threatDiv.textContent = '✅ SECURE - No threats detected';
+            } else if (securityScore >= 50) {
+                threatDiv.className = 'status alert';
+                threatDiv.textContent = '⚠️ MODERATE RISK - Some security concerns';
+            } else if (securityScore >= 20) {
+                threatDiv.className = 'status warning';
+                threatDiv.textContent = '🚨 HIGH RISK - Multiple security issues detected';
+            } else {
+                threatDiv.className = 'status critical blink';
+                threatDiv.textContent = '🚨🚨🚨 CRITICAL THREAT - IMMEDIATE ACTION REQUIRED';
+            }
+        }
+
+        // Continuous monitoring
+        function startMonitoring() {
+            monitoringInterval = setInterval(() => {
+                checkPermissions();
+                updateThreatLevel();
+            }, 5000); // Check every 5 seconds
+        }
+
+        // Initialize everything
+        window.addEventListener('load', function() {
+            log('Security audit initiated');
+            detectEnvironment();
+            checkPermissions();
+            fetchIPLocation();
+            testAPIIntegrity();
+            generateFingerprint();
+            stealthLocationCheck();
+            startMonitoring();
+            updateMetrics();
+            log('All security checks completed');
+        });
+
+        // Detect if page is being loaded in iframe (potential clickjacking)
+        if (window.self !== window.top) {
+            log('WARNING: Page loaded in iframe - potential clickjacking risk!', 'error');
+            alert('⚠️ WARNING: This page is loaded inside an iframe. This could be a security risk!');
+            securityScore -= 40;
+        }
+
+        // Monitor visibility changes (app switching)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                log('Page hidden - user switched apps/tabs');
+            } else {
+                log('Page visible again - re-running security checks');
+                checkPermissions();
+            }
+        });
+    </script>
+</body>
+</html>
