@@ -1,0 +1,7 @@
+{
+  "popup_enabled": true,
+  "message": "Votre message ici",
+  "link": "https://example.com",
+  "link_text": "Voir plus",
+  "show_link": true
+}
