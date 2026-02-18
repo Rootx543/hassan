@@ -5,10 +5,10 @@
   "link_text": "...",
   "show_link": false,
   "notification_enabled": true,
-  "notification_id": "notif-003",
-  "notification_title": "Nouveauté ! 🎉",
-  "notification_message": "Votre message...",
+  "notification_id": "notif-004",
+  "notification_title": "Notification! 🎉",
+  "notification_message": "Profitez de l'application dès maintenant, tant qu'elle est gratuite 😌😌",
   "notification_link": "https://...",
   "notification_link_text": "Découvrir",
-  "notification_show_link": true
+  "notification_show_link": false
 }
