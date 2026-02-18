@@ -1,11 +1,11 @@
 {
-  "popup_enabled": false,
+  "popup_enabled": true,
   "message": "...",
   "link": "...",
   "link_text": "...",
   "show_link": false,
   "notification_enabled": true,
-  "notification_id": "notif-004",
+  "notification_id": "notif-005",
   "notification_title": "Notification! 🎉",
   "notification_message": "Profitez de l'application dès maintenant, tant qu'elle est gratuite 😌😌",
   "notification_link": "https://...",
