@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recherche & Carte QC</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  * { box-sizing: border-box; font-family: -apple-system, Arial, sans-serif; }
+  body { margin:0; padding:0; background:#f4f6f8; }
+  header { background:#094699; color:white; padding:14px 16px; font-weight:800; font-size:18px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  header .status { font-size:11px; font-weight:500; opacity:0.85; }
+  #search-wrap { position:relative; padding:12px; background:white; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+  #search-input {
+    width:100%; padding:12px 14px; font-size:15px; border:1px solid #ddd;
+    border-radius:8px; outline:none;
+  }
+  #search-input:focus { border-color:#094699; }
+  #suggestions {
+    position:absolute; left:12px; right:12px; top:64px; background:white;
+    border:1px solid #ddd; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    max-height:280px; overflow-y:auto; z-index:1000; display:none;
+  }
+  .suggestion-item { padding:10px 14px; cursor:pointer; border-bottom:1px solid #f0f0f0; }
+  .suggestion-item:last-child { border-bottom:none; }
+  .suggestion-item:hover { background:#e8f0fe; }
+  .suggestion-item.msg { cursor:default; color:#999; font-size:13px; text-align:center; }
+  .suggestion-item.msg.err { color:#dc3545; }
+  .sugg-title { font-weight:600; font-size:14px; color:#222; }
+  .sugg-sub { font-size:12px; color:#777; margin-top:2px; }
+  .sugg-tag {
+    display:inline-block; font-size:10px; font-weight:700; padding:1px 6px;
+    border-radius:4px; margin-left:6px; vertical-align:middle;
+  }
+  .tag-adresse { background:#e8f0fe; color:#094699; }
+  .tag-entreprise { background:#fff3cd; color:#856404; }
+  .tag-recent { background:#e2e3e5; color:#41464b; }
+
+  #map-wrap { position:relative; }
+  #map { height: 55vh; width:100%; }
+  #locate-btn {
+    position:absolute; bottom:14px; right:10px; z-index:500;
+    width:44px; height:44px; border-radius:50%; border:none;
+    background:white; box-shadow:0 2px 8px rgba(0,0,0,0.3);
+    font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  #locate-btn.active { background:#094699; color:white; }
+
+  #list-wrap { padding:12px; }
+  #list-wrap h3 { margin:0 0 10px 0; font-size:15px; color:#333; }
+
+  #optimize-hint {
+    display:none; background:#fff3cd; color:#7a5b00; font-size:12px;
+    padding:10px 12px; border-radius:8px; margin-bottom:10px; line-height:1.5;
+  }
+
+  #route-bar {
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:white; padding:10px 12px; border-radius:8px; margin-bottom:10px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.06); flex-wrap:wrap;
+  }
+  #route-bar .info { font-size:12px; color:#666; flex:1; min-width:180px; }
+  #route-btn {
+    background:#0f9d58; color:white; border:none; border-radius:8px;
+    padding:10px 14px; font-size:13px; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  #route-btn:disabled { background:#b7cdbf; cursor:not-allowed; }
+  #route-btn:hover:not(:disabled) { background:#0c8043; }
+  #select-all-wrap { font-size:12px; color:#555; display:flex; align-items:center; gap:6px; }
+
+  #reset-bar {
+    display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-bottom:10px;
+    flex-wrap:wrap;
+  }
+  #reset-btn {
+    background:#f8d7da; color:#721c24; border:none; border-radius:8px;
+    padding:8px 12px; font-size:12px; font-weight:700; cursor:pointer;
+  }
+  #reset-btn:hover { background:#f1b0b7; }
+  #export-btn, #import-btn {
+    background:#e8f0fe; color:#094699; border:none; border-radius:8px;
+    padding:8px 12px; font-size:12px; font-weight:700; cursor:pointer;
+  }
+  #export-btn:hover, #import-btn:hover { background:#d6e4fc; }
+
+  .loc-item {
+    display:flex; align-items:center; gap:10px; background:white; padding:10px 12px;
+    border-radius:8px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap:wrap;
+  }
+  .loc-check { width:18px; height:18px; flex-shrink:0; cursor:pointer; accent-color:#094699; }
+  .loc-num {
+    width:28px; height:28px; border-radius:50%; background:#094699; color:white;
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0;
+  }
+  .loc-info { flex:1; min-width:140px; }
+  .loc-name { font-weight:600; font-size:13px; color:#333; }
+  .loc-addr { font-size:12px; color:#777; }
+  .loc-actions { display:flex; gap:6px; }
+  .loc-del {
+    background:#f8d7da; color:#721c24; border:none; border-radius:6px;
+    padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer;
+  }
+  .loc-gmap {
+    background:#d4edda; color:#155724; border:none; border-radius:6px;
+    padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer;
+    display:flex; align-items:center; gap:4px;
+  }
+  .loc-gmap:hover { background:#c3e6cb; }
+  .loc-del:hover { background:#f1b0b7; }
+  #empty-msg { text-align:center; color:#999; font-size:13px; padding:20px; }
+
+  .loc-item.delivered { opacity:0.6; background:#f6f9f7; }
+  .loc-item.delivered .loc-name { text-decoration:line-through; }
+  .loc-item.delivered .loc-num { background:#0f9d58; }
+  .loc-deliver {
+    background:#e8f5e9; color:#0f9d58; border:1px solid #bfe6c8; border-radius:6px;
+    padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer;
+    display:flex; align-items:center; gap:4px;
+  }
+  .loc-deliver:hover { background:#d4edda; }
+  .loc-deliver.active { background:#0f9d58; color:white; border-color:#0f9d58; }
+  #progress-info { font-size:12px; color:#666; margin:-4px 0 10px 0; }
+
+  #save-indicator {
+    position:fixed; bottom:12px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:#222; color:white; font-size:12px; padding:8px 14px; border-radius:20px;
+    opacity:0; transition:opacity 0.25s, transform 0.25s; z-index:2000; pointer-events:none;
+  }
+  #save-indicator.show { opacity:0.92; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <span> Recherche & Carte — Québec</span>
+  <span class="status" id="storage-status">Chargement…</span>
+</header>
+
+<div id="search-wrap">
+  <input type="text" id="search-input" placeholder=" Tapez une adresse ou un nom de commerce...">
+  <div id="suggestions"></div>
+</div>
+
+<div id="map-wrap">
+  <div id="map"></div>
+  <button id="locate-btn" title="Me localiser" onclick="toggleLiveLocation()"></button>
+</div>
+
+<div id="list-wrap">
+  <h3>Lieux ajoutés (<span id="loc-count">0</span>)</h3>
+  <div id="progress-info"></div>
+
+  <div id="reset-bar">
+    <button id="export-btn" onclick="exportLocations()" title="Exporter la liste en fichier JSON"> Exporter</button>
+    <button id="import-btn" onclick="document.getElementById('import-file').click()" title="Importer une liste depuis un fichier JSON"> Importer</button>
+    <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="importLocations(event)">
+    <button id="reset-btn" onclick="resetLocations()"> Réinitialiser la liste</button>
+  </div>
+
+  <div id="optimize-hint">
+     Une fois Google Maps ouvert, si vous avez 3 arrêts intermédiaires ou plus, cochez l'option
+    « <b>Optimiser l'ordre</b> » qui apparaît dans le panneau d'itinéraire pour laisser Google
+    réorganiser automatiquement les arrêts selon le trajet le plus efficace.
+  </div>
+
+  <div id="route-bar">
+    <div id="select-all-wrap">
+      <input type="checkbox" id="select-all" class="loc-check">
+      <label for="select-all">Tout sélectionner</label>
+    </div>
+    <div class="info" id="route-info">Sélectionnez 2 lieux ou plus pour créer un itinéraire.</div>
+    <button id="route-btn" disabled onclick="openSelectedRoute()"> Itinéraire optimisé</button>
+  </div>
+
+  <div id="loc-list">
+    <div id="empty-msg">Aucun lieu ajouté pour l'instant.</div>
+  </div>
+</div>
+
+<div id="save-indicator"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const map = L.map('map').setView([46.8139, -71.2080], 12); // Québec par défaut
+
+  // --- Couches de tuiles : OpenStreetMap + Google Maps (routière / satellite) ---
+  const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '&copy; OSM'
+  });
+
+  const googleRoadLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    attribution: '&copy; Google Maps'
+  });
+
+  const googleSatLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    attribution: '&copy; Google Maps'
+  });
+
+  osmLayer.addTo(map); // couche par défaut
+
+  L.control.layers({
+    'OpenStreetMap': osmLayer,
+    'Google Maps (routes)': googleRoadLayer,
+    'Google Maps (satellite)': googleSatLayer
+  }, {}, { position: 'topright' }).addTo(map);
+
+  let markersGroup = L.featureGroup().addTo(map);
+  let locations = []; // { name, address, lat, lon, selected, delivered }
+  let addressHistory = []; // { name, address, lat, lon } — lieux déjà recherchés
+  let debounceTimer = null;
+  let currentController = null;
+
+  const STORAGE_KEY_LOCATIONS = 'saved-locations';
+  const STORAGE_KEY_HISTORY = 'address-history';
+  const HISTORY_LIMIT = 30;
+
+  // Point d'accès proxy public (fonctionne en CORS depuis un navigateur)
+  const API_BASE = 'https://geoegl.msp.gouv.qc.ca/apis/icherche/geocode';
+
+  const searchInput = document.getElementById('search-input');
+  const suggestionsBox = document.getElementById('suggestions');
+  const storageStatus = document.getElementById('storage-status');
+  const saveIndicator = document.getElementById('save-indicator');
+
+  // ---------------------------------------------------------------------
+  // Stockage persistant — IndexedDB (survit à la fermeture du navigateur)
+  // ---------------------------------------------------------------------
+
+  const DB_NAME = 'carte-quebec-db';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'kv';
+  let dbPromise = null;
+
+  function openDb() {
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise((resolve, reject) => {
+      if (!window.indexedDB) {
+        reject(new Error("IndexedDB n'est pas disponible dans ce navigateur."));
+        return;
+      }
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME);
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return dbPromise;
+  }
+
+  const idbStorage = {
+    async get(key) {
+      const db = await openDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const req = tx.objectStore(STORE_NAME).get(key);
+        req.onsuccess = () => resolve(req.result !== undefined ? { value: req.result } : null);
+        req.onerror = () => reject(req.error);
+      });
+    },
+    async set(key, value) {
+      const db = await openDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(value, key);
+        tx.oncomplete = () => resolve({ key, value });
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+  };
+
+  function flashIndicator(text) {
+    saveIndicator.textContent = text;
+    saveIndicator.classList.add('show');
+    clearTimeout(flashIndicator._t);
+    flashIndicator._t = setTimeout(() => saveIndicator.classList.remove('show'), 1400);
+  }
+
+  async function loadFromStorage() {
+    storageStatus.textContent = 'Chargement…';
+    try {
+      const savedLocs = await idbStorage.get(STORAGE_KEY_LOCATIONS);
+      locations = savedLocs && savedLocs.value ? JSON.parse(savedLocs.value) : [];
+      // Migration : garantit que chaque lieu a bien un champ "delivered"
+      locations = locations.map(loc => ({ delivered: false, ...loc }));
+    } catch (e) {
+      console.error('Erreur de chargement:', e);
+      locations = []; // clé inexistante ou erreur
+    }
+    try {
+      const savedHist = await idbStorage.get(STORAGE_KEY_HISTORY);
+      addressHistory = savedHist && savedHist.value ? JSON.parse(savedHist.value) : [];
+    } catch (e) {
+      addressHistory = [];
+    }
+    storageStatus.textContent = locations.length
+      ? `${locations.length} lieu(x) restauré(s)`
+      : 'Prêt';
+    renderMarkers();
+    renderList();
+  }
+
+  async function persistLocations(retry = true) {
+    try {
+      const res = await idbStorage.set(STORAGE_KEY_LOCATIONS, JSON.stringify(locations));
+      if (!res) throw new Error('échec du stockage');
+      flashIndicator(' Sauvegardé');
+    } catch (e) {
+      console.error('Erreur de sauvegarde:', e);
+      if (retry) {
+        // Nouvelle tentative une fois, au cas où c'était une erreur passagère
+        setTimeout(() => persistLocations(false), 800);
+      } else {
+        flashIndicator(' Sauvegarde impossible');
+      }
+    }
+  }
+
+  async function persistHistory() {
+    try {
+      await idbStorage.set(STORAGE_KEY_HISTORY, JSON.stringify(addressHistory));
+    } catch (e) {
+      console.error('Erreur de sauvegarde historique:', e);
+    }
+  }
+
+  function addToHistory(name, address, lat, lon) {
+    // Évite les doublons (même nom + adresse)
+    addressHistory = addressHistory.filter(h => !(h.name === name && h.address === address));
+    addressHistory.unshift({ name, address, lat, lon });
+    if (addressHistory.length > HISTORY_LIMIT) addressHistory = addressHistory.slice(0, HISTORY_LIMIT);
+    persistHistory();
+  }
+
+  async function resetLocations() {
+    if (locations.length === 0) return;
+    if (!confirm('Voulez-vous vraiment effacer tous les lieux ajoutés ? Cette action est irréversible.')) return;
+    locations = [];
+    await persistLocations();
+    renderMarkers();
+    renderList();
+    flashIndicator(' Liste réinitialisée');
+  }
+
+  // ---------------------------------------------------------------------
+  // Import / Export des adresses (fichier JSON)
+  // ---------------------------------------------------------------------
+
+  function exportLocations() {
+    if (locations.length === 0) {
+      alert('Aucun lieu à exporter.');
+      return;
+    }
+    const exportData = locations.map(({ name, address, lat, lon, delivered }) => ({
+      name, address, lat, lon, delivered: !!delivered
+    }));
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `lieux-quebec-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    flashIndicator(` ${exportData.length} lieu(x) exporté(s)`);
+  }
+
+  function isValidImportedLocation(item) {
+    return item && typeof item === 'object'
+      && typeof item.lat === 'number' && typeof item.lon === 'number'
+      && !Number.isNaN(item.lat) && !Number.isNaN(item.lon)
+      && (typeof item.name === 'string' || typeof item.address === 'string');
+  }
+
+  async function importLocations(event) {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = ''; // permet de réimporter le même fichier si besoin
+    if (!file) return;
+
+    let parsed;
+    try {
+      const text = await file.text();
+      parsed = JSON.parse(text);
+    } catch (e) {
+      alert("Ce fichier n'est pas un JSON valide.");
+      return;
+    }
+
+    const items = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.locations) ? parsed.locations : null);
+    if (!items) {
+      alert("Format inattendu : le fichier doit contenir une liste de lieux.");
+      return;
+    }
+
+    const valid = items.filter(isValidImportedLocation).map(item => ({
+      name: item.name || item.address || 'Lieu',
+      address: item.address || item.name || '',
+      lat: item.lat,
+      lon: item.lon,
+      selected: true,
+      delivered: !!item.delivered
+    }));
+
+    if (valid.length === 0) {
+      alert("Aucun lieu valide trouvé dans ce fichier.");
+      return;
+    }
+
+    // Évite les doublons exacts (même nom + coordonnées) déjà présents dans la liste
+    const isDuplicate = (a, b) => a.name === b.name && a.lat === b.lat && a.lon === b.lon;
+    const toAdd = valid.filter(v => !locations.some(l => isDuplicate(l, v)));
+    const skipped = valid.length - toAdd.length;
+
+    if (toAdd.length === 0) {
+      alert('Tous les lieux de ce fichier sont déjà présents dans la liste.');
+      return;
+    }
+
+    const replace = locations.length > 0
+      ? confirm(`Importer ${toAdd.length} lieu(x)${skipped ? ` (${skipped} doublon(s) ignoré(s))` : ''}.\n\nCliquez OK pour AJOUTER à la liste actuelle, ou Annuler pour REMPLACER la liste actuelle par ce fichier.`)
+      : true;
+
+    locations = replace ? [...locations, ...toAdd] : toAdd;
+
+    renderMarkers();
+    renderList();
+    await persistLocations();
+    flashIndicator(` ${toAdd.length} lieu(x) importé(s)`);
+  }
+
+  // ---------------------------------------------------------------------
+  // Localisation en direct
+  // ---------------------------------------------------------------------
+
+  let liveWatchId = null;
+  let liveMarker = null;
+  let liveAccuracyCircle = null;
+  const locateBtn = document.getElementById('locate-btn');
+
+  function toggleLiveLocation() {
+    if (liveWatchId !== null) {
+      stopLiveLocation();
+      return;
+    }
+    if (!navigator.geolocation) {
+      alert("La géolocalisation n'est pas disponible sur cet appareil/navigateur.");
+      return;
+    }
+    locateBtn.classList.add('active');
+    let firstFix = true;
+    liveWatchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        updateLiveMarker(latitude, longitude, accuracy);
+        if (firstFix) {
+          map.setView([latitude, longitude], 15);
+          firstFix = false;
+        }
+      },
+      (err) => {
+        console.error('Erreur de géolocalisation:', err);
+        alert("Impossible d'obtenir votre position : " + err.message);
+        stopLiveLocation();
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+    );
+  }
+
+  function stopLiveLocation() {
+    if (liveWatchId !== null) navigator.geolocation.clearWatch(liveWatchId);
+    liveWatchId = null;
+    locateBtn.classList.remove('active');
+    if (liveMarker) { map.removeLayer(liveMarker); liveMarker = null; }
+    if (liveAccuracyCircle) { map.removeLayer(liveAccuracyCircle); liveAccuracyCircle = null; }
+  }
+
+  function updateLiveMarker(lat, lon, accuracy) {
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:16px;height:16px;border-radius:50%;background:#1a73e8;
+              border:3px solid white;box-shadow:0 0 0 2px rgba(26,115,232,0.5);"></div>`,
+      iconSize: [16, 16], iconAnchor: [8, 8]
+    });
+    if (!liveMarker) {
+      liveMarker = L.marker([lat, lon], { icon, zIndexOffset: 1000 }).addTo(map).bindPopup('Vous êtes ici');
+      liveAccuracyCircle = L.circle([lat, lon], { radius: accuracy, color: '#1a73e8', weight: 1, fillOpacity: 0.1 }).addTo(map);
+    } else {
+      liveMarker.setLatLng([lat, lon]);
+      liveAccuracyCircle.setLatLng([lat, lon]);
+      liveAccuracyCircle.setRadius(accuracy);
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // Recherche + historique
+  // ---------------------------------------------------------------------
+
+  searchInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    const q = searchInput.value.trim();
+    if (q.length < 2) {
+      if (q.length === 0) showRecentHistory();
+      else suggestionsBox.style.display = 'none';
+      return;
+    }
+    showMessage('Recherche en cours...', false);
+    debounceTimer = setTimeout(() => fetchSuggestions(q), 300);
+  });
+
+  searchInput.addEventListener('focus', () => {
+    if (searchInput.value.trim().length === 0) showRecentHistory();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#search-wrap')) suggestionsBox.style.display = 'none';
+  });
+
+  function showMessage(text, isError) {
+    suggestionsBox.innerHTML = `<div class="suggestion-item msg ${isError ? 'err' : ''}">${text}</div>`;
+    suggestionsBox.style.display = 'block';
+  }
+
+  function showRecentHistory() {
+    if (addressHistory.length === 0) {
+      suggestionsBox.style.display = 'none';
+      return;
+    }
+    renderNormalizedSuggestions(addressHistory.slice(0, 8).map(h => ({
+      title: h.name, sub: h.address, tagHtml: '<span class="sugg-tag tag-recent"> Récent</span>',
+      name: h.name, address: h.address, lat: h.lat, lon: h.lon
+    })));
+  }
+
+  function filterHistory(q) {
+    const ql = q.toLowerCase();
+    return addressHistory
+      .filter(h => h.name.toLowerCase().includes(ql) || h.address.toLowerCase().includes(ql))
+      .slice(0, 4);
+  }
+
+  async function fetchSuggestions(q) {
+    // Résultats de l'historique local (instantané)
+    const histMatches = filterHistory(q);
+
+    // Annule la requête précédente si elle est toujours en cours
+    if (currentController) currentController.abort();
+    currentController = new AbortController();
+
+    const url = `${API_BASE}?type=adresses,entreprises&q=${encodeURIComponent(q)}&limit=10&geometry=true`;
+
+    try {
+      const res = await fetch(url, { signal: currentController.signal });
+      if (!res.ok) {
+        showMessage(`Erreur serveur (code ${res.status}). Réessayez.`, true);
+        return;
+      }
+      const data = await res.json();
+      const features = data.features || [];
+      renderCombinedSuggestions(histMatches, features);
+    } catch (e) {
+      if (e.name === 'AbortError') return; // requête annulée, normal
+      console.error('Erreur de recherche:', e);
+      if (histMatches.length > 0) {
+        // Pas de réseau, mais on peut au moins proposer l'historique
+        renderCombinedSuggestions(histMatches, []);
+      } else {
+        showMessage(`Erreur de recherche : ${e.message || 'connexion impossible'}. Vérifiez votre connexion internet.`, true);
+      }
+    }
+  }
+
+  function renderCombinedSuggestions(histMatches, features) {
+    const histNormalized = histMatches.map(h => ({
+      title: h.name, sub: h.address, tagHtml: '<span class="sugg-tag tag-recent"> Récent</span>',
+      name: h.name, address: h.address, lat: h.lat, lon: h.lon
+    }));
+
+    const liveNormalized = features
+      .map(f => normalizeFeature(f))
+      .filter(Boolean)
+      // évite de dupliquer un résultat déjà présent dans l'historique
+      .filter(f => !histNormalized.some(h => h.name === f.name && h.address === f.address));
+
+    const combined = [...histNormalized, ...liveNormalized];
+
+    if (combined.length === 0) {
+      showMessage('Aucun résultat trouvé.', false);
+      return;
+    }
+    renderNormalizedSuggestions(combined);
+  }
+
+  function normalizeFeature(feature) {
+    const p = feature.properties;
+    const geom = feature.geometry;
+    if (!geom || !geom.coordinates) return null;
+    const lon = geom.coordinates[0];
+    const lat = geom.coordinates[1];
+    const isEntreprise = feature.index === 'entreprises';
+
+    let name, address, sub, tagHtml;
+    if (isEntreprise) {
+      name = p.nom || 'Commerce';
+      const parts = [p.noCivique, p.route].filter(Boolean).join(' ');
+      address = [parts, p.municipalite, p.codePostal].filter(Boolean).join(', ');
+      sub = address;
+      if (p.categorie) sub += ` — ${p.categorie}`;
+      tagHtml = '<span class="sugg-tag tag-entreprise"> Commerce</span>';
+    } else {
+      name = p.nom || 'Adresse';
+      address = p.nom || '';
+      sub = 'Adresse civique';
+      tagHtml = '<span class="sugg-tag tag-adresse"> Adresse</span>';
+    }
+
+    return { title: name, sub, tagHtml, name, address, lat, lon };
+  }
+
+  function renderNormalizedSuggestions(items) {
+    suggestionsBox.innerHTML = items.map((it, i) => `
+        <div class="suggestion-item" data-idx="${i}">
+          <div class="sugg-title">${it.title}${it.tagHtml}</div>
+          <div class="sugg-sub">${it.sub}</div>
+        </div>`).join('');
+
+    suggestionsBox.style.display = 'block';
+
+    suggestionsBox.querySelectorAll('.suggestion-item[data-idx]').forEach(el => {
+      el.addEventListener('click', () => {
+        const idx = parseInt(el.getAttribute('data-idx'));
+        pickSuggestion(items[idx]);
+      });
+    });
+  }
+
+  function pickSuggestion(item) {
+    addLocation(item.name, item.address, item.lat, item.lon);
+    addToHistory(item.name, item.address, item.lat, item.lon);
+    searchInput.value = '';
+    suggestionsBox.style.display = 'none';
+  }
+
+  // ---------------------------------------------------------------------
+  // Gestion des lieux ajoutés
+  // ---------------------------------------------------------------------
+
+  function addLocation(name, address, lat, lon) {
+    locations.push({ name, address, lat, lon, selected: true });
+    renderMarkers();
+    renderList();
+    persistLocations();
+    map.setView([lat, lon], 15);
+  }
+
+  function removeLocation(index) {
+    locations.splice(index, 1);
+    renderMarkers();
+    renderList();
+    persistLocations();
+  }
+
+  function toggleSelected(index, checked) {
+    locations[index].selected = checked;
+    updateRouteBar();
+    persistLocations();
+  }
+
+  function toggleDelivered(index) {
+    locations[index].delivered = !locations[index].delivered;
+    renderMarkers();
+    renderList();
+    persistLocations();
+  }
+
+  document.getElementById('select-all').addEventListener('change', (e) => {
+    locations.forEach(loc => loc.selected = e.target.checked);
+    renderList();
+    persistLocations();
+  });
+
+  // --- Ouvre le lieu dans Google Maps (nouvel onglet) en utilisant les coordonnées exactes ---
+  function openInGoogleMaps(index) {
+    const loc = locations[index];
+    if (!loc) return;
+    const url = `https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lon}`;
+    window.open(url, '_blank');
+  }
+
+  // --- Ouvre un itinéraire Google Maps avec toutes les adresses sélectionnées ---
+  // Google ne permet pas de forcer l'optimisation via l'URL (réservé à l'API payante).
+  // On ouvre donc l'itinéraire multi-arrêts, et l'utilisateur clique sur "Optimiser l'ordre"
+  // dans l'interface de Google Maps elle-même (visible dès 3 arrêts intermédiaires).
+  function openSelectedRoute() {
+    const selected = locations.filter(loc => loc.selected && !loc.delivered);
+    if (selected.length < 2) return;
+
+    const coord = (loc) => `${loc.lat},${loc.lon}`;
+
+    const origin = coord(selected[0]);
+    const destination = coord(selected[selected.length - 1]);
+    const middle = selected.slice(1, -1).map(coord);
+
+    let url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=driving`;
+    if (middle.length > 0) {
+      url += `&waypoints=${encodeURIComponent(middle.join('|'))}`;
+    }
+
+    window.open(url, '_blank');
+  }
+
+  function updateRouteBar() {
+    const selectedCount = locations.filter(loc => loc.selected && !loc.delivered).length;
+    const deliveredSelectedCount = locations.filter(loc => loc.selected && loc.delivered).length;
+    const btn = document.getElementById('route-btn');
+    const info = document.getElementById('route-info');
+    const hint = document.getElementById('optimize-hint');
+
+    btn.disabled = selectedCount < 2;
+
+    if (selectedCount < 2) {
+      info.textContent = 'Sélectionnez 2 lieux ou plus (non livrés) pour créer un itinéraire.';
+      hint.style.display = 'none';
+    } else {
+      const excluded = deliveredSelectedCount > 0 ? ` (${deliveredSelectedCount} déjà livré(s) exclu(s))` : '';
+      info.textContent = `${selectedCount} lieu(x) sélectionné(s) pour l'itinéraire${excluded}.`;
+      hint.style.display = selectedCount >= 4 ? 'block' : 'none';
+    }
+  }
+
+  function renderMarkers() {
+    markersGroup.clearLayers();
+    locations.forEach((loc, i) => {
+      const bg = loc.delivered ? '#0f9d58' : '#094699';
+      const label = loc.delivered ? '✔' : (i + 1);
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="background:${bg};color:white;width:28px;height:28px;border-radius:50%;
+                border:2px solid white;display:flex;align-items:center;justify-content:center;
+                font-weight:bold;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,0.4);
+                opacity:${loc.delivered ? '0.75' : '1'};">${label}</div>`,
+        iconSize: [28, 28], iconAnchor: [14, 14]
+      });
+      const gmapUrl = `https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lon}`;
+      const statusLine = loc.delivered ? '<br><b style="color:#0f9d58;">✔ Livré</b>' : '';
+      const marker = L.marker([loc.lat, loc.lon], { icon })
+        .bindPopup(`<b>${loc.name}</b><br>${loc.address}${statusLine}<br><a href="${gmapUrl}" target="_blank" rel="noopener"> Ouvrir dans Google Maps</a>`);
+      marker.addTo(markersGroup);
+    });
+    if (locations.length > 0) {
+      map.fitBounds(markersGroup.getBounds(), { padding: [40, 40], maxZoom: 16 });
+    }
+  }
+
+  function renderList() {
+    const listEl = document.getElementById('loc-list');
+    const progressEl = document.getElementById('progress-info');
+    document.getElementById('loc-count').textContent = locations.length;
+
+    if (locations.length === 0) {
+      listEl.innerHTML = '<div id="empty-msg">Aucun lieu ajouté pour l\'instant.</div>';
+      progressEl.textContent = '';
+      updateRouteBar();
+      return;
+    }
+
+    const deliveredCount = locations.filter(l => l.delivered).length;
+    progressEl.textContent = `${deliveredCount} livré(s) sur ${locations.length}`;
+
+    listEl.innerHTML = locations.map((loc, i) => `
+      <div class="loc-item ${loc.delivered ? 'delivered' : ''}">
+        <input type="checkbox" class="loc-check" ${loc.selected ? 'checked' : ''}
+               onchange="toggleSelected(${i}, this.checked)">
+        <div class="loc-num">${loc.delivered ? '✔' : (i + 1)}</div>
+        <div class="loc-info">
+          <div class="loc-name">${loc.name}</div>
+          <div class="loc-addr">${loc.address}</div>
+        </div>
+        <div class="loc-actions">
+          <button class="loc-deliver ${loc.delivered ? 'active' : ''}" onclick="toggleDelivered(${i})" title="Marquer comme livré">
+            ${loc.delivered ? '✔ Livré' : '📦 Livrer'}
+          </button>
+          <button class="loc-gmap" onclick="openInGoogleMaps(${i})" title="Ouvrir dans Google Maps"> Google Maps</button>
+          <button class="loc-del" onclick="removeLocation(${i})"> Suppr.</button>
+        </div>
+      </div>
+    `).join('');
+
+    updateRouteBar();
+  }
+
+  // ---------------------------------------------------------------------
+  // Démarrage
+  // ---------------------------------------------------------------------
+  loadFromStorage();
+</script>
+</body>
+</html>
