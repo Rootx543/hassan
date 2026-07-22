@@ -1,0 +1,1825 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<meta name="theme-color" content="#f5b942" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Saputo" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>Saputo Products</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23f5b942'/%3E%3Ctext x='50' y='68' font-size='58' font-family='Georgia,serif' font-weight='900' text-anchor='middle' fill='%231a1a1a'%3ES%3C/text%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23f5b942'/%3E%3Ctext x='50' y='68' font-size='58' font-family='Georgia,serif' font-weight='900' text-anchor='middle' fill='%231a1a1a'%3ES%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel-2:#1f242d; --line:#2a3140;
+    --text:#e7ecf3; --muted:#9aa5b5; --accent:#f5b942; --accent-2:#3b82f6;
+    --good:#22c55e; --warn:#f59e0b; --danger:#ef4444; --chip:#222936;
+    --safe-top:env(safe-area-inset-top,0px);
+    --safe-bot:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    -webkit-font-smoothing:antialiased; overscroll-behavior-y:contain;
+  }
+  body{padding-top:var(--safe-top);padding-bottom:var(--safe-bot)}
+  a{color:var(--accent-2);text-decoration:none}
+
+  /* Top bar (sticky) */
+  header.topbar{
+    position:sticky;top:0;z-index:30;
+    background:linear-gradient(180deg,#161a22 0%,#12151b 100%);
+    border-bottom:1px solid var(--line);
+    padding:calc(var(--safe-top) + 8px) 14px 8px;
+  }
+  .top-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;flex:1;min-width:0}
+  .logo{
+    width:30px;height:30px;border-radius:8px;background:var(--accent);
+    display:flex;align-items:center;justify-content:center;color:#1a1a1a;
+    font-weight:900;font-family:ui-serif,Georgia,serif;font-size:17px;flex-shrink:0;
+  }
+  .brand small{color:var(--muted);font-weight:500;font-size:11px;display:block;line-height:1.1}
+  .brand div{overflow:hidden;line-height:1.15}
+  .topbar .stat{font-size:11px;color:var(--muted);white-space:nowrap}
+  .topbar .stat b{color:var(--text)}
+  .install-btn{
+    background:var(--accent);color:#1a1a1a;border:0;padding:6px 10px;
+    border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;
+    display:none;
+  }
+  .install-btn.show{display:inline-block}
+
+  /* Sticky search */
+  .search{
+    position:relative;display:flex;gap:6px;align-items:center;
+  }
+  .search input{
+    flex:1;padding:11px 14px 11px 36px;border-radius:11px;
+    background:var(--panel);color:var(--text);border:1px solid var(--line);
+    font-size:15px;outline:none;min-width:0;
+  }
+  .search input:focus{border-color:var(--accent)}
+  .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:.6;pointer-events:none}
+  .search .clear-x{
+    position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    background:transparent;border:0;color:var(--muted);font-size:18px;cursor:pointer;padding:6px;display:none;
+  }
+  .search .clear-x.show{display:block}
+
+  /* Quick chip scroller */
+  .chip-row{
+    display:flex;gap:6px;overflow-x:auto;padding:10px 14px 6px;
+    scrollbar-width:none;
+  }
+  .chip-row::-webkit-scrollbar{display:none}
+  .chip{
+    flex-shrink:0;display:inline-flex;align-items:center;gap:5px;
+    padding:6px 12px;border-radius:999px;background:var(--chip);
+    color:var(--text);border:1px solid transparent;font-size:12px;cursor:pointer;
+    user-select:none;white-space:nowrap;
+  }
+  .chip.active{background:var(--accent);color:#1a1a1a;font-weight:600}
+  .chip .ct{opacity:.6;font-weight:500;font-size:11px}
+
+  /* Quick action buttons (mobile) */
+  .quick-actions{
+    display:flex;gap:8px;padding:6px 14px 10px;
+  }
+  .qa{
+    flex:1;background:var(--panel);border:1px solid var(--line);
+    color:var(--text);border-radius:10px;padding:8px;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    font-size:12px;font-weight:500;cursor:pointer;
+  }
+  .qa i{font-size:14px;color:var(--accent)}
+  .qa:active{background:var(--panel-2)}
+
+  /* Section titles */
+  .sec-title{
+    font-size:11px;letter-spacing:1.3px;color:var(--muted);
+    text-transform:uppercase;padding:14px 14px 6px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .sec-title a{color:var(--accent-2);font-size:11px;cursor:pointer;letter-spacing:0}
+
+  /* Recents horizontal scroll */
+  .recents{
+    display:flex;gap:10px;overflow-x:auto;padding:0 14px 6px;
+    scrollbar-width:none;
+  }
+  .recents::-webkit-scrollbar{display:none}
+  .recent-card{
+    flex-shrink:0;width:120px;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;overflow:hidden;cursor:pointer;
+  }
+  .recent-card .img{aspect-ratio:1;background:#0a0d12;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+  .recent-card .img img{width:100%;height:100%;object-fit:cover}
+  .recent-card .img .ph{font-size:10px;color:#3a4356}
+  .recent-card .name{font-size:11px;padding:6px 8px 8px;line-height:1.25;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .recent-card .photo-dot{
+    position:absolute;bottom:5px;right:5px;background:var(--good);
+    width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    color:#0a1f10;font-size:10px;
+  }
+
+  /* Product grid (2 cols on mobile, more on larger) */
+  main{padding:0 0 90px}
+  .grid{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:6px 14px 14px;
+  }
+  @media (min-width:600px){.grid{grid-template-columns:repeat(3,1fr);gap:12px}}
+  @media (min-width:900px){.grid{grid-template-columns:repeat(4,1fr)}}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    overflow:hidden;cursor:pointer;display:flex;flex-direction:column;
+    transition:transform .08s ease;
+  }
+  .card:active{transform:scale(.98)}
+  .card .img{
+    aspect-ratio:1;background:#0a0d12;
+    display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
+  }
+  .card .img img{width:100%;height:100%;object-fit:cover;display:block}
+  .card .img .ph{color:#3a4356;font-size:10px;text-align:center;padding:6px}
+  .badge{
+    position:absolute;top:6px;left:6px;background:rgba(0,0,0,.7);
+    color:#fff;font-size:9px;padding:2px 6px;border-radius:999px;letter-spacing:.4px;
+    font-weight:600;
+  }
+  .badge.brand-SAP{background:#1e3a8a}
+  .badge.brand-ARM{background:#7c2d12}
+  .badge.brand-KFT{background:#4c1d95}
+  .badge.brand-ORB{background:#065f46}
+  .badge.brand-WOO{background:#9a3412}
+  .badge.brand-COG{background:#3f3f46}
+  .badge.brand-NTL,.badge.brand-NLS{background:#0e7490}
+  .badge.brand-MZB{background:#7e22ce}
+  .badge.brand-MTL{background:#9333ea}
+  .badge.brand-LSM,.badge.brand-MFS{background:#0891b2}
+  .badge.brand-BLV{background:#a16207}
+  .badge.brand-VIA{background:#be123c}
+  .badge.brand-PMO,.badge.brand-SLA{background:#dc2626}
+  .badge.brand-BNB{background:#475569}
+  .badge.brand-DLD{background:#0369a1}
+  .badge.brand-LOGISTICS{background:#b91c1c}
+  .badge.brand-2GO,.badge.brand-2GS{background:#16a34a}
+  .badge.brand-SRR{background:#ea580c}
+  .badge.brand-SMN{background:#db2777}
+  .badge.brand-UCO{background:#0d9488}
+  .badge.brand-FML{background:#a21caf}
+  .badge.brand-FDR,.badge.brand-FAP{background:#4d7c0f}
+  .badge.brand-OTHER{background:#475569}
+
+  .body{padding:8px 10px 10px;display:flex;flex-direction:column;gap:4px;flex:1}
+  .title{font-size:12px;font-weight:600;line-height:1.25;color:var(--text);
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .meta{font-size:10px;color:var(--muted);display:flex;gap:4px;flex-wrap:wrap}
+  .meta .pill{background:#222936;border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+  .card .actions{display:flex;gap:4px;padding:0 8px 8px;margin-top:auto}
+  .card .actions button{
+    flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    padding:5px;font-size:10px;border-radius:6px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:3px;
+  }
+  .card .actions button.save-btn.has-photo{background:var(--good);color:#0a1f10;border-color:transparent}
+  .card .actions button.save-btn{background:var(--accent);color:#1a1a1a;font-weight:600;border-color:transparent}
+  .card .actions button:active{filter:brightness(1.2)}
+
+  .empty{padding:60px 20px;text-align:center;color:var(--muted)}
+  .empty h2{color:var(--text);margin:0 0 6px;font-size:18px}
+  .empty p{font-size:13px;margin:4px 0}
+
+  /* Modal — full screen on mobile */
+  .modal-back{
+    position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:50;
+    display:none;overflow:auto;
+  }
+  .modal-back.open{display:block}
+  .modal{
+    background:var(--panel);min-height:100%;
+    display:flex;flex-direction:column;
+  }
+  .modal .head{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:calc(var(--safe-top) + 8px) 14px 8px;
+    background:linear-gradient(180deg,#161a22 0%,#12151b 100%);
+    border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:2;
+  }
+  .modal .head .x{
+    background:transparent;border:0;color:var(--muted);font-size:24px;
+    cursor:pointer;padding:6px 8px;line-height:1;
+  }
+  .modal .head .head-info{flex:1;min-width:0;overflow:hidden}
+  .modal .head h2{margin:0;font-size:15px;line-height:1.25;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .modal .head .sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .modal .pic-wrap{position:relative;background:#0a0d12;flex-shrink:0}
+  .modal .pic{
+    width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;
+    background:#0a0d12;position:relative;overflow:hidden;
+  }
+  .modal .pic img{max-width:100%;max-height:100%;object-fit:contain}
+  .modal .pic .empty-ph{color:#3a4356;font-size:12px}
+
+  .photo-strip{
+    display:flex;gap:6px;padding:8px 14px;overflow-x:auto;background:#0a0d12;
+    border-bottom:1px solid var(--line);
+  }
+  .photo-strip::-webkit-scrollbar{display:none}
+  .photo-thumb{
+    flex-shrink:0;width:60px;height:60px;border-radius:8px;overflow:hidden;
+    background:#222;position:relative;cursor:pointer;border:1px solid var(--line);
+  }
+  .photo-thumb img{width:100%;height:100%;object-fit:cover}
+  .photo-thumb .del{
+    position:absolute;top:2px;right:2px;background:rgba(0,0,0,.7);color:#fff;
+    width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:10px;cursor:pointer;
+  }
+  .photo-add{
+    flex-shrink:0;width:60px;height:60px;border-radius:8px;
+    background:#1a1f29;border:2px dashed var(--line);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:var(--muted);font-size:10px;cursor:pointer;gap:2px;
+  }
+  .photo-add:active{background:#222936}
+  .photo-add i{font-size:18px;color:var(--accent)}
+
+  .info{padding:14px;flex:1}
+  .modal h3{margin:0 0 4px;font-size:17px;line-height:1.25}
+  .modal .sub2{color:var(--muted);font-size:12px;margin-bottom:10px}
+  .modal .desc{font-size:13px;line-height:1.5;color:#cdd5e0;margin:0 0 12px}
+  .modal .kv{display:grid;grid-template-columns:90px 1fr;gap:5px 10px;font-size:12px;margin-bottom:12px}
+  .modal .kv b{color:var(--muted);font-weight:500}
+  .modal table{width:100%;border-collapse:collapse;font-size:11px}
+  .modal th,.modal td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+  .modal th{color:var(--muted);font-weight:500;text-transform:uppercase;font-size:9px;letter-spacing:1px}
+  .modal .pill{display:inline-block;padding:2px 6px;border-radius:5px;background:#222936;
+    border:1px solid var(--line);font-size:10px;color:#cdd5e0}
+
+  .actions{
+    display:flex;gap:8px;padding:10px 14px calc(10px + var(--safe-bot));
+    background:var(--panel);border-top:1px solid var(--line);
+    position:sticky;bottom:0;z-index:2;
+  }
+  .btn{
+    flex:1;padding:11px 12px;border-radius:9px;border:1px solid var(--line);
+    background:var(--panel-2);color:var(--text);font-size:13px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:6px;font-weight:500;
+  }
+  .btn.primary{background:var(--accent);color:#1a1a1a;font-weight:600;border-color:transparent}
+  .btn.photo{background:var(--good);color:#0a1f10;font-weight:600;border-color:transparent}
+  .btn:active{filter:brightness(1.1)}
+
+  .logistics .pic{background:repeating-linear-gradient(45deg,#1a1f29,#1a1f29 10px,#161a22 10px,#161a22 20px)}
+  .logistics h3{color:var(--danger)}
+
+  /* Bottom nav */
+  .bottom-nav{
+    position:fixed;bottom:0;left:0;right:0;z-index:25;
+    background:rgba(15,17,21,.95);backdrop-filter:blur(8px);
+    border-top:1px solid var(--line);
+    display:grid;grid-template-columns:repeat(4,1fr);
+    padding-bottom:var(--safe-bot);
+  }
+  .bn{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    padding:8px 4px;color:var(--muted);font-size:10px;cursor:pointer;
+    background:transparent;border:0;
+  }
+  .bn i{font-size:18px}
+  .bn.active{color:var(--accent)}
+  .bn .ct{
+    position:absolute;margin-top:-22px;margin-left:14px;
+    background:var(--accent);color:#1a1a1a;font-weight:700;
+    min-width:18px;height:18px;border-radius:9px;padding:0 5px;
+    display:flex;align-items:center;justify-content:center;font-size:10px;
+  }
+
+  /* Toast */
+  .toast{
+    position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+    background:#1f2937;border:1px solid var(--line);color:#fff;
+    padding:10px 16px;border-radius:10px;font-size:13px;z-index:60;
+    opacity:0;pointer-events:none;transition:opacity .2s;
+    max-width:90%;text-align:center;
+  }
+  .toast.show{opacity:1}
+
+  /* Sort dropdown (mobile-friendly) */
+  .sort-bar{
+    display:flex;align-items:center;gap:6px;padding:6px 14px;
+    background:var(--panel);border-top:1px solid var(--line);
+    font-size:11px;color:var(--muted);
+  }
+  .sort-bar select{
+    background:var(--panel-2);color:var(--text);border:1px solid var(--line);
+    padding:5px 8px;border-radius:7px;font-size:12px;cursor:pointer;
+    flex:1;max-width:160px;
+  }
+  .sort-bar .toggle-view{
+    display:flex;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:7px;overflow:hidden;margin-left:auto;
+  }
+  .sort-bar .toggle-view button{
+    background:transparent;color:var(--muted);border:0;padding:5px 9px;
+    font-size:12px;cursor:pointer;
+  }
+  .sort-bar .toggle-view button.active{background:var(--accent);color:#1a1a1a;font-weight:600}
+
+  /* List view */
+  .grid.list{grid-template-columns:1fr;gap:6px}
+  .grid.list .card{flex-direction:row;align-items:stretch}
+  .grid.list .card .img{width:80px;aspect-ratio:1;flex-shrink:0}
+  .grid.list .card .body{flex:1;padding:8px 10px}
+  .grid.list .card .actions{flex-direction:column;padding:8px;width:80px;flex-shrink:0;justify-content:center}
+  .grid.list .card .actions button{font-size:9px;padding:4px 2px}
+
+  /* Photo viewer (lightbox) */
+  .lightbox{
+    position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.95);
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  .lightbox.open{display:flex}
+  .lightbox img{max-width:100%;max-height:90vh;object-fit:contain}
+  .lightbox .lb-x{
+    position:absolute;top:calc(var(--safe-top) + 12px);right:14px;
+    background:rgba(0,0,0,.6);border:0;color:#fff;font-size:24px;
+    width:40px;height:40px;border-radius:50%;cursor:pointer;
+  }
+  .lightbox .lb-del{
+    position:absolute;bottom:calc(var(--safe-bot) + 24px);right:14px;
+    background:var(--danger);border:0;color:#fff;font-size:14px;
+    padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:600;
+  }
+
+  /* Hidden file input */
+  .hidden-input{display:none}
+
+  /* Tap to add photo overlay */
+  .pic-tap{
+    position:absolute;bottom:8px;right:8px;
+    background:rgba(0,0,0,.7);color:#fff;border:0;width:36px;height:36px;
+    border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    font-size:14px;backdrop-filter:blur(4px);
+  }
+  .pic-tap:active{background:var(--accent);color:#1a1a1a}
+
+  /* Storage usage indicator */
+  .storage-info{
+    position:fixed;top:calc(var(--safe-top) + 6px);right:10px;
+    background:rgba(0,0,0,.6);color:#9aa5b5;font-size:10px;
+    padding:3px 7px;border-radius:6px;z-index:31;display:none;
+  }
+  .storage-info.show{display:block}
+</style>
+</head>
+<body>
+
+<div class="storage-info" id="storage-info"></div>
+
+<header class="topbar">
+  <div class="top-row">
+    <div class="brand">
+      <div class="logo">S</div>
+      <div>
+        Saputo Catalog
+        <small>Quebec Foodservice</small>
+      </div>
+    </div>
+    <button class="install-btn" id="install-btn"><i class="fa-solid fa-download"></i> Install</button>
+    <div class="stat" id="stat"><b id="stat-shown">0</b>/<b id="stat-total">0</b></div>
+  </div>
+  <div class="search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input id="q" type="search" placeholder="Search code, name, brand…" autocomplete="off" inputmode="search" />
+    <button class="clear-x" id="clear-x">×</button>
+  </div>
+</header>
+
+<div class="quick-actions">
+  <button class="qa" data-quick="recents"><i class="fa-solid fa-clock-rotate-left"></i> Recent</button>
+  <button class="qa" data-quick="photos"><i class="fa-solid fa-camera"></i> With photos</button>
+  <button class="qa" data-quick="all"><i class="fa-solid fa-border-all"></i> All</button>
+</div>
+
+<div class="chip-row" id="cat-chips"></div>
+<div class="chip-row" id="brand-chips"></div>
+
+<div class="sort-bar">
+  <span>Sort:</span>
+  <select id="sort">
+    <option value="name">Name A→Z</option>
+    <option value="brand">Brand</option>
+    <option value="cat">Category</option>
+    <option value="code">Code</option>
+    <option value="recent">Recent</option>
+  </select>
+  <div class="toggle-view" id="view-toggle">
+    <button data-view="grid" class="active"><i class="fa-solid fa-grip"></i></button>
+    <button data-view="list"><i class="fa-solid fa-list"></i></button>
+  </div>
+</div>
+
+<main>
+  <div id="recents-section" style="display:none">
+    <div class="sec-title">
+      <span><i class="fa-solid fa-clock-rotate-left"></i> Recently viewed</span>
+      <a id="clear-recents">Clear</a>
+    </div>
+    <div class="recents" id="recents"></div>
+  </div>
+  <div id="results-section">
+    <div class="sec-title">
+      <span id="results-label">All products</span>
+      <span id="results-count" style="color:var(--muted)"></span>
+    </div>
+    <div id="grid" class="grid"></div>
+    <div id="empty" class="empty" style="display:none">
+      <i class="fa-solid fa-magnifying-glass" style="font-size:32px;opacity:.4;margin-bottom:12px;display:block"></i>
+      <h2>Nothing found</h2>
+      <p>Try a different search or clear filters.</p>
+    </div>
+  </div>
+</main>
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <button class="bn active" data-tab="browse"><i class="fa-solid fa-magnifying-glass"></i><span>Browse</span></button>
+  <button class="bn" data-tab="photos"><i class="fa-solid fa-camera"></i><span>Photos</span></button>
+  <button class="bn" data-tab="list"><i class="fa-solid fa-bookmark"></i><span>My List</span><span class="ct" id="bn-list-ct" style="display:none">0</span></button>
+  <button class="bn" data-tab="scan"><i class="fa-solid fa-barcode"></i><span>SKU</span></button>
+</nav>
+
+<!-- Modal -->
+<div id="modal-back" class="modal-back" role="dialog" aria-modal="true">
+  <div class="modal" id="modal">
+    <div class="head">
+      <div class="head-info">
+        <h2 id="m-h-title">Product</h2>
+        <div class="sub" id="m-h-sub">—</div>
+      </div>
+      <button class="x" id="m-close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="pic-wrap" id="m-pic-wrap">
+      <div class="pic" id="m-pic"></div>
+      <button class="pic-tap" id="m-pic-tap" title="Add photo"><i class="fa-solid fa-camera"></i></button>
+    </div>
+    <div class="photo-strip" id="m-photos"></div>
+    <div class="info" id="m-info"></div>
+    <div class="actions" id="m-actions"></div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lb-x" id="lb-x"><i class="fa-solid fa-xmark"></i></button>
+  <img id="lb-img" alt="" />
+  <button class="lb-del" id="lb-del"><i class="fa-solid fa-trash"></i> Delete</button>
+</div>
+
+<!-- Hidden file input for photos: no forced "capture" attribute so mobile browsers
+     present their native chooser with BOTH "Take Photo" and "Choose from Library" options.
+     (A forced capture="environment" input skips straight to the camera and hides the
+     gallery option entirely, which is why uploads previously appeared broken.) -->
+<input type="file" id="photo-input" class="hidden-input" accept="image/*" multiple />
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ==================== DATA ==================== */
+const IMG = {
+  pzmz20:  "https://saputo.canto.com/direct/image/ubc07ra40t197e1peas7v5t74g/Hnj6DwJ7FjcSjPl7HswzXZzV-yA/original?content-type=image%2Fwebp&name=BeautyShot_Pizza_Mozzarella_thumbnail.webp",
+  pzmz_shred:"https://saputo.canto.com/direct/image/371m5jpuv91pfaeuak3m51lt1n/_tyo7INLyjCOqp7CEW0eJXvDaUI/original?content-type=image%2Fjpeg&name=1869_Pizza_Mozzarella_Naked.JPG",
+  fior:    "https://saputo.canto.com/direct/image/r6j3mm78o173h826gp6ng19f31/drPhLoDjLNdOrWMiqa0TqjlcoTg/original?content-type=image%2Fpng&name=Saputo_Fior%20di%20Latte_3Kg_Round_51150%20%281%29-min.png",
+  bocconc: "https://saputo.canto.com/preview/image/i2ju76sjal4tn4isbq9oh4rt5b/800",
+  bocconc2:"https://saputo.canto.com/direct/image/8bleq1e54951nepvg0jmpcqo3h/STA-R30hStvwCvg3McPK20tlqSU/original?content-type=image%2Fpng&name=Bocconcini.png",
+  ched_shred:"https://saputo.canto.com/preview/image/oal50q58tt3bdcf6j5purm6s1k/800",
+  ched_old: "https://saputo.canto.com/direct/image/46nfo4gsgh0elfsn4srg9fgl30/Ums1maWhYY9ShLMWFyVjFayzHT0/original?content-type=image%2Fpng&name=Old_cheddar_shredded_cheese_Thumbnail.jpg",
+  ched_triple:"https://saputo.canto.com/direct/image/s7c75qol817b3e6vvaefkg2n0i/3XsFvCoAa9-iQeEV8wQF9Tx7Nrg/original?content-type=image%2Fpng&name=LF_Triple%20Cheddar_Shreds_Thumbnail.png",
+  ched_marble_sticks:"https://www.newswire.ca/wp-content/uploads/2026/02/Armstrong-High-in-Protein-Marble-Cheddar-Cheese-1200x628-1.jpg",
+  feta:    "https://saputo.canto.com/direct/image/rdhi1bpf2l7992c50m1mnk1j68/-sAgUdTBrefT5MuVYbq-17ecPco/original?content-type=image%2Fpng&name=Saputo_Feta_Cubes.png",
+  feta_beauty:"https://saputo.canto.com/direct/image/8295e66uup7ff6ljseslm8ll5h/BBp59vDkABSS8T5IeN7RW9MZNCk/original?content-type=image%2Fwebp&name=BeautyShot_Feta_big_thumbnail.webp",
+  grana:   "https://saputo.canto.com/preview/image/2bs51righp1kp3mvssgkc8fc59/800",
+  parm:    "https://saputo.canto.com/preview/image/oig9kq096l2j71n9ed8vroqj0b/400",
+  pecor:   "https://saputo.canto.com/direct/image/ngb127h1a930h3hr3qoqac5308/xfyqm4jo4EWl-aqk5evltpGt-SI/original?content-type=image%2Fpng&name=Saputo%20Pecorino%20Romano%20Thumbnail.png",
+  haloumi: "https://saputo.canto.com/direct/image/5pt3jbkpf560nenb99lm017v7u/pESJpOXbafN6SFekZNZTYHeItL0/original?content-type=image%2Fpng&name=Haloumi_Mediterranean_Spices.png",
+  haloumi_beauty:"https://saputo.canto.com/direct/image/br2r0d1rhd41h3oamehdiort1v/RUkzP8XTqeDtW4K8oZ3qT3EWfkA/original?content-type=image%2Fjpeg&name=Haloumi.jpg",
+  comte:   "https://saputo.canto.com/preview/image/rp40ba6ii93srf0u72s395jm31/800",
+  phil:    "https://res.cloudinary.com/kraft-heinz-whats-cooking-ca/image/upload/f_auto/q_auto/r_8/c_limit,w_3840/v1/dxp-images/afh/products/10068100015314-philadelphia-original-cream-cheese-6-pack-15-kg-bricks/marketing-view-color-front-unit_ee6539a2d9ca2a14f9da2c072974b6adbb646bfd_75411c1859e60bceae6bcb49122bc10e?_a=BAVMn6ID0",
+  cheese_generic:"https://saputo.canto.com/direct/image/ubc07ra40t197e1peas7v5t74g/Hnj6DwJ7FjcSjPl7HswzXZzV-yA/original?content-type=image%2Fwebp&name=BeautyShot_Pizza_Mozzarella_thumbnail.webp",
+  milk:    "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=600&auto=format&fit=crop",
+  cream:   "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=600&auto=format&fit=crop",
+  butter:  "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=600&auto=format&fit=crop",
+  egg:     "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=600&auto=format&fit=crop",
+  flour:   "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&auto=format&fit=crop",
+  pepperoni:"https://images.unsplash.com/photo-1626200419199-391ae4be7a41?w=600&auto=format&fit=crop",
+  olives:  "https://images.unsplash.com/photo-1601493700518-c4d7c1d22e1b?w=600&auto=format&fit=crop",
+  pancetta:"https://images.unsplash.com/photo-1606851094291-6efae152bb87?w=600&auto=format&fit=crop",
+  chorizo: "https://images.unsplash.com/photo-1599629954294-14df9ec8bc03?w=600&auto=format&fit=crop",
+  anchovy: "https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?w=600&auto=format&fit=crop",
+  pizza_box:"https://images.unsplash.com/photo-1593504049359-74330189a345?w=600&auto=format&fit=crop",
+  burrata: "https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=600&auto=format&fit=crop",
+  ricotta: "https://images.unsplash.com/photo-1573821663912-6df460f9c684?w=600&auto=format&fit=crop",
+  yogurt:  "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=600&auto=format&fit=crop",
+  cottage: "https://images.unsplash.com/photo-1568051243851-f9b136146e97?w=600&auto=format&fit=crop",
+  oil:     "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=600&auto=format&fit=crop",
+  sugar:   "https://images.unsplash.com/photo-1610137544932-2e0d4d4f0f59?w=600&auto=format&fit=crop",
+  yeast:   "https://images.unsplash.com/photo-1605196560547-b2f7281b8355?w=600&auto=format&fit=crop",
+  tomato:  "https://images.unsplash.com/photo-1592841200221-a6898f307baa?w=600&auto=format&fit=crop",
+  swiss:   "https://images.unsplash.com/photo-1559561853-08451507cbe7?w=600&auto=format&fit=crop",
+  gruyere: "https://images.unsplash.com/photo-1452195100486-9cc805987862?w=600&auto=format&fit=crop",
+  provolone:"https://images.unsplash.com/photo-1626956336656-b2f6cc8b8e7a?w=600&auto=format&fit=crop",
+  blue:    "https://images.unsplash.com/photo-1452195100486-9cc805987862?w=600&auto=format&fit=crop",
+  gouda:   "https://images.unsplash.com/photo-1559561853-08451507cbe7?w=600&auto=format&fit=crop",
+  mozz_sticks:"https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=600&auto=format&fit=crop",
+  goat:    "https://images.unsplash.com/photo-1559561853-08451507cbe7?w=600&auto=format&fit=crop",
+  brie:    "https://images.unsplash.com/photo-1559561853-08451507cbe7?w=600&auto=format&fit=crop",
+  milk_choc:"https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=600&auto=format&fit=crop"
+};
+
+const PRODUCTS = [
+  {id:"pzmz-bloc", name:"Pizza Mozzarella 20% Block", brand:"SAP", category:"Cheese — Pizza Mozzarella",
+    desc:"Standard pizza mozzarella in 2.4 kg block. 20% moisture, ivory colour, exceptional stretch.",
+    format:"Block", image:IMG.pzmz20,
+    codes:[{code:"487299",desc:"SAP PZMZ 20% 3D BLOC",format:"10×2.4kg"},{code:"443111",desc:"MZB 2.4KG PZMZ 20% 3D BLOC",format:"2.4kg"},{code:"44142",desc:"SAP PZMZ 15% BLOC",format:"10×2.4kg"},{code:"441140",desc:"SAP GOLD PZMZ 20% 3D BLOC",format:"10×2.4kg"}]},
+  {id:"pzmz-shred", name:"Pizza Mozzarella 20% Shredded", brand:"SAP", category:"Cheese — Pizza Mozzarella",
+    desc:"Pre-shredded pizza mozzarella — saves labour, consistent melt.",
+    format:"Shredded", image:IMG.pzmz_shred,
+    codes:[{code:"487712",desc:"SAP 20% PZMZ SHRED 3D",format:"4×2.5kg"},{code:"51547",desc:"SAP PZMZ 20% 3D RAPE",format:"4×2.5kg"},{code:"443258",desc:"MZB 2.5KG PZMZ RAPE 20%",format:"2.5kg"},{code:"487750",desc:"MZB 2.5KG VALUE MOZZ SHRED",format:"2.5kg"}]},
+  {id:"pzmz-diced", name:"Pizza Mozzarella Diced 3D", brand:"MZB", category:"Cheese — Pizza Mozzarella",
+    desc:"Diced pizza mozzarella — ready to scatter.",
+    format:"Diced", image:IMG.pzmz20,
+    codes:[{code:"433178",desc:"MZB PZMZ IOF DICED 3D",format:"2×5kg"}]},
+  {id:"kgy-bloc", name:"KGY Pizza Mozzarella Block (portion)", brand:"SAP", category:"Cheese — Pizza Mozzarella",
+    desc:"Pre-portioned pizza mozzarella blocks for cafés.",
+    format:"Portion", image:IMG.pzmz20,
+    codes:[{code:"410105",desc:"//KGY NAPF BL",format:"52×340g"}]},
+  {id:"kgy-grain", name:"KGY Grain (poutine cheese)", brand:"SAP", category:"Cheese — Pizza Mozzarella",
+    desc:"Smaller shred size specifically for poutine.",
+    format:"Grain shred", image:IMG.pzmz20,
+    codes:[{code:"410005",desc:"KGY GRAIN POUTINE SML",format:"50×60g"},{code:"410039",desc:"//KGY GRAIN POUTINE SML",format:"5×2kg"},{code:"410043",desc:"//KGY GRAIN XS",format:"5×2kg"}]},
+  {id:"bocconc-brine", name:"Bocconcini (brine)", brand:"SAP", category:"Cheese — Fresh Mozzarella",
+    desc:"Fresh mozzarella balls in brine. Mild, milky, soft.",
+    format:"Brine", image:IMG.bocconc,
+    codes:[{code:"50167",desc:"SAP 3KG BOCCONCINI (BL) REG",format:"6×1kg"}]},
+  {id:"bocconc-vp", name:"Bocconcini Vacuum Pack", brand:"SAP", category:"Cheese — Fresh Mozzarella",
+    desc:"Bocconcini vacuum-packed for longer shelf life.",
+    format:"Vacuum", image:IMG.bocconc2,
+    codes:[{code:"50585",desc:"SAP 3KG BOCCONCINI PV",format:"6 SAP"}]},
+  {id:"bocconc-mini", name:"Mini Bocconcini / Cocktail", brand:"SAP", category:"Cheese — Fresh Mozzarella",
+    desc:"Pearl-sized bocconcini — skewers, salads, garnishes.",
+    format:"Vacuum", image:IMG.bocconc2,
+    codes:[{code:"43080",desc:"SAP 200G BOCCONCINI MINI",format:"6 SAP"},{code:"43087",desc:"SAP 200G COCKTAIL BOCCONCINI",format:"6 SAP"}]},
+  {id:"fior-di-latte", name:"Fior di Latte (3 kg pail)", brand:"SAP", category:"Cheese — Fresh Mozzarella",
+    desc:"Italian fresh mozzarella curd, 3 kg pail. Base for burrata.",
+    format:"Pail", image:IMG.fior,
+    codes:[{code:"51150",desc:"SAP 3KG FIOR DI LATTE SEAU",format:"1 SAP"},{code:"89255",desc:"BLV 3KG FIOR DI LATTE SEAU",format:"1 BLV"}]},
+  {id:"mozz-fresh-250", name:"Mozzarella Fresca 250g", brand:"SAP", category:"Cheese — Fresh Mozzarella",
+    desc:"Single-ball fresh mozzarella for retail.",
+    format:"Vacuum", image:IMG.bocconc2,
+    codes:[{code:"402770",desc:"SAP 250G MOZZARELLA FRESH",format:"6 SAP"}]},
+  {id:"mozz-fresh-etoile", name:"Étoile Mozz Fraîche (part-skim)", brand:"FAP", category:"Cheese — Fresh Mozzarella",
+    desc:"Part-skim fresh mozzarella — lighter, creamy.",
+    format:"Vacuum", image:IMG.bocconc2,
+    codes:[{code:"43232",desc:"FAP 200G PART ECREM MOZZ",format:"6 FAP"},{code:"43327",desc:"FAP ETOLLE MOZZ FRAICHE",format:"—"}]},
+  {id:"arm-ched-fort-shred", name:"Armstrong Cheddar Fort Shredded", brand:"ARM", category:"Cheese — Cheddar",
+    desc:"Aged yellow cheddar, pre-shredded. Strong, classic.",
+    format:"Shredded", image:IMG.ched_shred,
+    codes:[{code:"487254",desc:"ARM CHED FORT JM RAPE",format:"4×2.5kg"},{code:"487254",desc:"ARM OLD CHED YL SHRED",format:"4×2.5kg"}]},
+  {id:"arm-ched-moy-shred", name:"Armstrong Cheddar Moyen Shredded", brand:"ARM", category:"Cheese — Cheddar",
+    desc:"Medium yellow cheddar, shredded.",
+    format:"Shredded", image:IMG.ched_shred,
+    codes:[{code:"487261",desc:"ARM MOY/CHED JN RAPE",format:"4×2.5kg"}]},
+  {id:"arm-ched-doux-shred", name:"Armstrong Cheddar Doux (Mild)", brand:"ARM", category:"Cheese — Cheddar",
+    desc:"Mild yellow cheddar for bakeries.",
+    format:"Shredded", image:IMG.ched_shred,
+    codes:[{code:"487250",desc:"ARM DOUX RAP J BAKESHOP",format:"4×2.5kg"}]},
+  {id:"arm-ched-fort-jn", name:"Armstrong Cheddar Fort Jaune 2.25 kg", brand:"ARM", category:"Cheese — Cheddar",
+    desc:"Aged yellow cheddar blocks for slicing.",
+    format:"Block", image:IMG.ched_shred,
+    codes:[{code:"805103",desc:"ARM 2.25KG CHED FORT JN",format:"6×235g"}]},
+  {id:"sap-ched-fort-pot", name:"Saputo Cheddar Fort Jaune (pot)", brand:"SAP", category:"Cheese — Cheddar",
+    desc:"Saputo-house aged cheddar in 3 kg pot.",
+    format:"Pot", image:IMG.ched_old,
+    codes:[{code:"89721",desc:"SAP 3KG CHED FORT JN POT",format:"6 SAP"}]},
+  {id:"arm-ched-marble-stick", name:"Armstrong Marble Cheddar Sticks", brand:"ARM", category:"Cheese — Cheddar",
+    desc:"Marbled cheddar in 21 g sticks — kids' meals.",
+    format:"Stick", image:IMG.ched_marble_sticks,
+    codes:[{code:"461594",desc:"ARM FARMER MARBLE BATON",format:"50×21g"}]},
+  {id:"sap-montjack", name:"Saputo Mont-Jac (marbled)", brand:"SAP", category:"Cheese — Cheddar",
+    desc:"Marbled white & yellow Swiss-cheddar hybrid.",
+    format:"Block", image:IMG.gouda,
+    codes:[{code:"487375",desc:"SAP MONTJACK BL NAT TR",format:"12×180g"}]},
+  {id:"fap-brie-carre", name:"Brie Carré (1.25 kg square)", brand:"FAP", category:"Cheese — Soft / Brie",
+    desc:"Square-format brie wheel — charcuterie.",
+    format:"Square", image:IMG.brie,
+    codes:[{code:"41133",desc:"FAP BRIE CARRE CAD PV",format:"1.25kg"}]},
+  {id:"fap-brise-du-matin", name:"Brise du Matin Brie", brand:"FAP", category:"Cheese — Soft / Brie",
+    desc:"Quebec artisanal brie, soft-ripened, buttery.",
+    format:"Wedge", image:IMG.brie,
+    codes:[{code:"41324",desc:"FAP BRISE DU MATIN",format:"4×125g"},{code:"41402",desc:"FAP BRISE DU MATIN LGR",format:"4×125g"}]},
+  {id:"fap-sauvagine", name:"La Sauvagine (Quebec brie)", brand:"FAP", category:"Cheese — Soft / Brie",
+    desc:"Award-winning Quebec regional brie-style cheese.",
+    format:"Wedge", image:IMG.brie,
+    codes:[{code:"41348",desc:"FAP LA SAUVAGINE",format:"4×125g"},{code:"43144",desc:"FAP LA SAUVAGINE PV",format:"800g"},{code:"43080",desc:"FAP SAUVAGINE RESERVE PV",format:"1.2kg"}]},
+  {id:"fap-le-brie-alexis", name:"Le Brie d'Alexis", brand:"FAP", category:"Cheese — Soft / Brie",
+    desc:"Soft-ripened brie, 300 g log, double-cream.",
+    format:"Log", image:IMG.brie,
+    codes:[{code:"41454",desc:"FAP LE BRIE D'ALEXIS",format:"4×300g"}]},
+  {id:"fap-cam-camarades", name:"Camembert des Camarades", brand:"FAP", category:"Cheese — Soft / Brie",
+    desc:"Soft-ripened camembert, 200 g wheel.",
+    format:"Wheel", image:IMG.brie,
+    codes:[{code:"41179",desc:"FAP CAM DES CAMARADES",format:"12×200g"}]},
+  {id:"fap-cam-portneuf", name:"Camembert de Portneuf", brand:"FAP", category:"Cheese — Soft / Brie",
+    desc:"Portneuf-region camembert.",
+    format:"Log", image:IMG.brie,
+    codes:[{code:"41453",desc:"FAP CAM DE PORTNEUF",format:"4×300g"},{code:"43353",desc:"FAP CAM DE PORTNEUF",format:"4×300g"}]},
+  {id:"sap-dore-mi-cam", name:"Doré-Mi Camembert", brand:"SAP", category:"Cheese — Soft / Brie",
+    desc:"Saputo's house-brand camembert.",
+    format:"Wheel", image:IMG.brie,
+    codes:[{code:"41730",desc:"SAP DORE-MI REG",format:"4×300g"}]},
+  {id:"fap-belle-creme", name:"Belle Crème (soft ripened)", brand:"FAP", category:"Cheese — Soft / Brie",
+    desc:"Double-cream soft cheese, 160 g wheel.",
+    format:"Wheel", image:IMG.brie,
+    codes:[{code:"41438",desc:"FAP BELLE CRÈME",format:"12×160g"}]},
+  {id:"fap-evanjules", name:"L'Évanjules (Brie variant)", brand:"FAP", category:"Cheese — Soft / Brie",
+    desc:"Soft-ripened cheese, 125 g format.",
+    format:"Wedge", image:IMG.brie,
+    codes:[{code:"41485",desc:"FAP 125G L'EVanjules",format:"4"}]},
+  {id:"fap-chevre-des-neiges-brie", name:"Chèvre des Neiges (Brie)", brand:"FAP", category:"Cheese — Soft / Brie",
+    desc:"Goat-milk soft-ripened cheese.",
+    format:"Wedge", image:IMG.brie,
+    codes:[{code:"41619",desc:"FAP 125G CHEVRE DES NEIGES",format:"4"}]},
+  {id:"fap-chevre-neige-ail", name:"Chèvre des Neiges Ail & Herbes", brand:"FAP", category:"Cheese — Soft / Brie",
+    desc:"Garlic & herb soft goat-milk cheese.",
+    format:"Wedge", image:IMG.brie,
+    codes:[{code:"41617",desc:"FAP 125G CH NEIGE AIL&HERBE",format:"4"}]},
+  {id:"fap-brie-no-lactose", name:"Brie Sans Lactose", brand:"FAP", category:"Cheese — Soft / Brie",
+    desc:"Lactose-free soft-ripened brie.",
+    format:"Wedge", image:IMG.brie,
+    codes:[{code:"41623",desc:"FAP 125G BRIE SANS LACTOSE",format:"4"}]},
+  {id:"fap-le-cendrinn", name:"Le Cendrinn (ash-ripened)", brand:"FAP", category:"Cheese — Soft / Brie",
+    desc:"Ash-ripened soft cheese, mild and creamy.",
+    format:"Wedge", image:IMG.brie,
+    codes:[{code:"41312",desc:"FAP LE CENDRINN",format:"6×125g"}]},
+  {id:"sap-suisse", name:"Saputo Swiss (Suisse)", brand:"SAP", category:"Cheese — Soft / Brie",
+    desc:"Classic Swiss cheese, 200 g format.",
+    format:"Block", image:IMG.swiss,
+    codes:[{code:"1978",desc:"SAP SUISSE TR",format:"12×200g"}]},
+  {id:"fap-capriny", name:"Capriny (fresh goat)", brand:"FAP", category:"Cheese — Goat",
+    desc:"Fresh goat cheese, 1 kg log — soft, tangy.",
+    format:"Log", image:IMG.goat,
+    codes:[{code:"41225",desc:"FAP CAPRINY CHEVRE FRAIS",format:"2×1kg"}]},
+  {id:"fap-chevre-des-neiges-1kg", name:"Chèvre des Neiges 1 kg", brand:"FAP", category:"Cheese — Goat",
+    desc:"Snow-capped fresh goat cheese log, 1 kg.",
+    format:"Log", image:IMG.goat,
+    codes:[{code:"41525",desc:"FAP 1KG CHEVRE DES NEIGES",format:"2 FAP"}]},
+  {id:"fap-pailloit", name:"Pailloit de Chèvre", brand:"FAP", category:"Cheese — Goat",
+    desc:"Log of fresh goat cheese, 125 g.",
+    format:"Log", image:IMG.goat,
+    codes:[{code:"41507",desc:"FAP 125G PAILLOIT DE CHEVRE",format:"4"}]},
+  {id:"woo-goat-creamy", name:"Woolwich Creamy Goat Crumble", brand:"WOO", category:"Cheese — Goat",
+    desc:"Pre-crumbled goat cheese for salads and pasta.",
+    format:"Crumble", image:IMG.goat,
+    codes:[{code:"462027",desc:"WOO 125G CRMY TRAD GOAT CRUMBLE",format:"6 WOO"}]},
+  {id:"woo-goat-orig", name:"Woolwich Original Goat Crumble", brand:"WOO", category:"Cheese — Goat",
+    desc:"Woolwich original goat crumble, 1 kg.",
+    format:"Crumble", image:IMG.goat,
+    codes:[{code:"820164",desc:"WOO 1KG ORIG GOAT CRUMBLE",format:"2 WOO"},{code:"820164",desc:"WOO 1KG CHEV ORIG EMIETTE",format:"2 WOO"}]},
+  {id:"sap-feta-cubes-bucket", name:"Feta Cubes (3 kg pail)", brand:"SAP", category:"Cheese — Feta",
+    desc:"Cow's-milk feta cubes, 3 kg pail.",
+    format:"Cubes", image:IMG.feta,
+    codes:[{code:"41527",desc:"SAP 3KG FETA CUBES SEAU",format:"1 SAP"},{code:"41527",desc:"SAP FETA CUBES PAIL",format:"1 SAP"}]},
+  {id:"sap-feta-cubes-cow", name:"Feta Cow's Milk Cubes", brand:"SAP", category:"Cheese — Feta",
+    desc:"Cow's-milk feta cubes, salt-lactose-free.",
+    format:"Cubes", image:IMG.feta,
+    codes:[{code:"41628",desc:"SAP 3KG FETA VACHE CUBE S/L",format:"1 SAP"}]},
+  {id:"sap-feta-cubes-2kg", name:"Feta Cubes (2 kg)", brand:"SAP", category:"Cheese — Feta",
+    desc:"Smaller-case feta cubes, 2 kg × 5.",
+    format:"Cubes", image:IMG.feta,
+    codes:[{code:"71919",desc:"SAP 3KG FETA CUBES SEA",format:"5×2kg"}]},
+  {id:"sap-feta-crumb", name:"Feta Crumbled (1 kg)", brand:"SAP", category:"Cheese — Feta",
+    desc:"Pre-crumbled feta, 4×1 kg.",
+    format:"Crumble", image:IMG.feta_beauty,
+    codes:[{code:"489159",desc:"SAP FETA EMIETTE",format:"4×1kg"}]},
+  {id:"sap-feta-brine-200", name:"Feta in Brine (200 g)", brand:"SAP", category:"Cheese — Feta",
+    desc:"Feta blocks in brine, 200 g.",
+    format:"Brine", image:IMG.feta,
+    codes:[{code:"1686",desc:"SAP FETA SAUMURE",format:"12×200g"},{code:"43186",desc:"SAP FETA SAUMURE",format:"12×200g"}]},
+  {id:"lsm-grana-shred", name:"Grana Padano Shredded (LSM)", brand:"LSM", category:"Cheese — Parmesan / Grana",
+    desc:"Italian Grana Padano, pre-shredded, 8×1 kg.",
+    format:"Shredded", image:IMG.grana,
+    codes:[{code:"15098",desc:"LSM 1KG GPANA PADANO RAPE",format:"8 LSM"}]},
+  {id:"mtl-grana-cubes", name:"Grana Padano Cubes (MTL)", brand:"MTL", category:"Cheese — Parmesan / Grana",
+    desc:"Grana Padano cube format.",
+    format:"Cubes", image:IMG.grana,
+    codes:[{code:"3205",desc:"MTL 1.5KG GRANA PADANO CUB",format:"6 NLS"}]},
+  {id:"sap-grana-shred", name:"Saputo Grana Padano Shredded 4.8 kg", brand:"SAP", category:"Cheese — Parmesan / Grana",
+    desc:"Bulk foodservice Grana Padano shred, 4.8 kg.",
+    format:"Shredded", image:IMG.grana,
+    codes:[{code:"51690",desc:"SAP 4.8KG GRANA PADANO RAPE",format:"1 SAP"}]},
+  {id:"nls-grana-wedge", name:"Grana Padano Wedge in Pot", brand:"NLS", category:"Cheese — Parmesan / Grana",
+    desc:"Grana Padano 1/8 wedge vacuum-sealed in pot.",
+    format:"Wedge", image:IMG.grana,
+    codes:[{code:"271268",desc:"NLS 500ML GRANA PADANO1/8 POT",format:"6 NLS"}]},
+  {id:"sap-parm-shred", name:"Saputo Parmesan Shredded 2.268 kg", brand:"SAP", category:"Cheese — Parmesan / Grana",
+    desc:"Parmesan (Parmigiano-style) shredded.",
+    format:"Shredded", image:IMG.parm,
+    codes:[{code:"15113",desc:"SAP 2.268KG PARMESAN RAPE",format:"4 SAP"}]},
+  {id:"sap-parm-flakes", name:"Saputo Parmesan Flakes (Copeaux)", brand:"SAP", category:"Cheese — Parmesan / Grana",
+    desc:"Parmesan flakes — finish salads, pastas.",
+    format:"Flakes", image:IMG.parm,
+    codes:[{code:"133117",desc:"SAP 2.5KG PARMESAN PUR COPEAUX",format:"6 SAP"}]},
+  {id:"sap-parm-170", name:"Saputo Parmesan Shredded 12×170g", brand:"SAP", category:"Cheese — Parmesan / Grana",
+    desc:"Single-serve Parmesan shred packets.",
+    format:"Shredded", image:IMG.parm,
+    codes:[{code:"43120",desc:"SAP PARMESAN RAPE",format:"12×170g"}]},
+  {id:"sap-parm-leger", name:"Saputo Parmesan Léger (Light)", brand:"SAP", category:"Cheese — Parmesan / Grana",
+    desc:"Reduced-fat Parmesan, 2×1 kg.",
+    format:"Shredded", image:IMG.parm,
+    codes:[{code:"487264",desc:"SAP PARM LEGER RAPE ANGE",format:"2×1kg"}]},
+  {id:"sap-pecor-romano", name:"Saputo Pecorino Romano Wedge", brand:"SAP", category:"Cheese — Parmesan / Grana",
+    desc:"Italian sheep's-milk Pecorino Romano wedges.",
+    format:"Wedge", image:IMG.pecor,
+    codes:[{code:"433274",desc:"SAP 150G PECORINO ROMANO WDG",format:"18 SAP"}]},
+  {id:"sap-pzmz-15-tr", name:"Provolone 15% (PZMZ 15% TR)", brand:"SAP", category:"Cheese — Provolone",
+    desc:"Low-moisture provolone, 12×1 kg vacuum.",
+    format:"Vacuum", image:IMG.provolone,
+    codes:[{code:"8121",desc:"SAP PZMZ 15% TR PV",format:"12×1kg"}]},
+  {id:"sap-provolone-1.9", name:"Saputo Provolone 1.9 kg", brand:"SAP", category:"Cheese — Provolone",
+    desc:"Saputo provolone, 2×1.9 kg.",
+    format:"Block", image:IMG.provolone,
+    codes:[{code:"414266",desc:"SAP 1.9KG PROVOLONE",format:"2×1kg"}]},
+  {id:"sap-provolone-sl", name:"Saputo Provolone Sliced", brand:"SAP", category:"Cheese — Provolone",
+    desc:"Pre-sliced provolone — sandwiches.",
+    format:"Sliced", image:IMG.provolone,
+    codes:[{code:"433259",desc:"SAP 1KG SL PROVOLONE",format:"12 SAP"}]},
+  {id:"tap-bleu-entier", name:"Blue Cheese (TAP, whole wheel)", brand:"OTHER", category:"Cheese — Blue",
+    desc:"Whole wheel of blue cheese, 4×1.134 kg.",
+    format:"Wheel", image:IMG.blue,
+    codes:[{code:"41040",desc:"TAP BLEU ENTIER",format:"4×1.134kg"}]},
+  {id:"fap-caronzola", name:"Caronzola (Gorgonzola-style)", brand:"FAP", category:"Cheese — Blue",
+    desc:"Soft blue-veined cheese, 4×125 g.",
+    format:"Wedge", image:IMG.blue,
+    codes:[{code:"41349",desc:"FAP CARONZOLA",format:"4×125g"}]},
+  {id:"cds-gorgonzola-dop", name:"Gorgonzola DOP Piccante", brand:"OTHER", category:"Cheese — Blue",
+    desc:"Italian DOP Gorgonzola, 1.5 kg.",
+    format:"Wheel", image:IMG.blue,
+    codes:[{code:"3127",desc:"CDS 1.5KG GORGONZOLA DOP PV",format:"1 CDS"}]},
+  {id:"fdr-comte-6m", name:"Juraflore Comté 6 months", brand:"FDR", category:"Cheese — Specialty / Imported",
+    desc:"French farmstead Comté aged 6 months.",
+    format:"Wedge", image:IMG.comte,
+    codes:[{code:"41560",desc:"FDR 200G JURAFLORE COMTE 6M",format:"12"}]},
+  {id:"fdr-comte-12m", name:"Juraflore Comté 12 months", brand:"FDR", category:"Cheese — Specialty / Imported",
+    desc:"French Comté aged 12 months. Crystalline, complex.",
+    format:"Wedge", image:IMG.comte,
+    codes:[{code:"41509",desc:"FDR 200G COMTE JURAFLORE12M",format:"20"}]},
+  {id:"fap-laur-arthabaska-150", name:"Le Saint-Laurent Arthabaska 150g", brand:"FAP", category:"Cheese — Specialty",
+    desc:"Quebec regional cheese, 150 g.",
+    format:"Wedge", image:IMG.brie,
+    codes:[{code:"41481",desc:"FAP 150G LAUR ARTHABASK",format:"3"}]},
+  {id:"fap-laur-arthabaska-170", name:"Le Saint-Laurent Arthabaska 170g", brand:"FAP", category:"Cheese — Specialty",
+    desc:"Quebec regional cheese, 170 g.",
+    format:"Wedge", image:IMG.brie,
+    codes:[{code:"41480",desc:"FAP 170G SIR LAUR ARTHABASK",format:"6"}]},
+  {id:"fap-cantonnier", name:"Le Cantonnier (log, ash-ripened)", brand:"FAP", category:"Cheese — Specialty",
+    desc:"Ash-ripened log cheese, 2.2 kg.",
+    format:"Log", image:IMG.brie,
+    codes:[{code:"41489",desc:"FAP CANTONNIER BUCHE PV",format:"2.2kg"}]},
+  {id:"orb-burratini", name:"Orb Burratini", brand:"ORB", category:"Cheese — Specialty",
+    desc:"Mini burrata — fresh mozzarella shell with stracciatella.",
+    format:"Fresh", image:IMG.burrata,
+    codes:[{code:"469227",desc:"ORB 125G BURRATINI",format:"6 ORB"}]},
+  {id:"cog-shred-firm", name:"Cogruet Shredded Firm Aged", brand:"COG", category:"Cheese — Specialty",
+    desc:"Cogruet firm ripened cheese, pre-shredded.",
+    format:"Shredded", image:IMG.gruyere,
+    codes:[{code:"487951",desc:"COG SHRED FIRM RIPENED",format:"4×2.5kg"}]},
+  {id:"cog-cogruet-pv", name:"Cogruet Gruyère (whole wheel)", brand:"COG", category:"Cheese — Specialty",
+    desc:"Authentic Quebec-style Gruyère AOP, 1×12 kg.",
+    format:"Wheel", image:IMG.gruyere,
+    codes:[{code:"410610",desc:"COG COGRUET PV",format:"1×12kg"}]},
+  {id:"cog-cogruet-1kg", name:"Cogruet 1 kg Vacuum", brand:"COG", category:"Cheese — Specialty",
+    desc:"Cogruet Gruyère 1 kg vacuum pack.",
+    format:"Vacuum", image:IMG.gruyere,
+    codes:[{code:"8132",desc:"COG 1KG COGRUET TR PV",format:"—"}]},
+  {id:"mtl-from-rape-nonaffine", name:"Fromage Râpé Non-Affiné", brand:"MTL", category:"Cheese — Specialty",
+    desc:"Non-aged shredded cheese, 2×2.5 kg.",
+    format:"Shredded", image:IMG.ched_triple,
+    codes:[{code:"15074",desc:"MTL FROM RAPE NONAFFINE",format:"2×2.5kg"}]},
+  {id:"sap-dore-mi-haloumi", name:"Doré-Mi Halloumi", brand:"SAP", category:"Cheese — Specialty",
+    desc:"Halloumi cheese for grilling — high melt point, squeaky.",
+    format:"Block", image:IMG.haloumi,
+    codes:[{code:"41734",desc:"SAP DORE-MI HALOUMI PV",format:"2×1kg"}]},
+  {id:"kft-phil-1.5", name:"Philadelphia Original 1.5 kg", brand:"KFT", category:"Cheese — Cream Cheese",
+    desc:"Kraft Philadelphia original cream cheese, 6×1.5 kg.",
+    format:"Brick", image:IMG.phil,
+    codes:[{code:"64344",desc:"KFT 1.5KG PHILADELPHIA",format:"6 KFT"}]},
+  {id:"kft-phil-3-tartine", name:"Philadelphia Tartine Spreadable 3 kg", brand:"KFT", category:"Cheese — Cream Cheese",
+    desc:"Philadelphia spreadable / tartine, 3 kg.",
+    format:"Tub", image:IMG.phil,
+    codes:[{code:"64423",desc:"KFT 3KG PHILADELPHIA TARTINE",format:"1 KFT"}]},
+  {id:"ntl-milk-2l-3.25", name:"Natrel Whole Milk 2L", brand:"NTL", category:"Dairy — Milk",
+    desc:"Natrel homogenized whole milk (3.25% fat), 2 L.",
+    format:"Carton", image:IMG.milk,
+    codes:[{code:"130014",desc:"NTL 2L LAIT HOMO - CTN",format:"3.25% (2L)"},{code:"930006",desc:"NTL 2L LAIT HOMO - CRUCHE",format:"3.25% (jug 2L)"}]},
+  {id:"ntl-milk-2l-2", name:"Natrel 2% Milk 2L", brand:"NTL", category:"Dairy — Milk",
+    desc:"Natrel 2% partly-skimmed milk, 2 L.",
+    format:"Carton", image:IMG.milk,
+    codes:[{code:"130007",desc:"NTL 2L LAIT HOMO",format:"2% (2L)"},{code:"930002",desc:"NTL 2L LAIT 2%",format:"2%"}]},
+  {id:"ntl-milk-2l-1", name:"Natrel 1% Milk 2L", brand:"NTL", category:"Dairy — Milk",
+    desc:"Natrel 1% low-fat milk, 2 L.",
+    format:"Carton", image:IMG.milk,
+    codes:[{code:"130031",desc:"NTL 2L LAIT HOMO",format:"1% (2L)"}]},
+  {id:"ntl-milk-4l", name:"Natrel Milk 4L", brand:"NTL", category:"Dairy — Milk",
+    desc:"Natrel milk 4 L jug, foodservice.",
+    format:"Jug", image:IMG.milk,
+    codes:[{code:"130143",desc:"NTL 4L LAIT HOMO",format:"4L"}]},
+  {id:"nls-babeurre", name:"Natrel Buttermilk 1L", brand:"NLS", category:"Dairy — Milk",
+    desc:"Cultured buttermilk, 16×1 L.",
+    format:"Carton", image:IMG.milk,
+    codes:[{code:"271038",desc:"NLS 1L BABEURRE -CTN",format:"16 NTL (1L)"}]},
+  {id:"ntl-milk-grec", name:"Natrel Greek-Style Milk 1L", brand:"NTL", category:"Dairy — Milk",
+    desc:"High-protein Greek-style milk.",
+    format:"Carton", image:IMG.milk,
+    codes:[{code:"162126",desc:"NTL 1L LAIT STYLE GREC",format:"1L"}]},
+  {id:"nls-carmilk", name:"Carmilk Chocolate Milk 310 ml", brand:"NLS", category:"Dairy — Milk",
+    desc:"Flavoured chocolate milk, single-serve.",
+    format:"Bottle", image:IMG.milk_choc,
+    codes:[{code:"133508",desc:"NLS 310ML FRAP CARMILK",format:"12 NLS"}]},
+  {id:"nls-crispycrunch", name:"CrispyCrunch Chocolate Milk 310 ml", brand:"NLS", category:"Dairy — Milk",
+    desc:"CrispyCrunch-flavoured chocolate milk.",
+    format:"Bottle", image:IMG.milk_choc,
+    codes:[{code:"133509",desc:"NLS 310ML FRAP CRISPYCRUNCH",format:"12 NLS"}]},
+  {id:"2go-uht-choc", name:"2GO Chocolate Milk UHT 310 ml", brand:"OTHER", category:"Dairy — Milk",
+    desc:"On-the-go UHT chocolate milk, 12×310 ml.",
+    format:"Bottle", image:IMG.milk_choc,
+    codes:[{code:"133502",desc:"2GO 310ML LAIT CHOC UHT",format:"12 2GO"}]},
+  {id:"2gs-sport-choc-325", name:"2GO Sport Chocolate Milk 325 ml", brand:"OTHER", category:"Dairy — Milk",
+    desc:"Sport recovery chocolate milk, 12×325 ml.",
+    format:"Bottle", image:IMG.milk_choc,
+    codes:[{code:"130338",desc:"2GS SPORT 325ML LAIT CHOC",format:"12 2GS"}]},
+  {id:"2gs-sport-pro-choc", name:"2GO Sport Pro 473 ml", brand:"OTHER", category:"Dairy — Milk",
+    desc:"Larger protein-recovery milk, 12×473 ml.",
+    format:"Bottle", image:IMG.milk_choc,
+    codes:[{code:"130357",desc:"2GS 473ML SPORT/PRO CHOC",format:"12 2GS"}]},
+  {id:"nst-nesquik", name:"Nesquik Chocolate Milk 473 ml", brand:"OTHER", category:"Dairy — Milk",
+    desc:"Nesquik-branded flavoured milk, 12×473 ml.",
+    format:"Bottle", image:IMG.milk_choc,
+    codes:[{code:"212020",desc:"NST 12x473ML NESQUIK CHOC",format:"12"}]},
+  {id:"nst-rolo", name:"Rolo Milkshake 473 ml", brand:"OTHER", category:"Dairy — Milk",
+    desc:"Rolo-flavoured milkshake, 12×473 ml.",
+    format:"Bottle", image:IMG.milk_choc,
+    codes:[{code:"212023",desc:"NST 12x473ML LAIT FRAPPE ROLO",format:"12"}]},
+  {id:"dld-aero-crm", name:"DLD Aerosol Whipped Cream 19%", brand:"DLD", category:"Dairy — Cream",
+    desc:"Aerosol whipped cream, 12×225 g.",
+    format:"Aerosol", image:IMG.cream,
+    codes:[{code:"150665",desc:"DLD 225G AERO CRM FOUET 19%",format:"12 DLD"}]},
+  {id:"ntl-creme-fouet-35", name:"Natrel Whipping Cream 35% (1L)", brand:"NTL", category:"Dairy — Cream",
+    desc:"35% whipping cream, 1 L.",
+    format:"Carton", image:IMG.cream,
+    codes:[{code:"127250",desc:"NTL 1L CRM FOUETTER 35%",format:"1L"},{code:"127251",desc:"NTL 1L CREME 35%",format:"1L"},{code:"130164",desc:"NTL 1L CRME 35%",format:"1L"}]},
+  {id:"ntl-creme-cuisson-15", name:"Natrel Cooking Cream 15% (1L)", brand:"NTL", category:"Dairy — Cream",
+    desc:"15% cooking cream — sauces, soups.",
+    format:"Carton", image:IMG.cream,
+    codes:[{code:"127164",desc:"NTL 1L CRÈME CUISSON 15%",format:"1L"}]},
+  {id:"ntl-creme-cuisson-35", name:"Natrel Cooking Cream 35% (1L)", brand:"NTL", category:"Dairy — Cream",
+    desc:"35% cooking cream — rich sauces.",
+    format:"Carton", image:IMG.cream,
+    codes:[{code:"130631",desc:"NTL 1L CRM CUISSON 35%",format:"1L"}]},
+  {id:"ntl-creme-portions-2", name:"Natrel 2% Cream Portions (15 ml)", brand:"NTL", category:"Dairy — Cream",
+    desc:"100×15 ml single-serve 2% cream portions.",
+    format:"Portion", image:IMG.cream,
+    codes:[{code:"127402",desc:"NTL 100x15ML BTE 2% UHT-BTE",format:"4 NTL"}]},
+  {id:"ntl-creme-portions-10", name:"Natrel 10% Cream Portions (15 ml)", brand:"NTL", category:"Dairy — Cream",
+    desc:"100×15 ml 10% cream portions — coffee service.",
+    format:"Portion", image:IMG.cream,
+    codes:[{code:"127400",desc:"NTL 100x15ML BTE 10% CRM UHT",format:"4 NTL"}]},
+  {id:"dld-creme-sure-14", name:"DLD Sour Cream 14% (4L)", brand:"DLD", category:"Dairy — Cream",
+    desc:"14% sour cream, 4 L pail.",
+    format:"Pail", image:IMG.cream,
+    codes:[{code:"165358",desc:"DLD 4L CRÈME SURE 14%",format:"1 DLD"}]},
+  {id:"sap-beurre-sale-cong", name:"Saputo Salted Butter (frozen)", brand:"SAP", category:"Dairy — Butter",
+    desc:"Frozen salted butter, 25×454 g.",
+    format:"Frozen", image:IMG.butter,
+    codes:[{code:"3126",desc:"SAP BEURRE SALE CONG",format:"25×454g"},{code:"3132",desc:"SAP BEURRE SALE CONG",format:"25×454g (alt)"}]},
+  {id:"sap-beurre-sale-4.5", name:"Saputo Salted Butter 4.5 kg", brand:"SAP", category:"Dairy — Butter",
+    desc:"Salted butter brick, 4.5 kg.",
+    format:"Brick", image:IMG.butter,
+    codes:[{code:"103126",desc:"SAP 4.5KG BEURRE SALE",format:"25 SAP"}]},
+  {id:"sap-beurre-non-sale", name:"Saputo Unsalted Butter 25 kg", brand:"SAP", category:"Dairy — Butter",
+    desc:"Unsalted butter, 25 kg.",
+    format:"Brick", image:IMG.butter,
+    codes:[{code:"3131",desc:"SAP BEURRE NON-SALE",format:"1×25kg"}]},
+  {id:"sap-beurre-ports", name:"Saputo Salted Butter Portions 5.5 g", brand:"SAP", category:"Dairy — Butter",
+    desc:"5.5 g salted butter cups, 300 per case.",
+    format:"Portion", image:IMG.butter,
+    codes:[{code:"71947",desc:"SAP 5.5G BEURRE SALE PORTS",format:"300 SAP"}]},
+  {id:"bnb-pan-butter", name:"BNB Salted Butter Patties", brand:"BNB", category:"Dairy — Butter",
+    desc:"Pre-formed salted butter patties.",
+    format:"Patty", image:IMG.butter,
+    codes:[{code:"87238",desc:"BNB PAN SALTD BUTTER",format:"15/DZ BNB"}]},
+  {id:"dld-ygt-vanille", name:"DLD Vanilla Stirred Yogurt 4 kg", brand:"DLD", category:"Dairy — Yogurt",
+    desc:"Stirred vanilla yogurt, 4 kg pail.",
+    format:"Pail", image:IMG.yogurt,
+    codes:[{code:"164357",desc:"DLD 4KG YGT BRASSE VANILLE",format:"4kg"}]},
+  {id:"nls-cottage-2", name:"Natrel Cottage Cheese 2% (500g)", brand:"NLS", category:"Dairy — Yogurt / Soft",
+    desc:"Cottage cheese 2% MF, 500 g.",
+    format:"Tub", image:IMG.cottage,
+    codes:[{code:"271273",desc:"NLS 500G COTTAGE 2%",format:"6 NLS"}]},
+  {id:"nls-cottage-sg", name:"Natrel Cottage Cheese (no sugar)", brand:"NLS", category:"Dairy — Yogurt / Soft",
+    desc:"Cottage cheese, sugar-free, 500 g.",
+    format:"Tub", image:IMG.cottage,
+    codes:[{code:"271275",desc:"NLS 500G COTTAGE S/G",format:"6 NLS"}]},
+  {id:"nls-cottage-leger", name:"Natrel Cottage Cheese Light", brand:"NLS", category:"Dairy — Yogurt / Soft",
+    desc:"Cottage cheese, light, 500 g.",
+    format:"Tub", image:IMG.cottage,
+    codes:[{code:"271276",desc:"NLS 500G COTTAGE LEGER",format:"6 NLS"}]},
+  {id:"arm-cottage-16", name:"Armstrong Cottage Cheese 16%", brand:"ARM", category:"Dairy — Yogurt / Soft",
+    desc:"Armstrong cottage cheese 16% MF.",
+    format:"Tub", image:IMG.cottage,
+    codes:[{code:"462771",desc:"ARM 1/2 COTTAGE 16%",format:"—"}]},
+  {id:"sap-mascarpone", name:"Saputo Mascarpone 475 g", brand:"SAP", category:"Dairy — Yogurt / Soft",
+    desc:"Italian mascarpone, 6×475 g.",
+    format:"Tub", image:IMG.cheese_generic,
+    codes:[{code:"50578",desc:"SAP MASCARPONE 6x475G",format:"6 SAP"}]},
+  {id:"sap-ricotta-pv", name:"Saputo Ricotta (vacuum, 2.2 kg)", brand:"SAP", category:"Dairy — Yogurt / Soft",
+    desc:"Saputo ricotta, 6×2.2 kg.",
+    format:"Vacuum", image:IMG.ricotta,
+    codes:[{code:"1106",desc:"SAP RICOTTA PV 6x2.2KG",format:"6 SAP"}]},
+  {id:"sap-ricotta-italiana", name:"Saputo Ricotta Italiana (2 kg)", brand:"SAP", category:"Dairy — Yogurt / Soft",
+    desc:"Italian-style ricotta, 2×2 kg.",
+    format:"Vacuum", image:IMG.ricotta,
+    codes:[{code:"1109",desc:"SAP RICOTTA ITALIANA PV 2x2KG",format:"2×2kg"}]},
+  {id:"sap-ricotta-papier", name:"Saputo Ricotta (paper-wrapped, 300 g)", brand:"SAP", category:"Dairy — Yogurt / Soft",
+    desc:"Paper-wrapped ricotta, 8×300 g.",
+    format:"Wrapped", image:IMG.ricotta,
+    codes:[{code:"1901",desc:"SAP RICOTTA PAPIER 8x300G",format:"8×300g"}]},
+  {id:"bnb-eggs-bulk-8l", name:"BNB Bulk Eggs (8L flats)", brand:"BNB", category:"Dairy — Eggs",
+    desc:"Bulk large eggs in 8 L flats. VRAC = bulk, GROS = large.",
+    format:"Bulk", image:IMG.egg,
+    codes:[{code:"68900",desc:"BNB OEUFS VRAC 8L GROS",format:"8L"},{code:"69800",desc:"BNB OEUFS VRAC BL GROS",format:"8L"},{code:"89631",desc:"BNB WHT BIG BULK EGGS",format:"—"},{code:"9938",desc:"BNB BULK EGGS",format:"—"}]},
+  {id:"sap-ice-mix-wht", name:"Saputo Ice Cream Mix White 10 L", brand:"SAP", category:"Dairy — Ice Cream Base",
+    desc:"Vanilla ice cream base mix, 2×10 L.",
+    format:"Bag", image:IMG.cream,
+    codes:[{code:"153441",desc:"SAP 10L ICE MK WHT MIX",format:"2 SAP"}]},
+  {id:"ald-sauce-pate", name:"ALD Pasta Sauce (6×100 oz)", brand:"OTHER", category:"Pizza — Sauces",
+    desc:"Bulk pasta / pizza sauce, 6×100 oz cans.",
+    format:"Can", image:IMG.tomato,
+    codes:[{code:"3272",desc:"ALD SAUCE POUR PATE",format:"6×100oz ALD"}]},
+  {id:"blv-pate-tomates", name:"Tomato Paste (6×2.84 L)", brand:"BLV", category:"Pizza — Sauces",
+    desc:"Concentrated tomato paste, 6×2.84 L.",
+    format:"Can", image:IMG.tomato,
+    codes:[{code:"3303",desc:"BLV PATE DE TOMATES",format:"6×2.84L"}]},
+  {id:"blv-tomates-broyees", name:"Crushed Tomatoes (6×2.84 L)", brand:"BLV", category:"Pizza — Sauces",
+    desc:"Crushed tomatoes, 6×2.84 L.",
+    format:"Can", image:IMG.tomato,
+    codes:[{code:"3306",desc:"BLV TOMATES BROYEES",format:"6×2.84L"}]},
+  {id:"vso-pear-tomato", name:"Whole Peeled Pear Tomatoes (6×100 oz)", brand:"OTHER", category:"Pizza — Sauces",
+    desc:"Whole peeled pear tomatoes.",
+    format:"Can", image:IMG.tomato,
+    codes:[{code:"9799",desc:"VSO W.PEEL PEAR TOMATO",format:"6×100oz"}]},
+  {id:"blv-sce-epice", name:"Spicy Pizza Sauce 20 lb", brand:"BLV", category:"Pizza — Sauces",
+    desc:"Spicy pizza sauce, 20 lb pail.",
+    format:"Pail", image:IMG.tomato,
+    codes:[{code:"3000",desc:"BLV SCE EPICE BL",format:"1×20LBS"}]},
+  {id:"blv-spaghetti", name:"Spaghetti (1/2 pallet)", brand:"BLV", category:"Pizza — Sauces",
+    desc:"Dry spaghetti, 1/2 pallet format.",
+    format:"Bulk", image:IMG.tomato,
+    codes:[{code:"3015",desc:"BLV SPAGHETTI 1/2 PALETTE",format:"—"}]},
+  {id:"blv-garniture-saveur", name:"Pizza Topping — Flavour (20 kg)", brand:"BLV", category:"Pizza — Sauces",
+    desc:"Pizza topping seasoning, 20 kg.",
+    format:"Bag", image:IMG.tomato,
+    codes:[{code:"3305",desc:"BLV 20KG GARNITURE SAVEUR",format:"20kg"}]},
+  {id:"orb-sauce-6x100", name:"Orb Italian Sauce 6×100 oz", brand:"ORB", category:"Pizza — Sauces",
+    desc:"Italian-style pizza/pasta sauce.",
+    format:"Can", image:IMG.tomato,
+    codes:[{code:"0059",desc:"ORB 6X100Z SAUCES",format:"6×100oz"}]},
+  {id:"blv-levure", name:"Instant Dry Yeast 2 lb", brand:"BLV", category:"Pizza — Sauces",
+    desc:"Active dry yeast, 12×2 lb.",
+    format:"Bag", image:IMG.yeast,
+    codes:[{code:"1303",desc:"BLV 2LB LEVUR SEC ACT S/VID",format:"12 FLC"}]},
+  {id:"blv-pepperoni", name:"BLV Pepperoni Sticks 3\"", brand:"BLV", category:"Pizza — Meats",
+    desc:"3-inch pepperoni sticks, 5×5 kg.",
+    format:"Stick", image:IMG.pepperoni,
+    codes:[{code:"52914",desc:"BLV PEPPERONI TR GROS 3\"",format:"5×5kg"}]},
+  {id:"via-pepperoni", name:"VIA Pepperoni Sticks 3\"", brand:"VIA", category:"Pizza — Meats",
+    desc:"3-inch pepperoni sticks, 2×5 kg.",
+    format:"Stick", image:IMG.pepperoni,
+    codes:[{code:"52889",desc:"VIA PEPP GROS TR V.S. 3\"",format:"2×5kg"}]},
+  {id:"blv-bacon-bits", name:"BLV Bacon Bits", brand:"BLV", category:"Pizza — Meats",
+    desc:"Pre-cooked bacon bits, 3×2 kg.",
+    format:"Bag", image:IMG.pepperoni,
+    codes:[{code:"87384",desc:"BLV GARNTUR BACON PRCUIT",format:"3×2kg"}]},
+  {id:"pmo-beef-topping", name:"PMO Beef Topping", brand:"OTHER", category:"Pizza — Meats",
+    desc:"Cooked beef pizza topping, 2×2.27 kg.",
+    format:"Bag", image:IMG.pepperoni,
+    codes:[{code:"52089",desc:"PMO GARNITURE BOEUF",format:"2×2.27kg"}]},
+  {id:"sla-beef-topping", name:"SLA Beef Topping (large)", brand:"OTHER", category:"Pizza — Meats",
+    desc:"Cooked beef topping, 2×2.27 kg.",
+    format:"Bag", image:IMG.pepperoni,
+    codes:[{code:"52170",desc:"SLA GARNITR BOEUF LRG",format:"2×2.27kg"}]},
+  {id:"srr-italian-sausage", name:"Italian Sausage (pizza)", brand:"OTHER", category:"Pizza — Meats",
+    desc:"Italian-style sausage, 2×2.5 kg.",
+    format:"Bag", image:IMG.pepperoni,
+    codes:[{code:"87273",desc:"SRR GARN PZ SAUCIS ITA",format:"2×2.5kg"}]},
+  {id:"smn-chorizo", name:"SMN Spanish Chorizo 300g", brand:"OTHER", category:"Pizza — Meats",
+    desc:"Spanish-style chorizo sausage, 12×300 g.",
+    format:"Pack", image:IMG.chorizo,
+    codes:[{code:"88940",desc:"SMN 300G SAUC CHORIZO",format:"12 SMN"}]},
+  {id:"uco-anchovies", name:"Anchovies 340 g", brand:"OTHER", category:"Pizza — Meats",
+    desc:"Anchovy fillets in oil, 24×340 g.",
+    format:"Can", image:IMG.anchovy,
+    codes:[{code:"88363",desc:"UCO 340G ANCHOIS",format:"24 UCO"}]},
+  {id:"fml-pancetta", name:"Pancetta Cattedrale (sliced)", brand:"OTHER", category:"Pizza — Meats",
+    desc:"Italian pancetta, 6×4 kg.",
+    format:"Sliced", image:IMG.pancetta,
+    codes:[{code:"200154",desc:"FML PANCETTA CAT SL",format:"6×4kg TVS"}]},
+  {id:"kps-kalamata", name:"Kalamata Olives (pitted)", brand:"OTHER", category:"Pizza — Vegetables",
+    desc:"Pitted Kalamata olives, 10×1 kg.",
+    format:"Tub", image:IMG.olives,
+    codes:[{code:"74806",desc:"KPS OLIVES KALAMATA TR",format:"10×1kg"}]},
+  {id:"blv-black-olives", name:"Black Olives (sliced)", brand:"BLV", category:"Pizza — Vegetables",
+    desc:"Sliced black olives, 6×2.84 L.",
+    format:"Can", image:IMG.olives,
+    codes:[{code:"3419",desc:"BLV OLIVES NOIRES TR",format:"6×2.84L"}]},
+  {id:"bog-mozz-sticks", name:"Breaded Mozzarella Sticks", brand:"OTHER", category:"Pizza — Breaded / Frozen",
+    desc:"Frozen breaded mozzarella sticks, 2×1.136 kg.",
+    format:"Frozen", image:IMG.mozz_sticks,
+    codes:[{code:"89620",desc:"BOG BATONET MOZZ PANE",format:"2×1.136kg"}]},
+  {id:"kft-box-10", name:"Kraft Pizza Box 10\"", brand:"KFT", category:"Pizza — Boxes",
+    desc:"10-inch corrugated pizza box, 50 per bundle.",
+    format:"Bundle", image:IMG.pizza_box,
+    codes:[{code:"88169",desc:"KFT BTE PIZZA 10\"",format:"50/BDL"}]},
+  {id:"kft-box-14", name:"Kraft Pizza Box 14\"", brand:"KFT", category:"Pizza — Boxes",
+    desc:"14-inch corrugated pizza box, 50 per bundle.",
+    format:"Bundle", image:IMG.pizza_box,
+    codes:[{code:"88170",desc:"KFT BTE PIZZA 14\"",format:"50/BDL"}]},
+  {id:"map-box-12-kraft", name:"Kraft Pizza Box 12\" (brown)", brand:"OTHER", category:"Pizza — Boxes",
+    desc:"12-inch brown kraft pizza box, 50 per bundle.",
+    format:"Bundle", image:IMG.pizza_box,
+    codes:[{code:"78901",desc:"MAP BTE PIZZA 12\"KRAFT",format:"50/BDL"}]},
+  {id:"map-box-16-kraft", name:"Kraft Pizza Box 16\" (brown)", brand:"OTHER", category:"Pizza — Boxes",
+    desc:"16-inch brown kraft pizza box, 50 per bundle.",
+    format:"Bundle", image:IMG.pizza_box,
+    codes:[{code:"78902",desc:"MAP BTE PIZZA 16\"KRAFT",format:"50/BDL"}]},
+  {id:"map-box-9-ond", name:"Wavy Insulated Pizza Box 9\"", brand:"OTHER", category:"Pizza — Boxes",
+    desc:"9-inch corrugated insulated pizza box.",
+    format:"Bundle", image:IMG.pizza_box,
+    codes:[{code:"89142",desc:"MAP BTE PIZZA OND W/B 9\"",format:"50/BDL"}]},
+  {id:"blv-farine-forte", name:"Strong Bread Flour 20 kg", brand:"BLV", category:"Pizza — Baking",
+    desc:"High-gluten bread flour, 20 kg.",
+    format:"Bag", image:IMG.flour,
+    codes:[{code:"3489",desc:"BLV 20KG FARINE FORTE",format:"20kg"}]},
+  {id:"blv-farine-canola", name:"Canola Flour 20 kg", brand:"BLV", category:"Pizza — Baking",
+    desc:"Canola flour, 20 kg.",
+    format:"Bag", image:IMG.flour,
+    codes:[{code:"3492",desc:"BLV 20KG FARINE CANOLA BTE",format:"20kg"}]},
+  {id:"rdp-sucre-fin", name:"Fine White Sugar 20 kg", brand:"OTHER", category:"Pizza — Baking",
+    desc:"Fine white sugar, 20 kg.",
+    format:"Bag", image:IMG.sugar,
+    codes:[{code:"3965",desc:"RDP 20KG WHITE SUGAR FINE",format:"20kg"}]},
+  {id:"flc-levure", name:"FLC Instant Dry Yeast 2 lb", brand:"OTHER", category:"Pizza — Baking",
+    desc:"Active dry yeast, 12×2 lb.",
+    format:"Bag", image:IMG.yeast,
+    codes:[{code:"88272",desc:"FLC 2LB LEVUR SEC ACT S/VID",format:"12 FLC"}]},
+  {id:"blv-huile-canola", name:"Canola Oil 16 L", brand:"BLV", category:"Condiments — Oil",
+    desc:"Pure canola oil, 16 L tin.",
+    format:"Tin", image:IMG.oil,
+    codes:[{code:"78661",desc:"BLV 16L HUILE CANOLA BTE",format:"16L"}]},
+  {id:"chep-half-pallet", name:"CHEP 1/2 Pallet (deposit)", brand:"LOGISTICS", category:"Logistics — Deposit",
+    desc:"⚠ Returnable CHEP pallet deposit. NOT a product. Refunded on return.",
+    format:"Pallet", image:null, isLogistics:true,
+    codes:[{code:"199410",desc:"CHEP 1/2 PALETTE",format:"deposit"},{code:"5031",desc:"PALLET CHEP CON",format:"deposit"}]},
+  {id:"dld-16l-deposit", name:"DLD 16L Dairy Case Deposit", brand:"LOGISTICS", category:"Logistics — Deposit",
+    desc:"⚠ Returnable dairy case deposit (16L). NOT a product.",
+    format:"Case", image:null, isLogistics:true,
+    codes:[{code:"199404",desc:"DLD DEPOT CS LAITIERES 16L",format:"deposit"}]},
+  {id:"btm-board-deposit", name:"40x40 Bottom Board Deposit", brand:"LOGISTICS", category:"Logistics — Deposit",
+    desc:"⚠ Returnable wooden bottom board deposit.",
+    format:"Board", image:null, isLogistics:true,
+    codes:[{code:"199405",desc:"DEPOT PALETTE 40x40 BTM BOARD",format:"deposit"}]},
+  {id:"barre-logistique", name:"Logistic Bar (deposit)", brand:"LOGISTICS", category:"Logistics — Deposit",
+    desc:"⚠ Returnable logistic bar deposit.",
+    format:"Bar", image:null, isLogistics:true,
+    codes:[{code:"199416",desc:"BARRE LOGISTIQUE",format:"deposit"}]},
+  {id:"frais-livraison", name:"Delivery Fee (Quebec)", brand:"LOGISTICS", category:"Logistics — Fee",
+    desc:"⚠ Delivery charge, not a product.",
+    format:"Fee", image:null, isLogistics:true,
+    codes:[{code:"199053",desc:"FRAIS LIVRAISON QUEBEC",format:"$4.99"}]},
+];
+
+/* ==================== STATE ==================== */
+const state = {
+  q:"", cats:new Set(), brands:new Set(), types:new Set(["product"]),
+  sort:"name", view:"grid", tab:"browse",
+  myList: JSON.parse(localStorage.getItem("saputo-mylist") || "[]"),
+  recents: JSON.parse(localStorage.getItem("saputo-recents") || "[]"),
+};
+
+/* ==================== INDEXES ==================== */
+// Build code→product lookup for instant SKU search
+const codeIndex = new Map();
+PRODUCTS.forEach(p => p.codes.forEach(c => {
+  if(c.code) codeIndex.set(String(c.code), p.id);
+}));
+
+/* ==================== HELPERS ==================== */
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const uniq = a => [...new Set(a)];
+function esc(s){return (s||"").toString().replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function escapeHTML(s){return esc(s)}
+
+/* ==================== INDEXEDDB (photos) ==================== */
+const DB_NAME = "saputo-pwa-db";
+const DB_VER = 1;
+let dbPromise = null;
+function openDB(){
+  if(dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject) => {
+    if(!('indexedDB' in window)){
+      reject(new Error("IndexedDB not supported in this browser/mode"));
+      return;
+    }
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if(!db.objectStoreNames.contains("photos")){
+        const s = db.createObjectStore("photos", { keyPath: "id", autoIncrement: true });
+        s.createIndex("byProduct", "productId", { unique:false });
+        s.createIndex("byTime", "ts", { unique:false });
+      }
+    };
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>{ dbPromise = null; reject(req.error); };
+  });
+  return dbPromise;
+}
+// Ask the browser to treat this site's storage as persistent so saved photos
+// survive long periods of inactivity instead of being auto-evicted.
+if(navigator.storage && navigator.storage.persist){
+  navigator.storage.persist().catch(()=>{});
+}
+async function savePhoto(productId, blob){
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("photos","readwrite");
+    const store = tx.objectStore("photos");
+    const rec = { productId, blob, ts: Date.now() };
+    const r = store.add(rec);
+    r.onsuccess = ()=>res(r.result);
+    r.onerror = ()=>rej(r.error);
+  });
+}
+async function getPhotosForProduct(productId){
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("photos","readonly");
+    const idx = tx.objectStore("photos").index("byProduct");
+    const r = idx.getAll(productId);
+    r.onsuccess = ()=>res(r.result.sort((a,b)=>b.ts-a.ts));
+    r.onerror = ()=>rej(r.error);
+  });
+}
+async function getAllProductsWithPhotos(){
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("photos","readonly");
+    const r = tx.objectStore("photos").getAll();
+    r.onsuccess = ()=>{
+      const map = {};
+      r.result.forEach(p => {
+        if(!map[p.productId]) map[p.productId] = [];
+        map[p.productId].push(p);
+      });
+      res(map);
+    };
+    r.onerror = ()=>rej(r.error);
+  });
+}
+async function deletePhoto(id){
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("photos","readwrite");
+    const r = tx.objectStore("photos").delete(id);
+    r.onsuccess = ()=>res();
+    r.onerror = ()=>rej(r.error);
+  });
+}
+async function totalPhotoBytes(){
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("photos","readonly");
+    const r = tx.objectStore("photos").getAll();
+    r.onsuccess = ()=>{
+      const total = r.result.reduce((sum,p)=>sum + (p.blob?.size||0), 0);
+      res(total);
+    };
+    r.onerror = ()=>rej(r.error);
+  });
+}
+
+/* Convert blob to an object URL for display, caching per photo id so we don't
+   leak a new blob: URL every time the grid re-renders. */
+const photoUrlCache = new Map(); // photoId -> object URL
+function blobToUrl(b){ return URL.createObjectURL(b); }
+function photoUrl(photoRecord){
+  if(!photoRecord) return "";
+  let url = photoUrlCache.get(photoRecord.id);
+  if(!url){
+    url = URL.createObjectURL(photoRecord.blob);
+    photoUrlCache.set(photoRecord.id, url);
+  }
+  return url;
+}
+function releasePhotoUrl(photoId){
+  const url = photoUrlCache.get(photoId);
+  if(url){ URL.revokeObjectURL(url); photoUrlCache.delete(photoId); }
+}
+
+/* ==================== CHIPS ==================== */
+function buildChips(){
+  const cats = uniq(PRODUCTS.map(p=>p.category)).sort();
+  const catBox = $("#cat-chips");
+  catBox.innerHTML = `<span class="chip active" data-cat="__all">All</span>` +
+    cats.map(c=>`<span class="chip" data-cat="${esc(c)}">${esc(c)}</span>`).join("");
+  catBox.addEventListener("click", e=>{
+    const c = e.target.closest(".chip"); if(!c) return;
+    if(c.dataset.cat==="__all"){state.cats.clear();catBox.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));c.classList.add("active");}
+    else {const all=catBox.querySelector('[data-cat="__all"]');all.classList.remove("active");c.classList.toggle("active");
+      if(c.classList.contains("active")) state.cats.add(c.dataset.cat); else state.cats.delete(c.dataset.cat);
+      if(!state.cats.size) all.classList.add("active");
+    }
+    render();
+  });
+  const brands = uniq(PRODUCTS.map(p=>p.brand)).sort();
+  const brandBox = $("#brand-chips");
+  brandBox.innerHTML = `<span class="chip active" data-brand="__all">All</span>` +
+    brands.map(b=>{
+      const n = PRODUCTS.filter(p=>p.brand===b).length;
+      return `<span class="chip" data-brand="${esc(b)}">${esc(b)} <span class="ct">${n}</span></span>`;
+    }).join("");
+  brandBox.addEventListener("click", e=>{
+    const c = e.target.closest(".chip"); if(!c) return;
+    if(c.dataset.brand==="__all"){state.brands.clear();brandBox.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));c.classList.add("active");}
+    else {const all=brandBox.querySelector('[data-brand="__all"]');all.classList.remove("active");c.classList.toggle("active");
+      if(c.classList.contains("active")) state.brands.add(c.dataset.brand); else state.brands.delete(c.dataset.brand);
+      if(!state.brands.size) all.classList.add("active");
+    }
+    render();
+  });
+}
+
+/* ==================== FILTER ==================== */
+function matches(p){
+  if(state.types.size===1 && state.types.has("product") && p.isLogistics) return false;
+  if(state.types.size===1 && state.types.has("logistics") && !p.isLogistics) return false;
+  if(state.types.size===0) return false;
+  if(state.cats.size && !state.cats.has(p.category)) return false;
+  if(state.brands.size && !state.brands.has(p.brand)) return false;
+  if(state.q){
+    const q = state.q.toLowerCase().trim();
+    if(q){
+      const hay = [p.name, p.brand, p.category, p.format, ...p.codes.flatMap(c=>[String(c.code), c.desc, c.format])].join(" ").toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+  }
+  return true;
+}
+function sortList(arr){
+  const s = state.sort;
+  if(s==="name")   return arr.sort((a,b)=>a.name.localeCompare(b.name));
+  if(s==="brand")  return arr.sort((a,b)=>a.brand.localeCompare(b.brand)||a.name.localeCompare(b.name));
+  if(s==="cat")    return arr.sort((a,b)=>a.category.localeCompare(b.category)||a.name.localeCompare(b.name));
+  if(s==="code")   return arr.sort((a,b)=>(a.codes[0]?.code||"").localeCompare(b.codes[0]?.code||""));
+  if(s==="recent") return arr.sort((a,b)=>{
+    const ia = state.recents.indexOf(a.id), ib = state.recents.indexOf(b.id);
+    if(ia===-1 && ib===-1) return a.name.localeCompare(b.name);
+    if(ia===-1) return 1; if(ib===-1) return -1;
+    return ia-ib;
+  });
+  return arr;
+}
+
+/* ==================== RENDER ==================== */
+let photoMap = {};  // productId -> [photo records]
+
+async function refreshPhotoMap(){
+  try{
+    photoMap = await getAllProductsWithPhotos();
+  } catch(err){
+    console.error("Could not load saved photos", err);
+    photoMap = {};
+  }
+}
+
+function cardHTML(p, opts={}){
+  const inList = state.myList.includes(p.id);
+  const userPhotos = photoMap[p.id];
+  const hasPhoto = userPhotos?.length > 0;
+  const code0 = p.codes[0]?.code ? `#${p.codes[0].code}` : "—";
+  // Prefer the user's own saved photo of this product; fall back to the catalog stock photo.
+  const imgHTML = hasPhoto
+    ? `<img src="${photoUrl(userPhotos[0])}" alt="${esc(p.name)}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'ph',textContent:'photo unreadable'}))"/>`
+    : p.image
+      ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'ph',textContent:'no img'}))"/>`
+      : `<div class="ph">⚠<br/>not a product</div>`;
+  return `
+    <div class="card" data-id="${p.id}">
+      <div class="img">
+        <span class="badge brand-${esc(p.brand)}">${esc(p.brand)}</span>
+        ${imgHTML}
+        ${hasPhoto ? '<span class="photo-dot"><i class="fa-solid fa-camera" style="font-size:9px"></i></span>' : ''}
+      </div>
+      <div class="body">
+        <div class="title">${esc(p.name)}</div>
+        <div class="meta">
+          <span class="pill">${esc(p.format)}</span>
+          <span class="pill">${esc(code0)}</span>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="save-btn ${hasPhoto?'has-photo':(inList?'':'')}" data-act="save" data-id="${p.id}">
+          <i class="fa-solid ${hasPhoto?'fa-camera':'fa-bookmark'}"></i> ${hasPhoto?photoMap[p.id].length:inList?'Saved':'Save'}
+        </button>
+        <button data-act="cam" data-id="${p.id}"><i class="fa-solid fa-camera-retro"></i> Photo</button>
+      </div>
+    </div>`;
+}
+
+async function render(){
+  await refreshPhotoMap();
+  let filtered;
+  if(state.tab==="list"){
+    filtered = sortList(PRODUCTS.filter(p=>state.myList.includes(p.id)));
+    $("#results-label").textContent = "My saved products";
+  } else if(state.tab==="photos"){
+    const ids = Object.keys(photoMap);
+    filtered = sortList(PRODUCTS.filter(p=>ids.includes(p.id) && matches(p)));
+    $("#results-label").textContent = "Products with photos";
+  } else {
+    filtered = sortList(PRODUCTS.filter(matches));
+    $("#results-label").textContent = state.q ? `Search: "${state.q}"` : "All products";
+  }
+  const grid = $("#grid");
+  grid.className = "grid " + (state.view==="list" ? "list" : "");
+  grid.innerHTML = filtered.map(cardHTML).join("");
+
+  $("#stat-total").textContent = PRODUCTS.length;
+  $("#stat-shown").textContent = filtered.length;
+  $("#results-count").textContent = `${filtered.length} item${filtered.length!==1?"s":""}`;
+  $("#empty").style.display = filtered.length ? "none" : "block";
+
+  // bottom nav badge
+  const listCt = state.myList.length;
+  $("#bn-list-ct").textContent = listCt;
+  $("#bn-list-ct").style.display = listCt ? "flex" : "none";
+
+  // Show recents only on browse
+  if(state.tab==="browse" && state.recents.length){
+    const rec = state.recents.slice(0,10).map(id => PRODUCTS.find(p=>p.id===id)).filter(Boolean);
+    if(rec.length){
+      $("#recents-section").style.display = "block";
+      $("#recents").innerHTML = rec.map(p=>{
+        const userPhotos = photoMap[p.id];
+        const thumb = userPhotos?.length
+          ? `<img src="${photoUrl(userPhotos[0])}" alt=""/>`
+          : (p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy"/>` : `<div class="ph">no img</div>`);
+        return `
+        <div class="recent-card" data-id="${p.id}">
+          <div class="img">
+            ${thumb}
+            ${userPhotos?.length ? '<span class="photo-dot"><i class="fa-solid fa-camera" style="font-size:9px"></i></span>':''}
+          </div>
+          <div class="name">${esc(p.name)}</div>
+        </div>`;
+      }).join("");
+      $("#recents").querySelectorAll(".recent-card").forEach(c=>{
+        c.addEventListener("click", ()=>openModal(c.dataset.id));
+      });
+    } else $("#recents-section").style.display = "none";
+  } else $("#recents-section").style.display = "none";
+
+  // Storage info
+  const total = await totalPhotoBytes().catch(()=>0);
+  if(total > 0){
+    const mb = (total/1024/1024).toFixed(1);
+    $("#storage-info").textContent = `📷 ${mb} MB stored`;
+    $("#storage-info").classList.add("show");
+  } else $("#storage-info").classList.remove("show");
+
+  // bind cards
+  bindCards();
+}
+
+function bindCards(){
+  $$("#grid .card").forEach(card=>{
+    card.addEventListener("click", e=>{
+      if(e.target.closest("button")) return;
+      openModal(card.dataset.id);
+    });
+  });
+  $$("#grid .save-btn").forEach(b=>{
+    b.addEventListener("click", e=>{
+      e.stopPropagation();
+      toggleList(b.dataset.id);
+    });
+  });
+  $$("#grid [data-act='cam']").forEach(b=>{
+    b.addEventListener("click", e=>{
+      e.stopPropagation();
+      openPhotoCapture(b.dataset.id);
+    });
+  });
+}
+
+/* ==================== MODAL ==================== */
+let currentModalId = null;
+let currentModalPhotos = [];
+
+async function openModal(id){
+  const p = PRODUCTS.find(x=>x.id===id); if(!p) return;
+  currentModalId = id;
+  addRecent(id);
+
+  $("#m-h-title").textContent = p.name;
+  $("#m-h-sub").innerHTML = `<span class="badge brand-${esc(p.brand)}" style="position:static;font-size:10px;padding:2px 7px">${esc(p.brand)}</span> · ${esc(p.category)}`;
+
+  const pic = $("#m-pic");
+  if(p.image){
+    pic.innerHTML = `<img src="${esc(p.image)}" alt="${esc(p.name)}"/>`;
+  } else {
+    pic.innerHTML = `<div class="empty-ph">⚠ Logistics / deposit<br/>not a real product</div>`;
+  }
+
+  // photo strip
+  currentModalPhotos = await getPhotosForProduct(id).catch(()=>[]);
+  renderPhotoStrip(p);
+
+  const rows = p.codes.map(c=>`
+    <tr>
+      <td><code>${esc(String(c.code))}</code></td>
+      <td>${esc(c.desc)}</td>
+      <td><span class="pill">${esc(c.format)}</span></td>
+    </tr>`).join("");
+  const allCodes = uniq(p.codes.map(c=>String(c.code))).join(", ");
+  $("#m-info").innerHTML = `
+    <h3>${esc(p.name)}</h3>
+    <div class="sub2">${esc(p.category)} · ${esc(p.format)}</div>
+    <p class="desc">${esc(p.desc)}</p>
+    <div class="kv">
+      <b>Brand</b><div>${esc(p.brand)}</div>
+      <b>Format</b><div>${esc(p.format)}</div>
+      <b>SKU count</b><div>${p.codes.length}</div>
+      <b>Codes</b><div><code>${esc(allCodes)}</code></div>
+    </div>
+    <table>
+      <thead><tr><th>Code</th><th>Description</th><th>Format</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+  // actions
+  const inList = state.myList.includes(p.id);
+  const hasPhotos = currentModalPhotos.length > 0;
+  $("#m-actions").innerHTML = `
+    <button class="btn primary" id="m-act-save"><i class="fa-solid fa-bookmark"></i> ${inList?"Remove":"Save"}</button>
+    <button class="btn photo" id="m-act-cam"><i class="fa-solid fa-camera"></i> ${hasPhotos?`Photo (${hasPhotos})`:"Take Photo"}</button>
+    <button class="btn" id="m-act-copy"><i class="fa-solid fa-copy"></i> Codes</button>
+  `;
+  $("#m-act-save").onclick = ()=>{ toggleList(p.id); openModal(id); };
+  $("#m-act-cam").onclick = ()=> openPhotoCapture(id);
+  $("#m-act-copy").onclick = ()=>{
+    navigator.clipboard?.writeText(allCodes);
+    toast("Codes copied");
+  };
+
+  $("#modal").classList.toggle("logistics", !!p.isLogistics);
+  $("#modal-back").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function renderPhotoStrip(p){
+  const strip = $("#m-photos");
+  const photos = currentModalPhotos;
+  strip.innerHTML = photos.map(ph => `
+    <div class="photo-thumb" data-pid="${ph.id}">
+      <img src="${photoUrl(ph)}" alt=""/>
+      <div class="del" data-del="${ph.id}"><i class="fa-solid fa-xmark"></i></div>
+    </div>
+  `).join("") + `<div class="photo-add" id="m-photo-add">
+    <i class="fa-solid fa-camera"></i>
+    <span>Add</span>
+  </div>`;
+  strip.querySelectorAll(".photo-thumb img").forEach(img=>{
+    img.addEventListener("click", e=>{
+      e.stopPropagation();
+      const id = parseInt(img.parentElement.dataset.pid);
+      const ph = currentModalPhotos.find(x=>x.id===id);
+      if(ph) openLightbox(photoUrl(ph), id);
+    });
+  });
+  strip.querySelectorAll("[data-del]").forEach(d=>{
+    d.addEventListener("click", async e=>{
+      e.stopPropagation();
+      const id = parseInt(d.dataset.del);
+      if(confirm("Delete this photo?")){
+        await deletePhoto(id);
+        releasePhotoUrl(id);
+        currentModalPhotos = currentModalPhotos.filter(x=>x.id!==id);
+        renderPhotoStrip(p);
+        $("#m-act-cam").innerHTML = `<i class="fa-solid fa-camera"></i> ${currentModalPhotos.length?`Photo (${currentModalPhotos.length})`:"Take Photo"}`;
+        toast("Photo deleted");
+        render();
+      }
+    });
+  });
+  $("#m-photo-add").addEventListener("click", ()=> openPhotoCapture(p.id));
+}
+
+function closeModal(){
+  $("#modal-back").classList.remove("open");
+  document.body.style.overflow = "";
+  currentModalId = null;
+}
+$("#m-close").addEventListener("click", closeModal);
+$("#modal-back").addEventListener("click", e=>{
+  if(e.target.id==="modal-back") closeModal();
+});
+document.addEventListener("keydown", e=>{if(e.key==="Escape"){closeModal();closeLightbox();}});
+
+/* ==================== PHOTO CAPTURE ==================== */
+let photoTargetId = null;
+function openPhotoCapture(productId){
+  if(!('indexedDB' in window)){
+    toast("Photo storage isn't available in this browser/mode");
+    return;
+  }
+  photoTargetId = productId;
+  $("#photo-input").click();
+}
+$("#photo-input").addEventListener("change", async e=>{
+  const files = Array.from(e.target.files || []);
+  const productId = photoTargetId;
+  e.target.value = ""; // reset immediately so picking the same file again still fires "change"
+  if(!files.length || !productId) return;
+  for(const f of files){
+    await savePhotoFromFile(f, productId);
+  }
+});
+async function savePhotoFromFile(file, productId){
+  if(!file || !file.type || !file.type.startsWith("image/")){
+    toast("That file isn't an image");
+    return;
+  }
+  try{
+    // Resize to max 1600px to keep storage reasonable
+    const blob = await resizeImage(file, 1600, 0.85);
+    await savePhoto(productId, blob);
+    toast("Photo saved ✓");
+  } catch(err){
+    console.error("Failed to save photo", err);
+    toast("Couldn't read that photo (try a JPEG/PNG instead of HEIC)");
+    return;
+  }
+  // If modal is open for this product, refresh
+  if(currentModalId === productId){
+    currentModalPhotos = await getPhotosForProduct(productId);
+    const p = PRODUCTS.find(x=>x.id===productId);
+    renderPhotoStrip(p);
+    $("#m-act-cam").innerHTML = `<i class="fa-solid fa-camera"></i> Photo (${currentModalPhotos.length})`;
+  }
+  render();
+}
+function resizeImage(file, maxDim, quality){
+  // Try the modern, broader-format decoder first (handles more real-world phone
+  // photo formats than an <img> tag alone in some browsers).
+  if(window.createImageBitmap){
+    return createImageBitmap(file)
+      .then(bitmap => drawBitmapToBlob(bitmap, maxDim, quality))
+      .catch(() => resizeImageViaImgTag(file, maxDim, quality));
+  }
+  return resizeImageViaImgTag(file, maxDim, quality);
+}
+function drawBitmapToBlob(bitmap, maxDim, quality){
+  let {width, height} = bitmap;
+  if(width > maxDim || height > maxDim){
+    if(width > height) { height = height * maxDim/width; width = maxDim; }
+    else { width = width * maxDim/height; height = maxDim; }
+  }
+  const c = document.createElement("canvas");
+  c.width = width; c.height = height;
+  c.getContext("2d").drawImage(bitmap, 0, 0, width, height);
+  bitmap.close?.();
+  return new Promise((res, rej)=>{
+    c.toBlob(b => b ? res(b) : rej(new Error("canvas produced no blob")), "image/jpeg", quality);
+  });
+}
+function resizeImageViaImgTag(file, maxDim, quality){
+  return new Promise((res, rej)=>{
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = ()=>{
+      let {width, height} = img;
+      if(width > maxDim || height > maxDim){
+        if(width > height) { height = height * maxDim/width; width = maxDim; }
+        else { width = width * maxDim/height; height = maxDim; }
+      }
+      const c = document.createElement("canvas");
+      c.width = width; c.height = height;
+      c.getContext("2d").drawImage(img, 0, 0, width, height);
+      c.toBlob(b=>{
+        URL.revokeObjectURL(url);
+        b ? res(b) : rej(new Error("canvas produced no blob"));
+      }, "image/jpeg", quality);
+    };
+    // Do NOT silently fall back to the raw, undecoded file here — a file this
+    // browser can't decode (e.g. HEIC on non-Safari browsers) can't be displayed
+    // in an <img> tag either, so "saving" it anyway just produces a photo that
+    // looks saved but never shows up. Reject instead so the caller can tell the user.
+    img.onerror = ()=>{ URL.revokeObjectURL(url); rej(new Error("Browser could not decode this image format")); };
+    img.src = url;
+  });
+}
+
+/* ==================== LIGHTBOX ==================== */
+let lightboxDeleteId = null;
+function openLightbox(url, photoId){
+  $("#lb-img").src = url;
+  lightboxDeleteId = photoId;
+  $("#lightbox").classList.add("open");
+}
+function closeLightbox(){$("#lightbox").classList.remove("open");$("#lb-img").src="";}
+$("#lb-x").addEventListener("click", closeLightbox);
+$("#lightbox").addEventListener("click", e=>{if(e.target.id==="lightbox") closeLightbox();});
+$("#lb-del").addEventListener("click", async ()=>{
+  if(lightboxDeleteId==null) return;
+  if(!confirm("Delete this photo?")) return;
+  await deletePhoto(lightboxDeleteId);
+  releasePhotoUrl(lightboxDeleteId);
+  closeLightbox();
+  if(currentModalId){
+    currentModalPhotos = await getPhotosForProduct(currentModalId);
+    const p = PRODUCTS.find(x=>x.id===currentModalId);
+    renderPhotoStrip(p);
+  }
+  render();
+  toast("Photo deleted");
+});
+
+/* ==================== MY LIST ==================== */
+function toggleList(id){
+  if(state.myList.includes(id)) state.myList = state.myList.filter(x=>x!==id);
+  else state.myList.push(id);
+  localStorage.setItem("saputo-mylist", JSON.stringify(state.myList));
+  render();
+  toast(state.myList.includes(id) ? "Saved to My List ✓" : "Removed");
+}
+function addRecent(id){
+  state.recents = [id, ...state.recents.filter(x=>x!==id)].slice(0,20);
+  localStorage.setItem("saputo-recents", JSON.stringify(state.recents));
+}
+
+/* ==================== BOTTOM NAV ==================== */
+$$(".bn").forEach(b=>{
+  b.addEventListener("click", ()=>{
+    const tab = b.dataset.tab;
+    state.tab = tab;
+    $$(".bn").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    if(tab==="scan"){
+      $("#q").focus();
+      toast("Type or paste a SKU code");
+      return;
+    }
+    render();
+  });
+});
+$("#clear-recents").addEventListener("click", ()=>{
+  state.recents = [];
+  localStorage.removeItem("saputo-recents");
+  render();
+  toast("Recents cleared");
+});
+
+/* ==================== QUICK ACTIONS ==================== */
+$$(".qa").forEach(b=>{
+  b.addEventListener("click", ()=>{
+    const q = b.dataset.quick;
+    if(q==="recents"){
+      if(!state.recents.length){toast("No recent products yet");return;}
+      state.tab = "browse";
+      $$(".bn").forEach(x=>x.classList.remove("active"));
+      $$(".bn")[0].classList.add("active");
+      state.q="";
+      render();
+    } else if(q==="photos"){
+      state.tab="photos";
+      $$(".bn").forEach(x=>x.classList.remove("active"));
+      $$(".bn")[1].classList.add("active");
+      render();
+    } else if(q==="all"){
+      state.q="";$("#q").value="";
+      state.cats.clear();state.brands.clear();
+      $$("#cat-chips .chip").forEach(c=>c.classList.toggle("active", c.dataset.cat==="__all"));
+      $$("#brand-chips .chip").forEach(c=>c.classList.toggle("active", c.dataset.brand==="__all"));
+      state.tab="browse";
+      $$(".bn").forEach(x=>x.classList.remove("active"));
+      $$(".bn")[0].classList.add("active");
+      render();
+    }
+  });
+});
+
+/* ==================== SEARCH & UI ==================== */
+$("#q").addEventListener("input", e=>{
+  state.q = e.target.value;
+  $("#clear-x").classList.toggle("show", !!state.q);
+  // SKU shortcut: if exact code match, jump straight to product
+  const code = state.q.trim();
+  if(code && codeIndex.has(code)){
+    openModal(codeIndex.get(code));
+    state.q = "";
+    $("#q").value = "";
+    $("#clear-x").classList.remove("show");
+  }
+  render();
+});
+$("#clear-x").addEventListener("click", ()=>{
+  state.q="";$("#q").value="";$("#clear-x").classList.remove("show");render();$("#q").focus();
+});
+$("#sort").addEventListener("change", e=>{state.sort = e.target.value;render();});
+$("#view-toggle").addEventListener("click", e=>{
+  if(e.target.tagName!=="BUTTON") return;
+  $$("#view-toggle button").forEach(b=>b.classList.remove("active"));
+  e.target.classList.add("active");
+  state.view = e.target.dataset.view;
+  render();
+});
+$("#m-pic-tap").addEventListener("click", ()=>{
+  if(currentModalId) openPhotoCapture(currentModalId);
+});
+
+/* ==================== TOAST ==================== */
+let toastT;
+function toast(msg){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastT);
+  toastT = setTimeout(()=>t.classList.remove("show"), 1600);
+}
+
+/* ==================== INLINE MANIFEST (single-file app) ==================== */
+(function(){
+  const icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23f5b942'/%3E%3Ctext x='50' y='68' font-size='58' font-family='Georgia,serif' font-weight='900' text-anchor='middle' fill='%231a1a1a'%3ES%3C/text%3E%3C/svg%3E";
+  const manifest = {
+    name: "Saputo Products",
+    short_name: "Saputo",
+    start_url: ".",
+    display: "standalone",
+    background_color: "#0f1115",
+    theme_color: "#f5b942",
+    icons: [{ src: icon, sizes: "192x192 512x512", type: "image/svg+xml", purpose: "any" }]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type:"application/manifest+json"});
+  const link = document.createElement("link");
+  link.rel = "manifest";
+  link.href = URL.createObjectURL(blob);
+  document.head.appendChild(link);
+})();
+
+/* ==================== PWA INSTALL ==================== */
+let deferredInstall = null;
+window.addEventListener("beforeinstallprompt", e=>{
+  e.preventDefault();
+  deferredInstall = e;
+  $("#install-btn").classList.add("show");
+});
+$("#install-btn").addEventListener("click", async ()=>{
+  if(!deferredInstall) return;
+  deferredInstall.prompt();
+  const {outcome} = await deferredInstall.userChoice;
+  if(outcome==="accepted"){
+    $("#install-btn").classList.remove("show");
+    toast("App installed ✓");
+  }
+  deferredInstall = null;
+});
+window.addEventListener("appinstalled", ()=>{
+  $("#install-btn").classList.remove("show");
+  toast("App installed ✓");
+});
+
+/* ==================== INIT ==================== */
+buildChips();
+render();
+</script>
+</body>
+</html>
