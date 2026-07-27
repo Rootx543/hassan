@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Recherche & Carte QC — v3</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  * { box-sizing: border-box; font-family: -apple-system, Arial, sans-serif; }
+  body { margin:0; padding:0; background:#f4f6f8; }
+  header { background:#094699; color:white; padding:14px 16px; font-weight:800; font-size:18px;
+           display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  header .status { font-size:11px; font-weight:500; opacity:0.85; text-align:right; }
+  #offline-bar { display:none; background:#dc3545; color:white; font-size:12px; padding:6px 12px; text-align:center; }
+  #offline-bar.show { display:block; }
+
+  #search-wrap { position:relative; padding:12px; background:white; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+  #search-input { width:100%; padding:12px 14px; font-size:15px; border:1px solid #ddd; border-radius:8px; outline:none; }
+  #search-input:focus { border-color:#094699; }
+  #suggestions { position:absolute; left:12px; right:12px; top:64px; background:white;
+    border:1px solid #ddd; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    max-height:280px; overflow-y:auto; z-index:1000; display:none; }
+  .suggestion-item { padding:10px 14px; cursor:pointer; border-bottom:1px solid #f0f0f0; }
+  .suggestion-item:last-child { border-bottom:none; }
+  .suggestion-item:hover, .suggestion-item.active { background:#e8f0fe; }
+  .suggestion-item.msg { cursor:default; color:#999; font-size:13px; text-align:center; }
+  .suggestion-item.msg.err { color:#dc3545; }
+  .sugg-title { font-weight:600; font-size:14px; color:#222; }
+  .sugg-sub { font-size:12px; color:#777; margin-top:2px; }
+  .sugg-tag { display:inline-block; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; margin-left:6px; vertical-align:middle; }
+  .tag-adresse { background:#e8f0fe; color:#094699; }
+  .tag-entreprise { background:#fff3cd; color:#856404; }
+  .tag-recent { background:#e2e3e5; color:#41464b; }
+
+  #map-wrap { position:relative; }
+  #map { height:44vh; width:100%; }
+  #locate-btn { position:absolute; bottom:14px; right:10px; z-index:500; width:44px; height:44px;
+    border-radius:50%; border:none; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.3);
+    font-size:18px; cursor:pointer; }
+  #locate-btn.active { background:#094699; color:white; }
+
+  #nextstop-bar { display:none; background:#0f9d58; color:white; padding:12px 14px;
+    align-items:center; gap:12px; cursor:pointer; }
+  #nextstop-bar.show { display:flex; }
+  #nextstop-bar .ns-label { font-size:11px; opacity:0.85; text-transform:uppercase; letter-spacing:0.5px; }
+  #nextstop-bar .ns-name { font-size:15px; font-weight:800; }
+  #nextstop-bar .ns-sub { font-size:12px; opacity:0.9; }
+  #nextstop-bar .ns-go { margin-left:auto; background:white; color:#0f9d58; border:none;
+    border-radius:8px; padding:12px 16px; font-weight:800; font-size:14px; }
+
+  #list-wrap { padding:12px; }
+  .bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:white; padding:10px 12px;
+         border-radius:8px; margin-bottom:10px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+  h3 { margin:0 0 10px 0; font-size:15px; color:#333; }
+  .btn { border:none; border-radius:8px; padding:9px 12px; font-size:12px; font-weight:700; cursor:pointer; }
+  .btn-green { background:#0f9d58; color:white; }
+  .btn-green:hover:not(:disabled) { background:#0c8043; }
+  .btn-green:disabled { background:#b7cdbf; cursor:not-allowed; }
+  .btn-blue { background:#e8f0fe; color:#094699; }
+  .btn-blue:hover { background:#d6e4fc; }
+  .btn-red { background:#f8d7da; color:#721c24; }
+  .btn-red:hover { background:#f1b0b7; }
+  .filter-btn { background:#eee; color:#444; }
+  .filter-btn.active { background:#094699; color:white; }
+  .info { font-size:12px; color:#666; flex:1; min-width:170px; }
+  select.nav-select { border:1px solid #ddd; border-radius:8px; padding:8px; font-size:12px; }
+
+  .loc-item { display:flex; align-items:center; gap:10px; background:white; padding:10px 12px;
+    border-radius:8px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,0.06); flex-wrap:wrap; }
+  .loc-item.dragging { opacity:0.4; }
+  .loc-item.drop-target { outline:2px dashed #094699; }
+  .loc-item.near { outline:2px solid #0f9d58; }
+  .loc-check { width:18px; height:18px; flex-shrink:0; cursor:pointer; accent-color:#094699; }
+  .loc-num { width:28px; height:28px; border-radius:50%; background:#094699; color:white;
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0; }
+  .loc-info { flex:1; min-width:150px; }
+  .loc-name { font-weight:600; font-size:13px; color:#333; }
+  .loc-addr { font-size:12px; color:#777; }
+  .loc-meta { font-size:11px; color:#0b7285; margin-top:2px; }
+  .loc-note { font-size:11px; color:#7a5b00; margin-top:2px; font-style:italic; }
+  .loc-extra { font-size:11px; color:#555; margin-top:2px; }
+  .loc-time { font-size:11px; color:#0f9d58; margin-top:2px; font-weight:600; }
+  .loc-actions { display:flex; gap:6px; flex-wrap:wrap; }
+  .mini { border:none; border-radius:6px; padding:6px 9px; font-size:12px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; }
+  .mini-move { background:#eef1f5; color:#444; }
+  .mini-note { background:#fff3cd; color:#856404; }
+  .mini-gmap { background:#d4edda; color:#155724; }
+  .mini-call { background:#e3f2fd; color:#0d47a1; }
+  .mini-del { background:#f8d7da; color:#721c24; }
+  .mini-deliver { background:#e8f5e9; color:#0f9d58; border:1px solid #bfe6c8; }
+  .mini-deliver.active { background:#0f9d58; color:white; }
+  .mini-status { background:#fff; color:#444; border:1px solid #ddd; }
+  .drag-handle { cursor:grab; color:#bbb; font-size:16px; user-select:none; }
+
+  .loc-item.delivered { opacity:0.6; background:#f6f9f7; }
+  .loc-item.delivered .loc-name { text-decoration:line-through; }
+  .loc-item.delivered .loc-num { background:#0f9d58; }
+  .loc-item.failed { background:#fdf3f3; }
+  .loc-item.failed .loc-num { background:#dc3545; }
+  .loc-item.rescheduled .loc-num { background:#f0a020; }
+
+  #empty-msg { text-align:center; color:#999; font-size:13px; padding:20px; }
+  #progress-wrap { height:6px; background:#e6e9ee; border-radius:4px; overflow:hidden; margin-bottom:6px; }
+  #progress-fill { height:100%; width:0%; background:#0f9d58; transition:width 0.3s; }
+  #progress-info { font-size:12px; color:#666; margin-bottom:4px; }
+  #route-stats { font-size:12px; color:#094699; font-weight:600; margin-bottom:10px; }
+  #route-links { display:none; background:white; border-radius:8px; padding:10px 12px; margin-bottom:10px;
+                 box-shadow:0 1px 3px rgba(0,0,0,0.06); font-size:13px; }
+  #route-links a { display:inline-block; margin:4px 8px 4px 0; color:#094699; font-weight:700; }
+  #hint { display:none; background:#fff3cd; color:#7a5b00; font-size:12px; padding:10px 12px;
+          border-radius:8px; margin-bottom:10px; line-height:1.5; }
+
+  /* Modal (stop details + truck profile) */
+  .modal-back { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:3000;
+    align-items:center; justify-content:center; padding:16px; }
+  .modal-back.show { display:flex; }
+  .modal { background:white; border-radius:12px; padding:18px; width:100%; max-width:420px; max-height:88vh; overflow-y:auto; }
+  .modal h3 { margin-top:0; }
+  .modal label { display:block; font-size:12px; font-weight:700; color:#444; margin:10px 0 4px; }
+  .modal input, .modal select, .modal textarea { width:100%; padding:9px 10px; font-size:14px;
+    border:1px solid #ddd; border-radius:8px; }
+  .modal textarea { resize:vertical; min-height:60px; }
+  .modal-actions { display:flex; gap:8px; margin-top:16px; }
+  .modal-actions .btn { flex:1; padding:12px; font-size:14px; }
+  .row2 { display:flex; gap:8px; }
+  .row2 > div { flex:1; }
+
+  #toast { position:fixed; bottom:12px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:#222; color:white; font-size:12px; padding:9px 14px; border-radius:20px;
+    opacity:0; transition:opacity .25s, transform .25s; z-index:4000; display:flex; gap:10px; align-items:center; }
+  #toast.show { opacity:0.95; transform:translateX(-50%) translateY(0); }
+  #toast button { background:#ffd54f; color:#222; border:none; border-radius:12px; padding:4px 10px;
+    font-size:11px; font-weight:700; cursor:pointer; }
+
+  .live-dot { width:16px; height:16px; border-radius:50%; background:#1a73e8; border:3px solid white; box-shadow:0 0 4px rgba(0,0,0,0.4); }
+  .marker-pin { display:flex; align-items:center; justify-content:center; width:28px; height:28px;
+    border-radius:50%; color:white; font-weight:700; font-size:13px; border:2px solid white; box-shadow:0 1px 4px rgba(0,0,0,0.4); }
+</style>
+</head>
+<body>
+
+<header>
+  <span>Recherche & Carte — Québec</span>
+  <span class="status" id="storage-status">Chargement…</span>
+</header>
+<div id="offline-bar">Hors ligne — la recherche d'adresses est indisponible, vos lieux enregistrés restent accessibles.</div>
+
+<div id="search-wrap">
+  <input id="search-input" type="text" placeholder="Rechercher une adresse ou un commerce…" autocomplete="off">
+  <div id="suggestions"></div>
+</div>
+
+<div id="map-wrap">
+  <div id="map"></div>
+  <button id="locate-btn" title="Ma position">◎</button>
+</div>
+
+<div id="nextstop-bar">
+  <div>
+    <div class="ns-label">Prochain arrêt</div>
+    <div class="ns-name" id="ns-name">—</div>
+    <div class="ns-sub" id="ns-sub"></div>
+  </div>
+  <button class="ns-go" id="ns-go">Naviguer ▶</button>
+</div>
+
+<div id="list-wrap">
+  <h3>Lieux ajoutés (<span id="loc-count">0</span>)</h3>
+
+  <div id="progress-wrap"><div id="progress-fill"></div></div>
+  <div id="progress-info"></div>
+  <div id="route-stats"></div>
+
+  <div class="bar">
+    <button class="btn filter-btn active" data-filter="all">Tous</button>
+    <button class="btn filter-btn" data-filter="todo">À livrer</button>
+    <button class="btn filter-btn" data-filter="done">Livrés</button>
+    <span class="info" id="filter-info"></span>
+  </div>
+
+  <div class="bar">
+    <label style="font-size:12px;display:flex;align-items:center;gap:6px;">
+      <input type="checkbox" id="select-all" class="loc-check"> Tout sélectionner
+    </label>
+    <span class="info" id="route-info">Sélectionnez 2 lieux ou plus pour créer un itinéraire.</span>
+    <button class="btn btn-blue" id="optimize-btn">Optimiser l'ordre</button>
+    <select class="nav-select" id="nav-select">
+      <option value="google">Google Maps</option>
+      <option value="waze">Waze</option>
+    </select>
+    <button class="btn btn-green" id="route-btn" disabled>Ouvrir l'itinéraire</button>
+  </div>
+
+  <div id="route-links"></div>
+  <div id="hint"></div>
+
+  <div class="bar">
+    <button class="btn btn-blue" id="voice-btn">🎤 Voix</button>
+    <button class="btn btn-blue" id="truck-btn">🚚 Profil camion</button>
+    <button class="btn btn-blue" id="export-json">Exporter JSON</button>
+    <button class="btn btn-blue" id="export-csv">Exporter CSV</button>
+    <button class="btn btn-blue" id="import-btn">Importer</button>
+    <input type="file" id="import-file" accept="application/json" style="display:none">
+    <button class="btn btn-red" id="clear-done">Effacer les livrés</button>
+    <button class="btn btn-red" id="reset-btn">Tout réinitialiser</button>
+  </div>
+
+  <div id="loc-list"><div id="empty-msg">Aucun lieu ajouté pour l'instant.</div></div>
+</div>
+
+<!-- Stop details modal -->
+<div class="modal-back" id="stop-modal">
+  <div class="modal">
+    <h3 id="sm-title">Détails de l'arrêt</h3>
+    <input type="hidden" id="sm-id">
+    <label>Nom / client</label>
+    <input type="text" id="sm-name">
+    <label>Adresse</label>
+    <input type="text" id="sm-address">
+    <div class="row2">
+      <div><label>Téléphone</label><input type="tel" id="sm-phone" placeholder="418-555-0100"></div>
+      <div><label>Nº colis</label><input type="number" id="sm-packages" min="0" value="1"></div>
+    </div>
+    <div class="row2">
+      <div><label>Code de porte</label><input type="text" id="sm-door"></div>
+      <div><label>Fenêtre horaire</label><input type="text" id="sm-window" placeholder="9h–11h"></div>
+    </div>
+    <label>Note / instructions</label>
+    <textarea id="sm-note"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-red" id="sm-cancel">Annuler</button>
+      <button class="btn btn-green" id="sm-save">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Truck profile modal -->
+<div class="modal-back" id="truck-modal">
+  <div class="modal">
+    <h3>Profil du camion</h3>
+    <p style="font-size:12px;color:#666;">Ces mesures sont conservées pour un futur routage adapté aux camions et pour vous rappeler les restrictions. Google Maps/Waze ne routent pas encore selon le gabarit.</p>
+    <div class="row2">
+      <div><label>Hauteur (m)</label><input type="number" step="0.1" id="tk-height" placeholder="4.1"></div>
+      <div><label>Poids (t)</label><input type="number" step="0.1" id="tk-weight" placeholder="12"></div>
+    </div>
+    <div class="row2">
+      <div><label>Longueur (m)</label><input type="number" step="0.1" id="tk-length" placeholder="9"></div>
+      <div><label>Largeur (m)</label><input type="number" step="0.1" id="tk-width" placeholder="2.5"></div>
+    </div>
+    <label>Matières dangereuses à bord ?</label>
+    <select id="tk-hazmat"><option value="non">Non</option><option value="oui">Oui</option></select>
+    <div class="modal-actions">
+      <button class="btn btn-red" id="tk-cancel">Fermer</button>
+      <button class="btn btn-green" id="tk-save">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"><span id="toast-text"></span></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ */
+/* Utilitaires                                                         */
+/* ------------------------------------------------------------------ */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s)
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+const uid = () => (crypto.randomUUID ? crypto.randomUUID()
+  : "id-" + Date.now() + "-" + Math.random().toString(36).slice(2));
+
+function haversineKm(a, b) {
+  const R = 6371, toRad = (d) => d * Math.PI / 180;
+  const dLat = toRad(b.lat - a.lat), dLon = toRad(b.lon - a.lon);
+  const s = Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+const fmtKm = (km) => km < 1 ? Math.round(km * 1000) + " m" : km.toFixed(1) + " km";
+const fmtTime = (ts) => ts ? new Date(ts).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" }) : "";
+
+/* ------------------------------------------------------------------ */
+/* Constantes / état                                                   */
+/* ------------------------------------------------------------------ */
+const API_BASE = "https://geoegl.msp.gouv.qc.ca/apis/territoires/recherche";
+const DB_NAME = "livraison-qc", DB_VERSION = 1, STORE = "kv";
+const STORAGE_KEY_LOCATIONS = "locations";
+const STORAGE_KEY_HISTORY = "history";
+const STORAGE_KEY_TRUCK = "truck";
+const HISTORY_LIMIT = 30;
+const GMAPS_MAX_POINTS = 10;
+const ARRIVE_RADIUS_M = 60;           // geofence prompt radius
+const AVG_SPEED_KMH = 30;             // for rough ETA on route stats
+
+let locations = [];
+let addressHistory = [];
+let truck = {};
+let filter = "all";
+let myPosition = null;
+let debounceTimer = null;
+let currentController = null;
+let suggestionItems = [];
+let activeSuggestion = -1;
+let lastDeleted = null;
+let lastClearedDone = null;
+let promptedArrival = {};              // id -> true (avoid re-prompting)
+
+/* ------------------------------------------------------------------ */
+/* Carte                                                               */
+/* ------------------------------------------------------------------ */
+const map = L.map("map").setView([46.81, -71.21], 12);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: "© OpenStreetMap", maxZoom: 19, crossOrigin: true
+}).addTo(map);
+const markersGroup = L.layerGroup().addTo(map);
+const routeLine = L.polyline([], { color: "#094699", weight: 3, opacity: 0.6, dashArray: "6 6" }).addTo(map);
+
+/* ------------------------------------------------------------------ */
+/* IndexedDB                                                           */
+/* ------------------------------------------------------------------ */
+let dbPromise = null;
+function openDb() {
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject) => {
+    if (!window.indexedDB) return reject(new Error("IndexedDB indisponible"));
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return dbPromise;
+}
+const idb = {
+  async get(key) {
+    const db = await openDb();
+    return new Promise((res, rej) => {
+      const r = db.transaction(STORE, "readonly").objectStore(STORE).get(key);
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  },
+  async set(key, value) {
+    const db = await openDb();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).put(value, key);
+      tx.oncomplete = () => res(true);
+      tx.onerror = () => rej(tx.error);
+    });
+  }
+};
+
+function toast(text, actionLabel, action) {
+  const el = $("toast");
+  $("toast-text").textContent = text;
+  el.querySelectorAll("button").forEach((b) => b.remove());
+  if (actionLabel) {
+    const b = document.createElement("button");
+    b.textContent = actionLabel;
+    b.onclick = () => { el.classList.remove("show"); action(); };
+    el.appendChild(b);
+  }
+  el.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove("show"), actionLabel ? 8000 : 1500);
+}
+
+function normalizeLoc(loc) {
+  return {
+    id: loc.id || uid(),
+    name: loc.name || loc.address || "Lieu",
+    address: loc.address || loc.name || "",
+    lat: Number(loc.lat), lon: Number(loc.lon),
+    selected: loc.selected !== false,
+    delivered: !!loc.delivered,
+    status: loc.status || (loc.delivered ? "delivered" : "todo"),
+    deliveredAt: loc.deliveredAt || null,
+    note: loc.note || "",
+    phone: loc.phone || "",
+    packages: loc.packages != null ? loc.packages : 1,
+    door: loc.door || "",
+    timeWindow: loc.timeWindow || ""
+  };
+}
+
+async function loadFromStorage() {
+  try {
+    const raw = await idb.get(STORAGE_KEY_LOCATIONS);
+    locations = raw ? JSON.parse(raw).map(normalizeLoc) : [];
+  } catch (e) { console.error(e); locations = []; }
+  try {
+    const raw = await idb.get(STORAGE_KEY_HISTORY);
+    addressHistory = raw ? JSON.parse(raw) : [];
+  } catch (e) { addressHistory = []; }
+  try {
+    const raw = await idb.get(STORAGE_KEY_TRUCK);
+    truck = raw ? JSON.parse(raw) : {};
+  } catch (e) { truck = {}; }
+  $("storage-status").textContent = locations.length ? locations.length + " lieu(x) restauré(s)" : "Prêt";
+  renderAll(true);
+}
+
+async function persist(silent) {
+  try {
+    await idb.set(STORAGE_KEY_LOCATIONS, JSON.stringify(locations));
+    if (!silent) toast("Sauvegardé");
+  } catch (e) {
+    console.error(e);
+    toast("Sauvegarde impossible");
+  }
+}
+async function persistHistory() {
+  try { await idb.set(STORAGE_KEY_HISTORY, JSON.stringify(addressHistory)); } catch (e) {}
+}
+async function persistTruck() {
+  try { await idb.set(STORAGE_KEY_TRUCK, JSON.stringify(truck)); } catch (e) {}
+}
+
+/* ------------------------------------------------------------------ */
+/* Recherche                                                           */
+/* ------------------------------------------------------------------ */
+const searchInput = $("search-input");
+const suggestionsBox = $("suggestions");
+
+searchInput.addEventListener("input", () => {
+  clearTimeout(debounceTimer);
+  const q = searchInput.value.trim();
+  activeSuggestion = -1;
+  if (q.length < 3) { hideSuggestions(); return; }
+  debounceTimer = setTimeout(() => fetchSuggestions(q), 300);
+});
+
+searchInput.addEventListener("keydown", (e) => {
+  if (suggestionsBox.style.display !== "block" || suggestionItems.length === 0) return;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    const dir = e.key === "ArrowDown" ? 1 : -1;
+    activeSuggestion = (activeSuggestion + dir + suggestionItems.length) % suggestionItems.length;
+    highlightSuggestion();
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    pickSuggestion(suggestionItems[activeSuggestion >= 0 ? activeSuggestion : 0]);
+  } else if (e.key === "Escape") {
+    hideSuggestions();
+  }
+});
+
+searchInput.addEventListener("focus", () => {
+  if (!searchInput.value.trim()) showHistory();
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#search-wrap")) hideSuggestions();
+});
+
+function hideSuggestions() { suggestionsBox.style.display = "none"; suggestionItems = []; }
+function showMessage(text, isError) {
+  suggestionsBox.innerHTML = '<div class="suggestion-item msg' + (isError ? " err" : "") + '">' + esc(text) + "</div>";
+  suggestionsBox.style.display = "block";
+  suggestionItems = [];
+}
+function showHistory() {
+  if (!addressHistory.length) return hideSuggestions();
+  renderSuggestions(addressHistory.slice(0, 8).map((h) => ({
+    title: h.name, sub: h.address, tag: "recent",
+    name: h.name, address: h.address, lat: h.lat, lon: h.lon
+  })));
+}
+
+async function fetchSuggestions(q) {
+  const ql = q.toLowerCase();
+  const hist = addressHistory
+    .filter((h) => (h.name + " " + h.address).toLowerCase().includes(ql))
+    .slice(0, 4)
+    .map((h) => ({ title: h.name, sub: h.address, tag: "recent",
+                   name: h.name, address: h.address, lat: h.lat, lon: h.lon }));
+
+  if (!navigator.onLine) {
+    hist.length ? renderSuggestions(hist)
+                : showMessage("Hors ligne — aucun résultat dans l'historique.", true);
+    return;
+  }
+
+  if (currentController) currentController.abort();
+  currentController = new AbortController();
+  const url = API_BASE + "?type=adresses,entreprises&q=" + encodeURIComponent(q) + "&limit=10&geometry=true";
+
+  try {
+    const res = await fetch(url, { signal: currentController.signal });
+    if (!res.ok) return showMessage("Erreur serveur (" + res.status + "). Réessayez.", true);
+    const data = await res.json();
+    const live = (data.features || []).map(normalizeFeature).filter(Boolean)
+      .filter((f) => !hist.some((h) => h.name === f.name && h.address === f.address));
+    const all = hist.concat(live);
+    all.length ? renderSuggestions(all) : showMessage("Aucun résultat trouvé.", false);
+  } catch (e) {
+    if (e.name === "AbortError") return;
+    hist.length ? renderSuggestions(hist)
+                : showMessage("Recherche impossible : vérifiez votre connexion.", true);
+  }
+}
+
+function normalizeFeature(feature) {
+  const p = feature.properties || {};
+  const geom = feature.geometry;
+  if (!geom || !geom.coordinates) return null;
+  const [lon, lat] = geom.coordinates;
+  if (feature.index === "entreprises") {
+    const name = p.nom || "Commerce";
+    const street = [p.noCivique, p.route].filter(Boolean).join(" ");
+    const address = [street, p.municipalite, p.codePostal].filter(Boolean).join(", ");
+    return { title: name, sub: address + (p.categorie ? " — " + p.categorie : ""),
+             tag: "entreprise", name, address, lat, lon };
+  }
+  const name = p.nom || "Adresse";
+  return { title: name, sub: "Adresse civique", tag: "adresse", name, address: name, lat, lon };
+}
+
+function renderSuggestions(items) {
+  suggestionItems = items;
+  const tags = { recent: ["tag-recent", "Récent"], entreprise: ["tag-entreprise", "Commerce"], adresse: ["tag-adresse", "Adresse"] };
+  suggestionsBox.innerHTML = items.map((it, i) => {
+    const [cls, label] = tags[it.tag] || tags.adresse;
+    const dist = myPosition ? ' · ' + fmtKm(haversineKm(myPosition, it)) : "";
+    return '<div class="suggestion-item" data-idx="' + i + '">' +
+      '<div class="sugg-title">' + esc(it.title) +
+      '<span class="sugg-tag ' + cls + '">' + label + "</span></div>" +
+      '<div class="sugg-sub">' + esc(it.sub) + esc(dist) + "</div></div>";
+  }).join("");
+  suggestionsBox.style.display = "block";
+}
+function highlightSuggestion() {
+  suggestionsBox.querySelectorAll(".suggestion-item").forEach((el, i) => {
+    el.classList.toggle("active", i === activeSuggestion);
+    if (i === activeSuggestion) el.scrollIntoView({ block: "nearest" });
+  });
+}
+suggestionsBox.addEventListener("click", (e) => {
+  const el = e.target.closest(".suggestion-item[data-idx]");
+  if (el) pickSuggestion(suggestionItems[+el.dataset.idx]);
+});
+
+function pickSuggestion(item) {
+  if (!item) return;
+  addLocation(item.name, item.address, item.lat, item.lon);
+  addressHistory = addressHistory.filter((h) => !(h.name === item.name && h.address === item.address));
+  addressHistory.unshift({ name: item.name, address: item.address, lat: item.lat, lon: item.lon });
+  addressHistory = addressHistory.slice(0, HISTORY_LIMIT);
+  persistHistory();
+  searchInput.value = "";
+  hideSuggestions();
+}
+
+/* ------------------------------------------------------------------ */
+/* Gestion des lieux                                                   */
+/* ------------------------------------------------------------------ */
+function addLocation(name, address, lat, lon) {
+  const dup = locations.find((l) => l.lat === lat && l.lon === lon && l.name === name);
+  if (dup) { toast("Ce lieu est déjà dans la liste"); map.setView([lat, lon], 15); return; }
+  locations.push(normalizeLoc({ name, address, lat, lon, selected: true }));
+  renderAll(false);
+  map.setView([lat, lon], 15);
+  persist(true);
+}
+
+const byId = (id) => locations.findIndex((l) => l.id === id);
+
+function removeLocation(id) {
+  const i = byId(id);
+  if (i < 0) return;
+  lastDeleted = { item: locations[i], index: i };
+  locations.splice(i, 1);
+  renderAll(false);
+  persist(true);
+  toast("Lieu supprimé", "Annuler", () => {
+    locations.splice(lastDeleted.index, 0, lastDeleted.item);
+    lastDeleted = null;
+    renderAll(false);
+    persist(true);
+  });
+}
+
+function moveLocation(id, dir) {
+  const i = byId(id), j = i + dir;
+  if (i < 0 || j < 0 || j >= locations.length) return;
+  [locations[i], locations[j]] = [locations[j], locations[i]];
+  renderAll(false);
+  persist(true);
+}
+
+/* ---- Delivery status cycle: todo -> delivered -> failed -> rescheduled -> todo ---- */
+function setStatus(id, status) {
+  const loc = locations[byId(id)];
+  if (!loc) return;
+  loc.status = status;
+  loc.delivered = (status === "delivered");
+  loc.deliveredAt = (status === "delivered") ? Date.now() : (status === "todo" ? null : loc.deliveredAt);
+  if (status !== "todo" && status !== "delivered") loc.deliveredAt = Date.now();
+  renderAll(false);
+  persist(true);
+}
+function cycleStatus(id) {
+  const loc = locations[byId(id)];
+  if (!loc) return;
+  const order = ["todo", "delivered", "failed", "rescheduled"];
+  const next = order[(order.indexOf(loc.status) + 1) % order.length];
+  setStatus(id, next);
+  toast("Statut : " + statusLabel(next));
+}
+function statusLabel(s) {
+  return { todo: "À livrer", delivered: "Livré", failed: "Échec", rescheduled: "Reporté" }[s] || s;
+}
+
+function openInMaps(id) {
+  const loc = locations[byId(id)];
+  if (loc) window.open(navUrlFor(loc), "_blank", "noopener");
+}
+
+/* ------------------------------------------------------------------ */
+/* Détails de l'arrêt (modal)                                          */
+/* ------------------------------------------------------------------ */
+function openStopModal(id) {
+  const loc = locations[byId(id)];
+  if (!loc) return;
+  $("sm-id").value = loc.id;
+  $("sm-name").value = loc.name;
+  $("sm-address").value = loc.address;
+  $("sm-phone").value = loc.phone;
+  $("sm-packages").value = loc.packages;
+  $("sm-door").value = loc.door;
+  $("sm-window").value = loc.timeWindow;
+  $("sm-note").value = loc.note;
+  $("stop-modal").classList.add("show");
+}
+$("sm-cancel").addEventListener("click", () => $("stop-modal").classList.remove("show"));
+$("sm-save").addEventListener("click", () => {
+  const loc = locations[byId($("sm-id").value)];
+  if (!loc) return;
+  loc.name = $("sm-name").value.trim() || loc.name;
+  loc.address = $("sm-address").value.trim();
+  loc.phone = $("sm-phone").value.trim();
+  loc.packages = Number($("sm-packages").value) || 0;
+  loc.door = $("sm-door").value.trim();
+  loc.timeWindow = $("sm-window").value.trim();
+  loc.note = $("sm-note").value.trim();
+  $("stop-modal").classList.remove("show");
+  renderAll(false);
+  persist(true);
+});
+
+/* ------------------------------------------------------------------ */
+/* Profil camion (modal)                                               */
+/* ------------------------------------------------------------------ */
+$("truck-btn").addEventListener("click", () => {
+  $("tk-height").value = truck.height || "";
+  $("tk-weight").value = truck.weight || "";
+  $("tk-length").value = truck.length || "";
+  $("tk-width").value = truck.width || "";
+  $("tk-hazmat").value = truck.hazmat || "non";
+  $("truck-modal").classList.add("show");
+});
+$("tk-cancel").addEventListener("click", () => $("truck-modal").classList.remove("show"));
+$("tk-save").addEventListener("click", () => {
+  truck = {
+    height: $("tk-height").value, weight: $("tk-weight").value,
+    length: $("tk-length").value, width: $("tk-width").value,
+    hazmat: $("tk-hazmat").value
+  };
+  persistTruck();
+  $("truck-modal").classList.remove("show");
+  toast("Profil camion enregistré");
+});
+
+/* ------------------------------------------------------------------ */
+/* Navigation (Google / Waze)                                          */
+/* ------------------------------------------------------------------ */
+function navUrlFor(loc) {
+  const nav = $("nav-select").value;
+  if (nav === "waze") return "https://waze.com/ul?ll=" + loc.lat + "," + loc.lon + "&navigate=yes";
+  return "https://www.google.com/maps/search/?api=1&query=" + loc.lat + "," + loc.lon;
+}
+
+/* ------------------------------------------------------------------ */
+/* Optimisation du trajet (plus proche voisin + 2-opt)                 */
+/* ------------------------------------------------------------------ */
+function optimizeSelected() {
+  const selected = locations.filter((l) => l.selected && !l.delivered);
+  if (selected.length < 2) return toast("Sélectionnez au moins 2 lieux à livrer");
+  const start = myPosition || selected[0];
+
+  // Nearest neighbour
+  const remaining = selected.slice();
+  const ordered = [];
+  let current = start;
+  while (remaining.length) {
+    let best = 0, bestD = Infinity;
+    remaining.forEach((loc, idx) => {
+      const d = haversineKm(current, loc);
+      if (d < bestD) { bestD = d; best = idx; }
+    });
+    current = remaining.splice(best, 1)[0];
+    ordered.push(current);
+  }
+
+  // 2-opt
+  const dist = (a, b) => haversineKm(a, b);
+  let improved = true, guard = 0;
+  while (improved && guard++ < 60) {
+    improved = false;
+    for (let i = 0; i < ordered.length - 1; i++) {
+      for (let k = i + 1; k < ordered.length; k++) {
+        const a = i === 0 ? start : ordered[i - 1];
+        const b = ordered[i], c = ordered[k], d = ordered[k + 1];
+        const before = dist(a, b) + (d ? dist(c, d) : 0);
+        const after = dist(a, c) + (d ? dist(b, d) : 0);
+        if (after + 1e-9 < before) {
+          const seg = ordered.slice(i, k + 1).reverse();
+          ordered.splice(i, seg.length, ...seg);
+          improved = true;
+        }
+      }
+    }
+  }
+
+  const optIds = ordered.map((l) => l.id);
+  const others = locations.filter((l) => !optIds.includes(l.id));
+  locations = ordered.concat(others);
+  renderAll(false);
+  persist(true);
+  toast("Ordre optimisé — " + fmtKm(routeLengthKm(ordered, start)) + " à vol d'oiseau");
+}
+
+function routeLengthKm(list, start) {
+  let total = 0, prev = start || list[0];
+  list.forEach((loc) => { total += haversineKm(prev, loc); prev = loc; });
+  return total;
+}
+
+function buildRouteLinks() {
+  const selected = locations.filter((l) => l.selected);
+  const box = $("route-links");
+  if (selected.length < 2) { box.style.display = "none"; return []; }
+  const nav = $("nav-select").value;
+  const links = [];
+
+  if (nav === "waze") {
+    // Waze only supports one destination per link; guide to first undelivered
+    box.style.display = "none";
+    return [navUrlFor(selected[0])];
+  }
+
+  const chunks = [];
+  for (let i = 0; i < selected.length; i += GMAPS_MAX_POINTS) {
+    chunks.push(selected.slice(i, i + GMAPS_MAX_POINTS));
+  }
+  for (const chunk of chunks) {
+    if (chunk.length < 2) continue;
+    const c = (p) => p.lat + "," + p.lon;
+    let url = "https://www.google.com/maps/dir/?api=1&travelmode=driving" +
+      "&origin=" + encodeURIComponent(myPosition ? myPosition.lat + "," + myPosition.lon : c(chunk[0])) +
+      "&destination=" + encodeURIComponent(c(chunk[chunk.length - 1]));
+    const mid = chunk.slice(myPosition ? 0 : 1, -1).map(c);
+    if (mid.length) url += "&waypoints=" + encodeURIComponent(mid.join("|"));
+    links.push(url);
+  }
+
+  if (links.length > 1) {
+    box.style.display = "block";
+    box.innerHTML = "Trajet découpé en " + links.length + " segments (Google Maps limite à " +
+      GMAPS_MAX_POINTS + " points par itinéraire) : " +
+      links.map((u, i) => '<a href="' + u + '" target="_blank" rel="noopener">Segment ' + (i + 1) + "</a>").join("");
+  } else {
+    box.style.display = "none";
+  }
+  return links;
+}
+
+function openRoute() {
+  const links = buildRouteLinks();
+  if (!links.length) return;
+  window.open(links[0], "_blank", "noopener");
+}
+
+/* Next-stop bar */
+function nextUndelivered() {
+  const todo = locations.filter((l) => l.status === "todo" || l.status === "rescheduled");
+  if (!todo.length) return null;
+  if (myPosition) {
+    return todo.slice().sort((a, b) => haversineKm(myPosition, a) - haversineKm(myPosition, b))[0];
+  }
+  return todo[0];
+}
+function renderNextStop() {
+  const bar = $("nextstop-bar");
+  const next = nextUndelivered();
+  if (!next) { bar.classList.remove("show"); return; }
+  bar.classList.add("show");
+  $("ns-name").textContent = next.name;
+  const bits = [];
+  if (myPosition) bits.push(fmtKm(haversineKm(myPosition, next)));
+  if (next.timeWindow) bits.push("⏱ " + next.timeWindow);
+  if (next.packages) bits.push("📦 " + next.packages);
+  $("ns-sub").textContent = bits.join("  ·  ");
+  bar.dataset.id = next.id;
+}
+$("ns-go").addEventListener("click", (e) => {
+  e.stopPropagation();
+  const id = $("nextstop-bar").dataset.id;
+  if (id) openInMaps(id);
+});
+$("nextstop-bar").addEventListener("click", () => {
+  const id = $("nextstop-bar").dataset.id;
+  const loc = locations[byId(id)];
+  if (loc) map.setView([loc.lat, loc.lon], 15);
+});
+
+/* ------------------------------------------------------------------ */
+/* Rendu                                                               */
+/* ------------------------------------------------------------------ */
+function visibleLocations() {
+  if (filter === "todo") return locations.filter((l) => !l.delivered);
+  if (filter === "done") return locations.filter((l) => l.delivered);
+  return locations;
+}
+const statusClass = (s) => s === "delivered" ? "delivered" : s === "failed" ? "failed" : s === "rescheduled" ? "rescheduled" : "";
+const statusMark = (s) => s === "delivered" ? "✔" : s === "failed" ? "✕" : s === "rescheduled" ? "↻" : "";
+
+function renderMarkers(fit) {
+  markersGroup.clearLayers();
+  locations.forEach((loc, i) => {
+    const bg = loc.status === "delivered" ? "#0f9d58"
+             : loc.status === "failed" ? "#dc3545"
+             : loc.status === "rescheduled" ? "#f0a020" : "#094699";
+    const label = statusMark(loc.status) || (i + 1);
+    const icon = L.divIcon({
+      className: "",
+      html: '<div class="marker-pin" style="background:' + bg + '">' + label + "</div>",
+      iconSize: [28, 28], iconAnchor: [14, 14]
+    });
+    L.marker([loc.lat, loc.lon], { icon })
+      .bindPopup("<b>" + esc(loc.name) + "</b><br>" + esc(loc.address) +
+        (loc.note ? "<br><i>" + esc(loc.note) + "</i>" : "") +
+        (loc.deliveredAt ? '<br><span style="color:#0f9d58">' + statusLabel(loc.status) + " — " + fmtTime(loc.deliveredAt) + "</span>" : "") +
+        '<br><a href="' + navUrlFor(loc) + '" target="_blank" rel="noopener">Naviguer</a>')
+      .addTo(markersGroup);
+  });
+
+  routeLine.setLatLngs(locations.filter((l) => l.selected).map((l) => [l.lat, l.lon]));
+
+  if (fit && locations.length) {
+    map.fitBounds(markersGroup.getBounds(), { padding: [40, 40], maxZoom: 16 });
+  }
+}
+
+function renderList() {
+  const listEl = $("loc-list");
+  const visible = visibleLocations();
+  $("loc-count").textContent = locations.length;
+
+  const done = locations.filter((l) => l.delivered).length;
+  const pct = locations.length ? Math.round(done / locations.length * 100) : 0;
+  $("progress-fill").style.width = pct + "%";
+  $("progress-info").textContent = locations.length
+    ? done + " livré(s) sur " + locations.length + " (" + pct + " %)" : "";
+  $("filter-info").textContent = visible.length + " affiché(s)";
+
+  // Route stats
+  const sel = locations.filter((l) => l.selected);
+  if (sel.length >= 2) {
+    const km = routeLengthKm(sel, myPosition);
+    const mins = Math.round(km / AVG_SPEED_KMH * 60);
+    const pkgs = sel.reduce((s, l) => s + (Number(l.packages) || 0), 0);
+    $("route-stats").textContent = "Itinéraire : " + sel.length + " arrêts · " + fmtKm(km) +
+      " · ~" + mins + " min · " + pkgs + " colis";
+  } else {
+    $("route-stats").textContent = "";
+  }
+
+  if (!visible.length) {
+    listEl.innerHTML = '<div id="empty-msg">' +
+      (locations.length ? "Aucun lieu pour ce filtre." : "Aucun lieu ajouté pour l'instant.") + "</div>";
+    updateBars();
+    renderNextStop();
+    return;
+  }
+
+  listEl.innerHTML = visible.map((loc) => {
+    const i = byId(loc.id);
+    const d = myPosition ? fmtKm(haversineKm(myPosition, loc)) + " de vous" : "";
+    const near = myPosition && haversineKm(myPosition, loc) * 1000 < ARRIVE_RADIUS_M && loc.status === "todo";
+    const extras = [];
+    if (loc.packages) extras.push("📦 " + loc.packages);
+    if (loc.door) extras.push("🔑 " + esc(loc.door));
+    if (loc.timeWindow) extras.push("⏱ " + esc(loc.timeWindow));
+    return '<div class="loc-item ' + statusClass(loc.status) + (near ? " near" : "") + '" data-id="' + loc.id + '" draggable="true">' +
+      '<span class="drag-handle">⠿</span>' +
+      '<input type="checkbox" class="loc-check" data-act="select" ' + (loc.selected ? "checked" : "") + '>' +
+      '<span class="loc-num">' + (statusMark(loc.status) || i + 1) + "</span>" +
+      '<div class="loc-info">' +
+        '<div class="loc-name">' + esc(loc.name) + "</div>" +
+        '<div class="loc-addr">' + esc(loc.address) + "</div>" +
+        (extras.length ? '<div class="loc-extra">' + extras.join("  ") + "</div>" : "") +
+        (d ? '<div class="loc-meta">' + d + "</div>" : "") +
+        (loc.note ? '<div class="loc-note">' + esc(loc.note) + "</div>" : "") +
+        (loc.deliveredAt ? '<div class="loc-time">' + statusLabel(loc.status) + " · " + fmtTime(loc.deliveredAt) + "</div>" : "") +
+      "</div>" +
+      '<div class="loc-actions">' +
+        '<button class="mini mini-move" data-act="up">↑</button>' +
+        '<button class="mini mini-move" data-act="down">↓</button>' +
+        '<button class="mini mini-deliver ' + (loc.delivered ? "active" : "") + '" data-act="deliver">' +
+          (loc.delivered ? "✔ Livré" : "Livrer") + "</button>" +
+        '<button class="mini mini-status" data-act="status">' + statusLabel(loc.status) + "</button>" +
+        (loc.phone ? '<a class="mini mini-call" href="tel:' + esc(loc.phone) + '">📞</a>' : "") +
+        '<button class="mini mini-note" data-act="edit">✎</button>' +
+        '<a class="mini mini-gmap" href="' + navUrlFor(loc) + '" target="_blank" rel="noopener">Maps</a>' +
+        '<button class="mini mini-del" data-act="del">Suppr.</button>' +
+      "</div></div>";
+  }).join("");
+
+  updateBars();
+  renderNextStop();
+}
+
+function updateBars() {
+  const sel = locations.filter((l) => l.selected);
+  $("route-btn").disabled = sel.length < 2;
+  $("optimize-btn").disabled = locations.filter((l) => l.selected && !l.delivered).length < 2;
+  $("select-all").checked = sel.length > 0 && sel.length === locations.length;
+
+  const info = $("route-info");
+  const hint = $("hint");
+  if (sel.length < 2) {
+    info.textContent = "Sélectionnez 2 lieux ou plus pour créer un itinéraire.";
+    hint.style.display = "none";
+  } else {
+    info.textContent = sel.length + " lieu(x) sélectionné(s).";
+    hint.style.display = "block";
+    hint.textContent = myPosition
+      ? "Le trajet part de votre position actuelle. Utilisez « Optimiser l'ordre » avant d'ouvrir la navigation."
+      : "Activez la localisation (bouton ◎ sur la carte) pour partir de votre position et optimiser depuis là.";
+  }
+  buildRouteLinks();
+}
+
+function renderAll(fit) { renderMarkers(fit); renderList(); }
+
+/* ------------------------------------------------------------------ */
+/* Interactions de la liste (délégation + glisser-déposer)             */
+/* ------------------------------------------------------------------ */
+const listEl = $("loc-list");
+
+listEl.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-act]");
+  if (!btn || btn.type === "checkbox") return;
+  if (btn.tagName === "A") return; // let links (call/maps) work
+  const id = btn.closest(".loc-item").dataset.id;
+  const act = btn.dataset.act;
+  if (act === "del") removeLocation(id);
+  else if (act === "up") moveLocation(id, -1);
+  else if (act === "down") moveLocation(id, 1);
+  else if (act === "edit") openStopModal(id);
+  else if (act === "status") cycleStatus(id);
+  else if (act === "deliver") {
+    const loc = locations[byId(id)];
+    setStatus(id, loc.delivered ? "todo" : "delivered");
+  }
+});
+
+listEl.addEventListener("change", (e) => {
+  if (e.target.dataset.act !== "select") return;
+  const id = e.target.closest(".loc-item").dataset.id;
+  locations[byId(id)].selected = e.target.checked;
+  renderAll(false);
+  persist(true);
+});
+
+let dragId = null;
+listEl.addEventListener("dragstart", (e) => {
+  const item = e.target.closest(".loc-item");
+  if (!item) return;
+  dragId = item.dataset.id;
+  item.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+});
+listEl.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  const item = e.target.closest(".loc-item");
+  listEl.querySelectorAll(".drop-target").forEach((el) => el.classList.remove("drop-target"));
+  if (item && item.dataset.id !== dragId) item.classList.add("drop-target");
+});
+listEl.addEventListener("drop", (e) => {
+  e.preventDefault();
+  const item = e.target.closest(".loc-item");
+  if (!item || !dragId) return;
+  const from = byId(dragId), to = byId(item.dataset.id);
+  if (from < 0 || to < 0) return;
+  const [moved] = locations.splice(from, 1);
+  locations.splice(to, 0, moved);
+  renderAll(false);
+  persist(true);
+});
+listEl.addEventListener("dragend", () => {
+  dragId = null;
+  listEl.querySelectorAll(".dragging,.drop-target").forEach((el) => el.classList.remove("dragging", "drop-target"));
+});
+
+/* ------------------------------------------------------------------ */
+/* Barres d'outils                                                     */
+/* ------------------------------------------------------------------ */
+$("select-all").addEventListener("change", (e) => {
+  locations.forEach((l) => (l.selected = e.target.checked));
+  renderAll(false);
+  persist(true);
+});
+$("route-btn").addEventListener("click", openRoute);
+$("optimize-btn").addEventListener("click", optimizeSelected);
+$("nav-select").addEventListener("change", () => renderAll(false));
+
+document.querySelectorAll(".filter-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    filter = btn.dataset.filter;
+    document.querySelectorAll(".filter-btn").forEach((b) => b.classList.toggle("active", b === btn));
+    renderList();
+  });
+});
+
+$("reset-btn").addEventListener("click", async () => {
+  if (!locations.length) return;
+  if (!confirm("Effacer tous les lieux ? Cette action est irréversible.")) return;
+  locations = [];
+  await persist(true);
+  renderAll(false);
+  toast("Liste réinitialisée");
+});
+
+$("clear-done").addEventListener("click", async () => {
+  const doneItems = locations.filter((l) => l.delivered);
+  if (!doneItems.length) return toast("Aucun lieu livré");
+  if (!confirm("Retirer les " + doneItems.length + " lieu(x) déjà livré(s) ?")) return;
+  lastClearedDone = locations.slice();
+  locations = locations.filter((l) => !l.delivered);
+  await persist(true);
+  renderAll(false);
+  toast(doneItems.length + " lieu(x) retiré(s)", "Annuler", async () => {
+    if (lastClearedDone) { locations = lastClearedDone; lastClearedDone = null; renderAll(false); await persist(true); }
+  });
+});
+
+function download(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+const stamp = () => new Date().toISOString().slice(0, 10);
+
+$("export-json").addEventListener("click", () => {
+  if (!locations.length) return toast("Aucun lieu à exporter");
+  const data = locations.map(({ name, address, lat, lon, status, delivered, deliveredAt, note, phone, packages, door, timeWindow }) =>
+    ({ name, address, lat, lon, status, delivered, deliveredAt, note, phone, packages, door, timeWindow }));
+  download("lieux-quebec-" + stamp() + ".json", JSON.stringify(data, null, 2), "application/json");
+  toast(data.length + " lieu(x) exporté(s)");
+});
+
+$("export-csv").addEventListener("click", () => {
+  if (!locations.length) return toast("Aucun lieu à exporter");
+  const q = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+  const rows = [["ordre","nom","adresse","latitude","longitude","statut","livre_a","tel","colis","code_porte","fenetre","note"].join(",")]
+    .concat(locations.map((l, i) => [i + 1, l.name, l.address, l.lat, l.lon, statusLabel(l.status),
+      l.deliveredAt ? new Date(l.deliveredAt).toLocaleString("fr-CA") : "", l.phone, l.packages, l.door, l.timeWindow, l.note].map(q).join(",")));
+  download("lieux-quebec-" + stamp() + ".csv", "\uFEFF" + rows.join("\n"), "text/csv");
+  toast(locations.length + " lieu(x) exporté(s) en CSV");
+});
+
+$("import-btn").addEventListener("click", () => $("import-file").click());
+$("import-file").addEventListener("change", async (event) => {
+  const file = event.target.files && event.target.files[0];
+  event.target.value = "";
+  if (!file) return;
+  let parsed;
+  try { parsed = JSON.parse(await file.text()); }
+  catch (e) { return alert("Ce fichier n'est pas un JSON valide."); }
+
+  const items = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.locations) ? parsed.locations : null);
+  if (!items) return alert("Format inattendu : le fichier doit contenir une liste de lieux.");
+
+  const valid = items
+    .filter((it) => it && Number.isFinite(Number(it.lat)) && Number.isFinite(Number(it.lon)) && (it.name || it.address))
+    .map(normalizeLoc);
+  if (!valid.length) return alert("Aucun lieu valide trouvé dans ce fichier.");
+
+  const isDup = (a, b) => a.name === b.name && a.lat === b.lat && a.lon === b.lon;
+  const toAdd = valid.filter((v) => !locations.some((l) => isDup(l, v)));
+  const skipped = valid.length - toAdd.length;
+
+  if (locations.length) {
+    const mode = prompt(
+      "Importer " + valid.length + " lieu(x)" + (skipped ? " (" + skipped + " doublon(s))" : "") +
+      "\n\nTapez A pour AJOUTER à la liste actuelle, ou R pour REMPLACER la liste.", "A");
+    if (mode === null) return;
+    if (mode.trim().toUpperCase() === "R") locations = valid;
+    else if (!toAdd.length) return alert("Tous ces lieux sont déjà présents.");
+    else locations = locations.concat(toAdd);
+  } else {
+    locations = valid;
+  }
+  renderAll(true);
+  await persist(true);
+  toast("Import terminé");
+});
+
+/* ------------------------------------------------------------------ */
+/* Commande vocale (mains libres)                                      */
+/* ------------------------------------------------------------------ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+$("voice-btn").addEventListener("click", () => {
+  if (!SR) return alert("La reconnaissance vocale n'est pas prise en charge sur ce navigateur.");
+  if (recognition) { recognition.stop(); return; }
+  recognition = new SR();
+  recognition.lang = "fr-CA";
+  recognition.continuous = false;
+  recognition.onresult = (e) => {
+    const text = e.results[0][0].transcript.toLowerCase();
+    handleVoice(text);
+  };
+  recognition.onerror = () => toast("Voix : erreur");
+  recognition.onend = () => { recognition = null; $("voice-btn").textContent = "🎤 Voix"; };
+  recognition.start();
+  $("voice-btn").textContent = "🎤 …";
+  toast("Dites : « livré », « prochain », « échec »…");
+});
+function speak(text) {
+  if (window.speechSynthesis) {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "fr-CA";
+    window.speechSynthesis.speak(u);
+  }
+}
+function handleVoice(text) {
+  const next = nextUndelivered();
+  if (/livr|d[ée]pos/.test(text) && next) {
+    setStatus(next.id, "delivered");
+    speak(next.name + " marqué livré.");
+  } else if (/[ée]chec|absent|personne/.test(text) && next) {
+    setStatus(next.id, "failed");
+    speak(next.name + " marqué échec.");
+  } else if (/report|plus tard/.test(text) && next) {
+    setStatus(next.id, "rescheduled");
+    speak(next.name + " reporté.");
+  } else if (/prochain|suivant|navig/.test(text) && next) {
+    openInMaps(next.id);
+    speak("Navigation vers " + next.name);
+  } else {
+    toast("Commande non reconnue : « " + text + " »");
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Localisation en direct + geofence d'arrivée                         */
+/* ------------------------------------------------------------------ */
+let liveWatchId = null, liveMarker = null, liveCircle = null;
+const locateBtn = $("locate-btn");
+
+locateBtn.addEventListener("click", () => {
+  if (liveWatchId !== null) return stopLiveLocation();
+  if (!navigator.geolocation) return alert("La géolocalisation n'est pas disponible sur cet appareil.");
+  locateBtn.classList.add("active");
+  let first = true;
+  liveWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const { latitude, longitude, accuracy } = pos.coords;
+      myPosition = { lat: latitude, lon: longitude };
+      updateLiveMarker(latitude, longitude, accuracy);
+      if (first) { map.setView([latitude, longitude], 15); first = false; }
+      checkArrival();
+      renderList();
+    },
+    (err) => { alert("Position indisponible : " + err.message); stopLiveLocation(); },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+  );
+});
+
+function stopLiveLocation() {
+  if (liveWatchId !== null) navigator.geolocation.clearWatch(liveWatchId);
+  liveWatchId = null;
+  myPosition = null;
+  locateBtn.classList.remove("active");
+  if (liveMarker) { map.removeLayer(liveMarker); liveMarker = null; }
+  if (liveCircle) { map.removeLayer(liveCircle); liveCircle = null; }
+  renderList();
+}
+
+function updateLiveMarker(lat, lon, accuracy) {
+  const icon = L.divIcon({
+    className: "",
+    html: '<div class="live-dot"></div>',
+    iconSize: [16, 16], iconAnchor: [8, 8]
+  });
+  if (!liveMarker) {
+    liveMarker = L.marker([lat, lon], { icon, zIndexOffset: 1000 }).addTo(map).bindPopup("Vous êtes ici");
+    liveCircle = L.circle([lat, lon], { radius: accuracy, color: "#1a73e8", weight: 1, fillOpacity: 0.1 }).addTo(map);
+  } else {
+    liveMarker.setLatLng([lat, lon]);
+    liveCircle.setLatLng([lat, lon]).setRadius(accuracy);
+  }
+}
+
+function checkArrival() {
+  if (!myPosition) return;
+  locations.forEach((loc) => {
+    if (loc.status !== "todo" && loc.status !== "rescheduled") return;
+    const m = haversineKm(myPosition, loc) * 1000;
+    if (m < ARRIVE_RADIUS_M && !promptedArrival[loc.id]) {
+      promptedArrival[loc.id] = true;
+      const bits = [loc.address];
+      if (loc.door) bits.push("Code porte : " + loc.door);
+      if (loc.packages) bits.push(loc.packages + " colis");
+      toast("Arrivé à « " + loc.name + " » ? " + bits.join(" · "), "Marquer livré", () => {
+        setStatus(loc.id, "delivered");
+      });
+      speak("Arrivé à " + loc.name);
+    } else if (m > ARRIVE_RADIUS_M * 3) {
+      promptedArrival[loc.id] = false; // reset when leaving
+    }
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* Réseau + démarrage                                                  */
+/* ------------------------------------------------------------------ */
+function updateOnline() { $("offline-bar").classList.toggle("show", !navigator.onLine); }
+window.addEventListener("online", updateOnline);
+window.addEventListener("offline", updateOnline);
+updateOnline();
+
+// Fermer les modales en cliquant l'arrière-plan
+document.querySelectorAll(".modal-back").forEach((mb) => {
+  mb.addEventListener("click", (e) => { if (e.target === mb) mb.classList.remove("show"); });
+});
+
+loadFromStorage();
+</script>
+</body>
+</html>
