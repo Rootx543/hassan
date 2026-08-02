@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recherche &amp; Carte QC — v3</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  * { box-sizing: border-box; font-family: -apple-system, Arial, sans-serif; }
+  body { margin:0; padding:0; background:#f4f6f8; }
+  header { background:#094699; color:white; padding:14px 16px; font-weight:800; font-size:18px;
+           display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  header .status { font-size:11px; font-weight:500; opacity:0.85; text-align:right; }
+  #offline-bar { display:none; background:#dc3545; color:white; font-size:12px; padding:6px 12px; text-align:center; }
+  #offline-bar.show { display:block; }
+
+  #search-wrap { position:relative; padding:12px; background:white; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+  #search-input { width:100%; padding:12px 14px; font-size:15px; border:1px solid #ddd; border-radius:8px; outline:none; }
+  #search-input:focus { border-color:#094699; }
+  #suggestions { position:absolute; left:12px; right:12px; top:64px; background:white;
+    border:1px solid #ddd; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    max-height:280px; overflow-y:auto; z-index:1000; display:none; }
+  .suggestion-item { padding:10px 14px; cursor:pointer; border-bottom:1px solid #f0f0f0; }
+  .suggestion-item:last-child { border-bottom:none; }
+  .suggestion-item:hover, .suggestion-item.active { background:#e8f0fe; }
+  .suggestion-item.msg { cursor:default; color:#999; font-size:13px; text-align:center; }
+  .suggestion-item.msg.err { color:#dc3545; }
+  .sugg-title { font-weight:600; font-size:14px; color:#222; }
+  .sugg-sub { font-size:12px; color:#777; margin-top:2px; }
+  .sugg-tag { display:inline-block; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; margin-left:6px; vertical-align:middle; }
+  .tag-adresse { background:#e8f0fe; color:#094699; }
+  .tag-entreprise { background:#fff3cd; color:#856404; }
+  .tag-recent { background:#e2e3e5; color:#41464b; }
+  .tag-client { background:#e0f2f1; color:#00695c; }
+
+  /* ---------- Carnet de clients ---------- */
+  #book-wrap { background:white; border-top:1px solid #eceff3; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+  #book-toggle { width:100%; border:none; background:#f7f9fc; color:#094699; font-weight:800; font-size:14px;
+    padding:12px 14px; text-align:left; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  #book-toggle:hover { background:#eef3fb; }
+  #book-toggle .chev { font-size:12px; opacity:0.7; }
+  #book-body { display:none; padding:10px 12px 14px 12px; }
+  #book-body.open { display:block; }
+  #book-controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+  #book-search { flex:1; min-width:180px; padding:10px 12px; font-size:14px; border:1px solid #ddd; border-radius:8px; outline:none; }
+  #book-search:focus { border-color:#094699; }
+  #book-city { padding:9px 10px; font-size:13px; border:1px solid #ddd; border-radius:8px; background:white; max-width:190px; }
+  #book-count { font-size:12px; color:#666; flex-basis:100%; }
+  #book-list { max-height:46vh; overflow-y:auto; border:1px solid #eceff3; border-radius:8px; }
+  .cli { display:flex; align-items:center; gap:9px; padding:9px 10px; border-bottom:1px solid #f2f4f7; cursor:pointer; }
+  .cli:last-child { border-bottom:none; }
+  .cli:hover { background:#f7faff; }
+  .cli.picked { background:#e8f0fe; }
+  .cli.added { opacity:0.55; }
+  .cli-check { width:18px; height:18px; flex-shrink:0; accent-color:#094699; pointer-events:none; }
+  .cli-info { flex:1; min-width:0; }
+  .cli-name { font-weight:600; font-size:13px; color:#222; }
+  .cli-sub { font-size:11.5px; color:#777; margin-top:1px; }
+  .cli-tel { font-size:11px; color:#0b7285; }
+  .cli-add { border:none; border-radius:6px; padding:6px 10px; font-size:13px; font-weight:800;
+             background:#0f9d58; color:white; cursor:pointer; flex-shrink:0; }
+  .cli-add.is-added { background:#dfe5ec; color:#67707c; }
+  .warnv { display:inline-block; font-size:10px; font-weight:700; padding:1px 5px; border-radius:4px;
+           background:#fff3cd; color:#856404; margin-left:5px; }
+  .book-empty { padding:16px; text-align:center; color:#999; font-size:13px; }
+  .tag-google { background:#e3f2fd; color:#0b57d0; }
+  .tag-osm { background:#f1e5ff; color:#6a1b9a; }
+
+  /* ---------- Ajout manuel d'adresses ---------- */
+  #add-wrap { background:white; border-top:1px solid #eceff3; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+  #add-toggle { width:100%; border:none; background:#f7f9fc; color:#0f7a45; font-weight:800; font-size:14px;
+    padding:12px 14px; text-align:left; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  #add-toggle:hover { background:#eefaf2; }
+  #add-toggle .chev { font-size:12px; opacity:0.7; }
+  #add-body { display:none; padding:10px 12px 14px 12px; }
+  #add-body.open { display:block; }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .tab { border:none; border-radius:8px; padding:8px 11px; font-size:12px; font-weight:700;
+         background:#eef1f5; color:#444; cursor:pointer; }
+  .tab.active { background:#094699; color:white; }
+  .pane { display:none; }
+  .pane.active { display:block; }
+  .fld { display:block; font-size:11.5px; font-weight:700; color:#555; margin:8px 0 3px; }
+  .inp { width:100%; padding:10px 12px; font-size:14px; border:1px solid #ddd; border-radius:8px; outline:none; background:white; }
+  .inp:focus { border-color:#094699; }
+  textarea.inp { min-height:120px; resize:vertical; font-family:inherit; line-height:1.5; }
+  .row2 { display:flex; gap:8px; flex-wrap:wrap; }
+  .row2 > div { flex:1; min-width:140px; }
+  .actions-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+  .muted { font-size:11.5px; color:#7a828c; line-height:1.5; }
+  .prov-note { font-size:11.5px; color:#7a5b00; background:#fff8e1; border-radius:6px; padding:7px 9px; margin-top:6px; line-height:1.5; }
+  #geo-progress { display:none; height:6px; background:#e6e9ee; border-radius:4px; overflow:hidden; margin-top:10px; }
+  #geo-progress-fill { height:100%; width:0%; background:#094699; transition:width .2s; }
+  #bulk-results { margin-top:10px; max-height:44vh; overflow-y:auto; border:1px solid #eceff3;
+                  border-radius:8px; display:none; }
+  .res { display:flex; gap:9px; align-items:flex-start; padding:9px 10px; border-bottom:1px solid #f2f4f7; }
+  .res:last-child { border-bottom:none; }
+  .res-check { width:18px; height:18px; margin-top:2px; flex-shrink:0; accent-color:#094699; }
+  .res-info { flex:1; min-width:0; }
+  .res-q { font-size:11.5px; color:#8a929c; }
+  .res-name { font-weight:600; font-size:13px; color:#222; }
+  .res-found { font-size:12px; color:#0b7285; margin-top:1px; }
+  .res-fail { font-size:12px; color:#c0392b; margin-top:1px; }
+  .res-sel { width:100%; margin-top:5px; padding:6px 8px; font-size:12px; border:1px solid #ddd; border-radius:6px; background:white; }
+  .res-side { display:flex; flex-direction:column; gap:5px; flex-shrink:0; }
+  .badge { font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; text-align:center; }
+  .b-ok { background:#e8f5e9; color:#1b6b3a; }
+  .b-warn { background:#fff3cd; color:#856404; }
+  .b-err { background:#f8d7da; color:#721c24; }
+
+  #map-wrap { position:relative; }
+  #map { height:50vh; width:100%; }
+  #locate-btn { position:absolute; bottom:14px; right:10px; z-index:500; width:44px; height:44px;
+    border-radius:50%; border:none; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.3);
+    font-size:18px; cursor:pointer; }
+  #locate-btn.active { background:#094699; color:white; }
+
+  #list-wrap { padding:12px; }
+  .bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:white; padding:10px 12px;
+         border-radius:8px; margin-bottom:10px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+  h3 { margin:0 0 10px 0; font-size:15px; color:#333; }
+  .btn { border:none; border-radius:8px; padding:9px 12px; font-size:12px; font-weight:700; cursor:pointer; }
+  .btn-green { background:#0f9d58; color:white; }
+  .btn-green:hover:not(:disabled) { background:#0c8043; }
+  .btn-green:disabled { background:#b7cdbf; cursor:not-allowed; }
+  .btn-blue { background:#e8f0fe; color:#094699; }
+  .btn-blue:hover { background:#d6e4fc; }
+  .btn-red { background:#f8d7da; color:#721c24; }
+  .btn-red:hover { background:#f1b0b7; }
+  .filter-btn { background:#eee; color:#444; }
+  .filter-btn.active { background:#094699; color:white; }
+  .info { font-size:12px; color:#666; flex:1; min-width:170px; }
+
+  .loc-item { display:flex; align-items:center; gap:10px; background:white; padding:10px 12px;
+    border-radius:8px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,0.06); flex-wrap:wrap; }
+  .loc-item.dragging { opacity:0.4; }
+  .loc-item.drop-target { outline:2px dashed #094699; }
+  .loc-check { width:18px; height:18px; flex-shrink:0; cursor:pointer; accent-color:#094699; }
+  .loc-num { width:28px; height:28px; border-radius:50%; background:#094699; color:white;
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0; }
+  .loc-info { flex:1; min-width:150px; }
+  .loc-name { font-weight:600; font-size:13px; color:#333; }
+  .loc-addr { font-size:12px; color:#777; }
+  .loc-meta { font-size:11px; color:#0b7285; margin-top:2px; }
+  .loc-note { font-size:11px; color:#7a5b00; margin-top:2px; font-style:italic; }
+  .loc-actions { display:flex; gap:6px; flex-wrap:wrap; }
+  .mini { border:none; border-radius:6px; padding:6px 9px; font-size:12px; font-weight:600; cursor:pointer; }
+  .mini-move { background:#eef1f5; color:#444; }
+  .mini-note { background:#fff3cd; color:#856404; }
+  .mini-gmap { background:#d4edda; color:#155724; }
+  .mini-del { background:#f8d7da; color:#721c24; }
+  .mini-tel { background:#e0f2f1; color:#00695c; }
+  .mini-deliver { background:#e8f5e9; color:#0f9d58; border:1px solid #bfe6c8; }
+  .mini-deliver.active { background:#0f9d58; color:white; }
+  .drag-handle { cursor:grab; color:#bbb; font-size:16px; user-select:none; }
+
+  .loc-item.delivered { opacity:0.6; background:#f6f9f7; }
+  .loc-item.delivered .loc-name { text-decoration:line-through; }
+  .loc-item.delivered .loc-num { background:#0f9d58; }
+
+  #empty-msg { text-align:center; color:#999; font-size:13px; padding:20px; }
+  #progress-wrap { height:6px; background:#e6e9ee; border-radius:4px; overflow:hidden; margin-bottom:6px; }
+  #progress-fill { height:100%; width:0%; background:#0f9d58; transition:width 0.3s; }
+  #progress-info { font-size:12px; color:#666; margin-bottom:10px; }
+  #route-links { display:none; background:white; border-radius:8px; padding:10px 12px; margin-bottom:10px;
+                 box-shadow:0 1px 3px rgba(0,0,0,0.06); font-size:13px; }
+  #route-links a { display:inline-block; margin:4px 8px 4px 0; color:#094699; font-weight:700; }
+  #hint { display:none; background:#fff3cd; color:#7a5b00; font-size:12px; padding:10px 12px;
+          border-radius:8px; margin-bottom:10px; line-height:1.5; }
+
+  #toast { position:fixed; bottom:12px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:#222; color:white; font-size:12px; padding:9px 14px; border-radius:20px;
+    opacity:0; transition:opacity .25s, transform .25s; z-index:2000; display:flex; gap:10px; align-items:center; }
+  #toast.show { opacity:0.95; transform:translateX(-50%) translateY(0); }
+  #toast button { background:#ffd54f; color:#222; border:none; border-radius:12px; padding:4px 10px;
+    font-size:11px; font-weight:700; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<header>
+  <span>Recherche &amp; Carte — Québec</span>
+  <span class="status" id="storage-status">Chargement…</span>
+</header>
+<div id="offline-bar">Hors ligne — la recherche d'adresses est indisponible, vos lieux enregistrés restent accessibles.</div>
+
+<div id="search-wrap">
+  <input type="text" id="search-input" autocomplete="off"
+         placeholder="Tapez une adresse ou un nom de commerce…">
+  <div id="suggestions"></div>
+</div>
+
+<div id="book-wrap">
+  <button id="book-toggle">
+    <span>📇 Carnet de clients (<span id="book-total">0</span>) — ajout rapide</span>
+    <span class="chev" id="book-chev">▼</span>
+  </button>
+  <div id="book-body">
+    <div id="book-controls">
+      <input type="text" id="book-search" autocomplete="off" placeholder="Filtrer : nom, rue, ville, téléphone…">
+      <select id="book-city"><option value="">Toutes les villes</option></select>
+      <button class="btn btn-blue" id="book-select-all">Cocher tout</button>
+      <button class="btn btn-blue" id="book-clear">Décocher</button>
+      <button class="btn btn-green" id="book-add" disabled>Ajouter (0)</button>
+      <span id="book-count"></span>
+    </div>
+    <div id="book-list"></div>
+  </div>
+</div>
+
+<div id="add-wrap">
+  <button id="add-toggle">
+    <span>➕ Ajouter des adresses (manuel, en lot, GPS)</span>
+    <span class="chev" id="add-chev">▼</span>
+  </button>
+  <div id="add-body">
+
+    <div class="tabs">
+      <button class="tab active" data-pane="pane-one">Une adresse</button>
+      <button class="tab" data-pane="pane-bulk">Liste en lot</button>
+      <button class="tab" data-pane="pane-gps">Coordonnées GPS</button>
+      <button class="tab" data-pane="pane-cfg">Géocodeur</button>
+    </div>
+
+    <!-- Une adresse -->
+    <div class="pane active" id="pane-one">
+      <label class="fld" for="one-addr">Adresse à rechercher</label>
+      <input type="text" class="inp" id="one-addr" autocomplete="off"
+             placeholder="Ex. : 1195 rue Taillon, Québec">
+      <div class="row2">
+        <div>
+          <label class="fld" for="one-name">Nom / commerce (optionnel)</label>
+          <input type="text" class="inp" id="one-name" autocomplete="off" placeholder="Ex. : Arsenal &amp; Co">
+        </div>
+        <div>
+          <label class="fld" for="one-note">Note (optionnel)</label>
+          <input type="text" class="inp" id="one-note" autocomplete="off" placeholder="Code de porte, tél., nº commande…">
+        </div>
+      </div>
+      <div class="actions-row">
+        <button class="btn btn-green" id="one-go">Rechercher et ajouter</button>
+        <span class="muted" id="one-status"></span>
+      </div>
+    </div>
+
+    <!-- Liste en lot -->
+    <div class="pane" id="pane-bulk">
+      <label class="fld" for="bulk-text">Collez votre liste — une adresse par ligne</label>
+      <textarea class="inp" id="bulk-text" spellcheck="false"
+placeholder="1195 rue Taillon, Québec
+597 rue St-Jean, Québec | Attaboy Pizza
+298 rue St-Jean, Québec | Au Bonnet d'Âne | code porte 4512"></textarea>
+      <div class="muted" style="margin-top:6px;">
+        Formats acceptés par ligne : <b>adresse</b> · <b>adresse | nom</b> · <b>adresse | nom | note</b>.
+        Le séparateur peut être <b>|</b> ou <b>;</b>. Les lignes CSV <code>Nom,Adresse,Ville,Téléphone</code> sont
+        reconnues automatiquement.
+      </div>
+      <div class="actions-row">
+        <button class="btn btn-green" id="bulk-go">Géocoder la liste</button>
+        <button class="btn btn-blue" id="bulk-clear">Vider</button>
+        <span class="muted" id="bulk-status"></span>
+      </div>
+      <div id="geo-progress"><div id="geo-progress-fill"></div></div>
+      <div id="bulk-results"></div>
+      <div class="actions-row" id="bulk-add-row" style="display:none;">
+        <button class="btn btn-green" id="bulk-add">Ajouter les lignes cochées</button>
+        <button class="btn btn-blue" id="bulk-check-all">Tout cocher</button>
+        <button class="btn btn-blue" id="bulk-uncheck-all">Tout décocher</button>
+      </div>
+    </div>
+
+    <!-- Coordonnées GPS -->
+    <div class="pane" id="pane-gps">
+      <div class="row2">
+        <div>
+          <label class="fld" for="gps-lat">Latitude</label>
+          <input type="text" class="inp" id="gps-lat" inputmode="decimal" placeholder="46.81624">
+        </div>
+        <div>
+          <label class="fld" for="gps-lon">Longitude</label>
+          <input type="text" class="inp" id="gps-lon" inputmode="decimal" placeholder="-71.20453">
+        </div>
+      </div>
+      <label class="fld" for="gps-name">Nom du lieu</label>
+      <input type="text" class="inp" id="gps-name" autocomplete="off" placeholder="Ex. : Entrepôt secteur nord">
+      <div class="actions-row">
+        <button class="btn btn-green" id="gps-go">Ajouter ce point</button>
+        <button class="btn btn-blue" id="gps-here">Utiliser ma position</button>
+        <span class="muted" id="gps-status"></span>
+      </div>
+      <div class="muted" style="margin-top:6px;">
+        Vous pouvez aussi coller « 46.81624, -71.20453 » dans le champ Latitude — il sera séparé automatiquement.
+        Astuce : un <b>clic long sur la carte</b> ajoute directement un point à cet endroit.
+      </div>
+    </div>
+
+    <!-- Géocodeur -->
+    <div class="pane" id="pane-cfg">
+      <label class="fld" for="cfg-provider">Service de géocodage</label>
+      <select class="inp" id="cfg-provider">
+        <option value="qc">Québec (officiel) — gratuit, sans clé</option>
+        <option value="google">Google Geocoding — nécessite une clé API</option>
+        <option value="osm">OpenStreetMap / Nominatim — gratuit, mondial</option>
+        <option value="qc+google">Québec, puis Google en secours</option>
+        <option value="google+qc">Google, puis Québec en secours</option>
+      </select>
+
+      <label class="fld" for="cfg-key">Clé API Google Maps (Geocoding API)</label>
+      <input type="password" class="inp" id="cfg-key" autocomplete="off" placeholder="AIza…">
+      <div class="actions-row">
+        <button class="btn btn-green" id="cfg-save">Enregistrer</button>
+        <button class="btn btn-blue" id="cfg-test">Tester la clé</button>
+        <button class="btn btn-red" id="cfg-forget">Oublier la clé</button>
+        <span class="muted" id="cfg-status"></span>
+      </div>
+
+      <label class="fld" for="cfg-region">Restreindre les résultats</label>
+      <select class="inp" id="cfg-region">
+        <option value="qc">Québec seulement (recommandé)</option>
+        <option value="ca">Canada</option>
+        <option value="">Aucune restriction</option>
+      </select>
+
+      <div class="prov-note">
+        La clé est stockée <b>uniquement sur cet appareil</b> (IndexedDB), jamais envoyée ailleurs qu'à Google.
+        Protégez-la dans la console Google Cloud en limitant son usage à l'API Geocoding et à votre domaine.
+        Google facture au-delà du quota gratuit mensuel — le géocodeur du Québec reste gratuit et illimité.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="map-wrap">
+  <div id="map"></div>
+  <button id="locate-btn" title="Me localiser">◎</button>
+</div>
+
+<div id="list-wrap">
+  <h3>Lieux ajoutés (<span id="loc-count">0</span>)</h3>
+  <div id="progress-wrap"><div id="progress-fill"></div></div>
+  <div id="progress-info"></div>
+
+  <div class="bar">
+    <button class="btn filter-btn active" data-filter="all">Tous</button>
+    <button class="btn filter-btn" data-filter="todo">À livrer</button>
+    <button class="btn filter-btn" data-filter="done">Livrés</button>
+    <span class="info" id="filter-info"></span>
+  </div>
+
+  <div class="bar">
+    <label style="font-size:12px;display:flex;align-items:center;gap:6px;">
+      <input type="checkbox" id="select-all" class="loc-check"> Tout sélectionner
+    </label>
+    <span class="info" id="route-info">Sélectionnez 2 lieux ou plus pour créer un itinéraire.</span>
+    <button class="btn btn-blue" id="optimize-btn" disabled>Optimiser l'ordre</button>
+    <button class="btn btn-green" id="route-btn" disabled>Ouvrir l'itinéraire</button>
+  </div>
+
+  <div id="hint"></div>
+  <div id="route-links"></div>
+
+  <div class="bar">
+    <button class="btn btn-blue" id="export-json">Exporter JSON</button>
+    <button class="btn btn-blue" id="export-csv">Exporter CSV</button>
+    <button class="btn btn-blue" id="import-btn">Importer</button>
+    <input type="file" id="import-file" accept="application/json,.json" style="display:none">
+    <span class="info"></span>
+    <button class="btn btn-red" id="clear-done">Effacer les livrés</button>
+    <button class="btn btn-red" id="reset-btn">Tout réinitialiser</button>
+  </div>
+
+  <div id="loc-list"><div id="empty-msg">Aucun lieu ajouté pour l'instant.</div></div>
+</div>
+
+<div id="toast"><span id="toast-text"></span></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script id="clients-data" type="application/json">[{"n":"#8188H G780 2731-7254 QC INC","a":"255 chemin Sainte-Foy, Québec G1R1T5","c":"QUEBEC CITY","p":"4185249890","lat":46.804245,"lon":-71.2308397},{"n":"#99192 RIVE SUD","a":"95 chemin Henri-Chartrand, L'Ange-Gardien J8L0W9","c":"L ANGE-GARDIEN","p":"5146082549","lat":45.6187829,"lon":-75.4021258},{"n":"9201-8807 QUEBEC INC","a":"930 rue Blais, Sherbrooke J1K2B7","c":"SHERBROOKE","p":"8195648844","lat":45.390703,"lon":-71.9377883},{"n":"9352-7812 QUEBEC INC.","a":"3295 avenue Laurin, Québec G1P1T6","c":"QUEBEC","p":"4188033824","lat":46.8109044,"lon":-71.3272678},{"n":"9448-6065 QUEBEC INC","a":"840 rue Bouvier, Québec G2J1A3","c":"QUEBEC","p":"5817042272","lat":46.8336998,"lon":-71.278536},{"n":"9487-4781 QUEBEC INC","a":"1795 rue de Bourgogne, Sherbrooke J1J1B1","c":"SHERBROOKE","p":"8195881220","lat":45.422686,"lon":-71.9190539},{"n":"9494-4246 QUEBEC INC","a":"3295 chemin Royal, Québec G1E1V8","c":"QUEBEC","p":"4185272210","lat":46.8518797,"lon":-71.2095865},{"n":"9532-9199 QUEBEC INC.","a":"3295 chemin Royal, Québec G1E1V8","c":"QUEBEC","p":"4186949333","lat":46.8518797,"lon":-71.2095865},{"n":"9537-2769 QUEBEC INC.","a":"840 rue Bouvier, Québec G2J1A3","c":"QUEBEC","p":"4186223203","lat":46.8336998,"lon":-71.278536},{"n":"9563-9159 QUEBEC INC.","a":"840 rue Bouvier, Québec G2J1A3","c":"QUEBEC","p":"4186223203","lat":46.8336998,"lon":-71.278536},{"n":"ALAIN LEDUC","a":"140 boulevard Lacombe, Repentigny J5Z1S1","c":"REPENTIGNY","p":"5148844924","lat":45.7417035,"lon":-73.4807615},{"n":"ALAIN LEDUC - CENTRE-SUD MTL","a":"179 rue Rémi-Meunier, Terrebonne J6V1B9","c":"TERREBONNE","p":"4509649346","lat":45.6978279,"lon":-73.5722709},{"n":"ALIMENTATION SERRO INC #4789","a":"707 boulevard Charest Ouest, Québec G1N4P6","c":"QUEBEC","p":"4186817365","lat":46.8046208,"lon":-71.2423745},{"n":"ALPHONSE CUISINE ET COCKTAIL","a":"19 rue des Jardins, Québec G1R4L4","c":"QUEBEC","p":"4186940707","lat":46.8132594,"lon":-71.2072391},{"n":"ARSENAL & CO","a":"1195 rue Taillon, Québec G1N3V2","c":"QUEBEC","p":"4186940618","lat":46.8014003,"lon":-71.2533615},{"n":"ATTABOY PIZZA","a":"597 rue Saint-Jean, Québec G1R1P7","c":"QUEBEC","p":"5817023730","lat":46.8099832,"lon":-71.2197139},{"n":"AU BONNET D ANE ST-JEAN","a":"298 rue Saint-Jean, Québec G1R1P1","c":"QUEBEC","p":"4186473031","lat":46.8085624,"lon":-71.2239009},{"n":"AU PETIT COIN BRETON (2)","a":"1029 rue Saint-Jean, Québec G1R1R9","c":"QUEBEC","p":"4186940758","lat":46.8130539,"lon":-71.2120499},{"n":"AU RELAIS DE LA PLACE D ARME","a":"16 rue Sainte-Anne, Québec G1R3X2","c":"QUEBEC","p":"4186949063","lat":46.8131726,"lon":-71.2059845},{"n":"AUX PETITS DELICES CARTIER","a":"1191 avenue Cartier, Québec G1R2S9","c":"QUEBEC","p":"41865225154","lat":46.802938,"lon":-71.2241927},{"n":"BALONEY SANDWICHERIE","a":"545 rue Saint-Jean, Québec G1R1P5","c":"QUEBEC","p":"4189975579","lat":46.8095468,"lon":-71.220455},{"n":"BELLO RESTAURANTE (2)","a":"73 rue Saint-Louis, Québec G1R3Z2","c":"QUEBEC","p":"4186940030","lat":46.8105266,"lon":-71.2090684},{"n":"BISTRO BAR BECLUB (RTA)","a":"17 rue Saint-Stanislas, Québec G1R4G7","c":"QUEBEC","p":"4186925488","lat":46.8138584,"lon":-71.2114446},{"n":"BISTRO BAR L ATELIER","a":"624 Grande Allée Est, Québec G1R2K5","c":"QUEBEC","p":"4185222225","lat":46.8064928,"lon":-71.2168243},{"n":"BISTRO HORTUS","a":"1190 rue Saint-Jean, Québec G1R1S6","c":"QUEBEC","p":"4186925524","lat":46.814697,"lon":-71.2096999},{"n":"BISTRO LES TROIS GARCONS INC","a":"1084 rue Saint-Jean, Québec G1R1S4","c":"QUEBEC","p":"4186923900","lat":46.8138597,"lon":-71.211235},{"n":"BLAXTON-CARTIER","a":"1179 avenue Cartier, Québec G1R2S9","c":"QUEBEC","p":"4185229955","lat":46.802935,"lon":-71.2246513},{"n":"BONISOIR","a":"780 rue Raoul-Jobin, Québec G1N1S3","c":"QUEBEC","p":"4182614240","lat":46.8067108,"lon":-71.2460719},{"n":"BOSSINI GRANDE-ALLEE","a":"575 Grande Allée Est, Québec G1R2K4","c":"QUEBEC","p":"4186223203","lat":46.8056369,"lon":-71.2170357},{"n":"BOTTEGA EPICERIE & PIZZERIA","a":"28 côte de la Fabrique, Québec G1R3V7","c":"QUEBEC","p":"3677771170","lat":46.8144763,"lon":-71.207561},{"n":"BOULANGERIE ARTISANALE (2)","a":"432 rue du Parvis, Québec G1K6H8","c":"QUEBEC","p":"4186473666","lat":46.8142993,"lon":-71.2235204},{"n":"BRASSERIE LES MORDUS","a":"57 rue Sainte-Anne, Québec G1R3X4","c":"QUEBEC","p":"4186923365","lat":46.812937,"lon":-71.2077111},{"n":"BRULERIE ROUSSEAU CARTIER","a":"1191 avenue Cartier, Québec G1R2S9","c":"QUEBEC","p":"41865227786","lat":46.802938,"lon":-71.2241927},{"n":"BUGEL","a":"164 rue Crémazie Ouest, Québec G1R1X7","c":"QUEBEC","p":"4185237666","lat":46.8043037,"lon":-71.2286919},{"n":"BURGER CARTIER","a":"1191 avenue Cartier, Québec G1R2S9","c":"QUEBEC","p":"4189481841","lat":46.802938,"lon":-71.2241927},{"n":"C.J. GUINDON","a":"95 chemin Henri-Chartrand, L'Ange-Gardien J8L0W9","c":"L ANGE GARDIEN","p":"8192815926","lat":45.6187829,"lon":-75.4021258},{"n":"CAFE BUADE","a":"31 rue De Buade, Québec G1R4A2","c":"QUEBEC","p":"4186949333","lat":46.8133957,"lon":-71.2062758},{"n":"CAFE KRIEGHOFF","a":"1089 avenue Cartier, Québec G1R2S6","c":"QUEBEC","p":"4185223711","lat":46.8035601,"lon":-71.2253802},{"n":"CANTOOK","a":"575 rue Saint-Jean, Québec G1R1P5","c":"QUEBEC","p":"4185294769","lat":46.8098464,"lon":-71.2200136},{"n":"CAPITAL HRS INC","a":"900 boulevard René-Lévesque Est, Québec G1R2B5","c":"QUEBEC","p":"4186496212","lat":46.8096026,"lon":-71.216405},{"n":"CASSE-CR. HOP. ST-SACREMENT","a":"1050 chemin Sainte-Foy, Québec G1S4L8","c":"QUEBEC","p":"4186827511","lat":46.799012,"lon":-71.2465703},{"n":"CCGS LOUIS S ST-LAURENT","a":"280 rue John-Ryan, Saint-Colomban J5K0N3","c":"ST-JOHN","p":"7097655597","lat":45.7133698,"lon":-74.1145197,"w":1},{"n":"CHARBON (DIVISION AVIATIC)","a":"450 rue de la Gare-du-Palais, Québec G1K3X2","c":"QUEBEC","p":"4185220133","lat":46.8174866,"lon":-71.213917},{"n":"CHARLES CREVIER","a":"2365 chemin de la Côte-de-Liesse, Montréal H4N2M7","c":"SAINT-LAURENT","p":"4504674173","lat":45.5208533,"lon":-73.6556935,"w":1},{"n":"CHEZ TEMPOREL","a":"25 rue Couillard, Québec G1R3T4","c":"QUEBEC","p":"5819979250","lat":46.8150928,"lon":-71.2082505},{"n":"CHEZ VICTOR ST-PAUL (2)","a":"300 rue Saint-Paul, Québec G1K7R1","c":"QUEBEC","p":"4187812511","lat":46.8174106,"lon":-71.2116883},{"n":"CICCIO CAFE","a":"875 rue de Claire-Fontaine, Québec G1R3A8","c":"QUEBEC","p":"","lat":46.8083067,"lon":-71.221657},{"n":"CONCEPT RESTO ESJ INC","a":"1080 rue Saint-Jean, Québec G1R1S4","c":"QUEBEC","p":"","lat":46.8137691,"lon":-71.2113386},{"n":"CRAC (LE)","a":"690 rue Saint-Jean, Québec G1R1P8","c":"QUEBEC","p":"","lat":46.8106618,"lon":-71.2191071},{"n":"DELI MEX","a":"300 rue de la Couronne, Québec G1K6E4","c":"QUEBEC","p":"","lat":46.8154771,"lon":-71.2258809},{"n":"DELICES DU PARVIS (RAMQ)","a":"1125 Grande Allée Ouest, Québec G1S1E7","c":"QUEBEC","p":"","lat":46.7904034,"lon":-71.2428341},{"n":"DELICES DU PARVIS GRANDE-ALL","a":"875 Grande Allée Est, Québec G1R5W5","c":"QUEBEC","p":"","lat":46.8076414,"lon":-71.2129876},{"n":"DEPANNEUR 210 ST JEAN","a":"210 rue Saint-Jean, Québec G1R1P1","c":"QUEBEC","p":"","lat":46.8083253,"lon":-71.2249028},{"n":"DEPANNEUR A","a":"808 boulevard Charest Est, Québec G1K8H8","c":"QUEBEC","p":"","lat":46.8157586,"lon":-71.218393},{"n":"DEPANNEUR BELANGER 8842","a":"100 Grande Allée Est, Québec G1R5N2","c":"QUEBEC","p":"","lat":46.8038662,"lon":-71.2229887},{"n":"DEPANNEUR MICHAUD","a":"210 rue Renaud, Québec G1K4W6","c":"QUEBEC","p":"","lat":46.8118362,"lon":-71.2395255},{"n":"DINER SAINT SAUVEUR","a":"230 rue Durocher, Québec G1K4W7","c":"QUEBEC","p":"","lat":46.8117254,"lon":-71.239047},{"n":"DISTRIBUTION DENIS SOULARD","a":"3240 avenue Watt, Québec G1X4X7","c":"QUEBEC","p":"","lat":46.7818778,"lon":-71.3313794},{"n":"DISTRIBUTION M A T INC","a":"95 chemin Henri-Chartrand, L'Ange-Gardien J8L0W9","c":"L ANGE-GARDIEN","p":"","lat":45.6187829,"lon":-75.4021258},{"n":"DISTRIBUTION M A T INC","a":"95 chemin Henri-Chartrand, L'Ange-Gardien J8L0W9","c":"L ANGE-GARDIEN","p":"","lat":45.6187829,"lon":-75.4021258},{"n":"DISTRIBUTION M A T INC","a":"3085 rue Esther, Laval H7P2G6","c":"LAVAL","p":"","lat":45.577286,"lon":-73.7928494},{"n":"DISTRIBUTION POINT ROUGE","a":"687 boulevard Pierre-Bertrand, Québec G1M2E4","c":"QUEBEC","p":"","lat":46.8216971,"lon":-71.2721245},{"n":"DISTRIBUTION S.D.","a":"971 boulevard Des Ruisseaux, Mont-Laurier J9L0H6","c":"MONT-LAURIER","p":"","lat":46.5627442,"lon":-75.5605978},{"n":"ECHANTILLON QC 323","a":"3240 avenue Watt, Québec G1X4X7","c":"STE-FOY","p":"","lat":46.7818778,"lon":-71.3313794,"w":1},{"n":"EPIC. RUE COUILLARD #8889 SP","a":"27 rue Couillard, Québec G1R3T4","c":"QUEBEC","p":"","lat":46.8150475,"lon":-71.2083154},{"n":"EPICERIE RICHARD INC","a":"42 rue Desjardins, Ripon J0V1V0","c":"QUEBEC","p":"","lat":45.7831299,"lon":-75.1042855,"w":1},{"n":"EPICERIE RICHARD LAIT","a":"42 rue Desjardins, Ripon J0V1V0","c":"QUEBEC","p":"","lat":45.7831299,"lon":-75.1042855,"w":1},{"n":"EPICERIE SCOTT","a":"505 rue Saint-Patrick, Québec G1R1Y7","c":"QUEBEC","p":"","lat":46.8088098,"lon":-71.2207138},{"n":"EPICERIE ST-OLIVIER 2021","a":"200 rue Saint-Olivier, Québec G1R1G3","c":"QUEBEC","p":"","lat":46.8090434,"lon":-71.2260956},{"n":"FAITE A L OS INC","a":"637 Grande Allée Est, Québec G1R2K4","c":"QUEBEC","p":"","lat":46.8060915,"lon":-71.2162687},{"n":"FOURCHETTE ET SAVEURS","a":"415 avenue Marconi, Québec G1N4A5","c":"QUEBEC","p":"","lat":46.797602,"lon":-71.2764959},{"n":"GELATO - NATURE ARTISAN","a":"42 rue Garneau, Québec G1R3V5","c":"QUEBEC","p":"","lat":46.8147757,"lon":-71.2086132},{"n":"GROUPE EXCELSO (5)","a":"4975 rue Rideau, Québec G2E5H5","c":"QUEBEC","p":"","lat":46.7971115,"lon":-71.3209898},{"n":"HOTEL CHAMPLAIN / HOTEL ATYP","a":"115 rue Sainte-Anne, Québec G1R3X6","c":"QUEBEC","p":"4186941720","lat":46.8122462,"lon":-71.2102965},{"n":"HOTEL CHATEAU LAURIER QUEBEC","a":"1220 place George-V Ouest, Québec G1R5B8","c":"QUEBEC","p":"4185223848","lat":46.8063848,"lon":-71.2153948},{"n":"HOTEL DELTA - QUEBEC","a":"690 boulevard René-Lévesque Est, Québec G1R5A8","c":"QUEBEC","p":"4186471717","lat":46.8094112,"lon":-71.2176885},{"n":"HOTEL LE DAUPHIN QUEBEC","a":"400 rue du Marais, Québec G1M3R1","c":"QUEBEC","p":"4186883888","lat":46.8283723,"lon":-71.2827323},{"n":"HOTEL M. JEAN","a":"839 rue Saint-Joseph Est, Québec G1K3C8","c":"QUEBEC","p":"4189777777","lat":46.8160195,"lon":-71.2183268},{"n":"HOTEL M. JEAN","a":"2 rue Pierre-Olivier-Chauveau, Québec G1R0C5","c":"QUEBEC","p":"4189777777","lat":46.814368,"lon":-71.2090796},{"n":"HOTEL MANOIR VIEUX-QUEBEC","a":"8 rue de la Porte, Québec G1R4M9","c":"QUEBEC","p":"4189072361","lat":46.8106871,"lon":-71.2063844},{"n":"IGA #8188 PROD LAITIERS","a":"255 chemin Sainte-Foy, Québec G1R1T5","c":"QUEBEC","p":"4185249890","lat":46.804245,"lon":-71.2308397},{"n":"J COULOMBE EMMANUEL INC.","a":"373 rue des Entrepreneurs, Montmagny G5V4S9","c":"MONTMAGNY","p":"4182483612","lat":46.9664628,"lon":-70.5905009},{"n":"JARDIN MOBILE CARTIER","a":"1191 avenue Cartier, Québec G1R2S9","c":"QUEBEC","p":"4185295674","lat":46.802938,"lon":-71.2241927},{"n":"JARDIN SCARPRO INC","a":"1781 route de l'Aéroport, L'Ancienne-Lorette G2G2P5","c":"ANCIENNE-LORETTE","p":"4188779908","lat":46.8071034,"lon":-71.3807455},{"n":"JF STE-URSULE","a":"4 1/2 rue Sainte-Ursule, Québec G1R4C8","c":"QUEBEC","p":"4182610388","lat":46.8128636,"lon":-71.212257},{"n":"L ARTISAN ET LA PORTEUSE","a":"1070 avenue Cartier, Québec G1R2S5","c":"QUEBEC","p":"4185237066","lat":46.8033768,"lon":-71.2259149},{"n":"L AXE DU MALT","a":"801 rue des Agates, Québec G2L2N4","c":"QUEBEC","p":"4187170879","lat":46.8787863,"lon":-71.2507179},{"n":"LA BUCHE","a":"49 rue Saint-Louis, Québec G1R3Z2","c":"QUEBEC","p":"4186947272","lat":46.8112536,"lon":-71.2078856},{"n":"LA BUCHETTE","a":"24 rue Sainte-Anne, Québec G1R3X3","c":"QUEBEC","p":"4186947000","lat":46.8131518,"lon":-71.2064429},{"n":"LA MAISON LIVERNOIS","a":"1200 rue Saint-Jean, Québec G1R1S8","c":"QUEBEC","p":"5817422555","lat":46.8148192,"lon":-71.2088497},{"n":"LA ROUTE DES INDES","a":"560 rue Saint-Jean, Québec G1R1P6","c":"QUEBEC","p":"(418)529-4847","lat":46.8101129,"lon":-71.2205412},{"n":"LE BILLIG","a":"481 rue Saint-Jean, Québec G1R1P5","c":"QUEBEC","p":"4185248341","lat":46.8093441,"lon":-71.2212123},{"n":"LE CAPITOLE DE QUEBEC INC.","a":"972 rue Saint-Jean, Québec G1R1R5","c":"QUEBEC","p":"4186949930","lat":46.8132114,"lon":-71.214201},{"n":"LE CHIC SHACK (Q)","a":"15 rue du Fort, Québec G1R3W9","c":"QUEBEC","p":"4186921485","lat":46.8133343,"lon":-71.2052352},{"n":"LE GEORGE V","a":"1220 place George-V Ouest, Québec G1R5B8","c":"QUEBEC","p":"4185223848","lat":46.8063848,"lon":-71.2153948},{"n":"LE GRAND CAFE INC","a":"690 Grande Allée Est, Québec G1R2K5","c":"QUEBEC","p":"4185296237","lat":46.8069937,"lon":-71.2158615},{"n":"LE LAPIN SAUTE","a":"52 rue du Petit-Champlain, Québec G1K4H4","c":"QUEBEC","p":"4186925325","lat":46.811836,"lon":-71.2039099},{"n":"LE MARCHE EMMA","a":"17 1/2 rue Sainte-Ursule, Québec G1R4C7","c":"QUEBEC","p":"4188069788","lat":46.8125715,"lon":-71.211508},{"n":"LE SAPRISTI (4)","a":"1001 rue Saint-Jean, Québec G1R1R8","c":"QUEBEC","p":"4186922030","lat":46.8127722,"lon":-71.2124916},{"n":"LECLERC GROUPE HOTELIER","a":"1505 boulevard Lebourgneuf, Québec G2K2G3","c":"QUEBEC","p":"4188880919","lat":46.8333504,"lon":-71.300987},{"n":"LES COUSINS","a":"1029 avenue Cartier, Québec G1R2S3","c":"QUEBEC","p":"4185228889","lat":46.8040063,"lon":-71.2259626},{"n":"LES DEPAN BELANGER XL","a":"15 rue Lesage, Sainte-Thérèse J7E3E7","c":"STE-THERESE","p":"5149339331","lat":45.6369965,"lon":-73.8349731,"w":1},{"n":"LES DISTRIBUTIONS PARC","a":"11915 rue Frigon, Montréal H3M2S1","c":"MONTREAL","p":"5149450438","lat":45.5396335,"lon":-73.6942518},{"n":"LES DISTRIBUTIONS PARC","a":"11915 rue Frigon, Montréal H3M2S1","c":"MONTREAL","p":"5149450438","lat":45.5396335,"lon":-73.6942518},{"n":"LES IMMEUBLES GENCAM INC","a":"800 boulevard Saint-Joseph, Drummondville J2C2C5","c":"DRUMMONDVILLE","p":"4186883888","lat":45.8905955,"lon":-72.5095901},{"n":"LES MOULINS LAFAYETTE GA","a":"801 Grande Allée Ouest, Québec G1S1C1","c":"QUEBEC","p":"4189777246","lat":46.7955815,"lon":-71.234338},{"n":"MARCHE PROVISION OSP","a":"1115 avenue Cartier, Québec G1R2S6","c":"QUEBEC","p":"4185257154","lat":46.8034978,"lon":-71.2252877},{"n":"MAURICE RESTAURANT LOUNGE","a":"575 Grande Allée Est, Québec G1R2K4","c":"QUEBEC","p":"4186287423","lat":46.8056369,"lon":-71.2170357},{"n":"METRO #22504 COMM","a":"977 avenue Cartier, Québec G1R2S2","c":"QUEBEC","p":"4185228011","lat":46.8047114,"lon":-71.2268237},{"n":"METRO #22504 DELI","a":"977 avenue Cartier, Québec G1R2S2","c":"QUEBEC","p":"4185228011","lat":46.8047114,"lon":-71.2268237},{"n":"METRO #22504 PROD. LAIT","a":"977 avenue Cartier, Québec G1R2S2","c":"QUEBEC","p":"4185228011","lat":46.8047114,"lon":-71.2268237},{"n":"METRO #22834 PROD.LAITIERS","a":"860 boulevard Charest Est, Québec G1K8S5","c":"QUEBEC","p":"4186488794","lat":46.8157748,"lon":-71.2179616},{"n":"METRO #22834 SPEC","a":"860 boulevard Charest Est, Québec G1K8S5","c":"QUEBEC","p":"4186488794","lat":46.8157748,"lon":-71.2179616},{"n":"METRO RICHELIEU INC","a":"5559 route 132, Saint-Anicet J0S1L0","c":"ETOBICOKE","p":"5143288000","lat":45.0606522,"lon":-74.417982,"w":1},{"n":"METRO RICHELIEU INC (A/P)","a":"555 mivviviniq Street, Akulivik J0M1V0","c":"ETOBICOKE","p":"5143288000","lat":60.8083165,"lon":-78.1864975,"w":1},{"n":"METRO RICHELIEU INC.","a":"5559 route 132, Saint-Anicet J0S1L0","c":"ETOBICOKE","p":"5146431000","lat":45.0606522,"lon":-74.417982,"w":1},{"n":"MILANO PIZZERIA (RTA)","a":"194 rue Crémazie Ouest, Québec G1R1X7","c":"QUEBEC","p":"(418)529-2919","lat":46.8040487,"lon":-71.2291732},{"n":"MONSIEUR SABLE","a":"120 boulevard René-Lévesque Ouest, Québec G1R2A5","c":"QUEBEC","p":"4184405844","lat":46.8042213,"lon":-71.2275117},{"n":"MORA PASTA E PROSECCO","a":"649 Grande Allée Est, Québec G1R2K4","c":"QUEBEC","p":"4185226672","lat":46.8062279,"lon":-71.2160347},{"n":"MORENA","a":"1040 avenue Cartier, Québec G1R2S4","c":"QUEBEC","p":"4185293868","lat":46.8036891,"lon":-71.2263253},{"n":"NINA PIZZA ST-JEAN","a":"764 rue Saint-Jean, Québec G1R1P9","c":"QUEBEC","p":"5819906573","lat":46.8112003,"lon":-71.2178564},{"n":"PARIS TACOS","a":"6 côte du Palais, Québec G1R4H6","c":"QUEBEC","p":"5814489480","lat":46.8152956,"lon":-71.2118175},{"n":"PARIS TACOS INC","a":"2860 chemin des Quatre-Bourgeois, Québec G1V1Y3","c":"QUEBEC","p":"4185294949","lat":46.7744986,"lon":-71.3000878},{"n":"PATACI ET PATACA","a":"1191 avenue Cartier, Québec G1R2S9","c":"QUEBEC","p":"4186141202","lat":46.802938,"lon":-71.2241927},{"n":"POLINA PIZZERIA","a":"44 rue Saint-Louis, Québec G1R3Z1","c":"QUEBEC","p":"4188928888","lat":46.811605,"lon":-71.2077985},{"n":"PORTOFINO BISTRO ITALIANO","a":"54 rue Couillard, Québec G1R3T3","c":"QUEBEC","p":"4185257154","lat":46.814862,"lon":-71.2092041},{"n":"PROVISION","a":"1115 avenue Cartier, Québec G1R2S6","c":"QUEBEC","p":"4186225282","lat":46.8034978,"lon":-71.2252877},{"n":"PUB GALWAY","a":"1112 avenue Cartier, Québec G1R2S5","c":"QUEBEC","p":"4186940015","lat":46.8032429,"lon":-71.2257429},{"n":"PUB ST-ALEXANDRE (3)","a":"1087 rue Saint-Jean, Québec G1R1S3","c":"QUEBEC","p":"4188940618","lat":46.8135468,"lon":-71.2109164},{"n":"PUB ST-PATRICK","a":"1200 rue Saint-Jean, Québec G1R1S8","c":"QUEBEC","p":"5147470303","lat":46.8148192,"lon":-71.2088497},{"n":"PUBLICITE - STEVE ROBIN","a":"2365 chemin de la Côte-de-Liesse, Montréal H4N2M7","c":"VILLE ST-LAURENT","p":"4186940253","lat":45.5208533,"lon":-73.6556935,"w":1},{"n":"REST. AUX ANCIENS CANADIENS","a":"34 rue Desjardins, La Malbaie G5A1B3","c":"QUEBEC","p":"4185294949","lat":47.6656838,"lon":-70.1541907,"w":1},{"n":"REST. BAR LE GRAFFITI (3)","a":"1191 avenue Cartier, Québec G1R2S9","c":"QUEBEC","p":"4186449520","lat":46.802938,"lon":-71.2241927},{"n":"REST. LE PARLEMENTAIRE","a":"1045 rue des Parlementaires, Québec G1A1A4","c":"QUEBEC","p":"4186920341","lat":46.8090297,"lon":-71.2139623},{"n":"RESTAURANT AU PARMESAN ENR","a":"38 rue Saint-Louis, Québec G1R3Z1","c":"QUEBEC","p":"4189140967","lat":46.8116782,"lon":-71.2076029},{"n":"RESTAURANT L ARPENTEUR","a":"840 avenue Ernest-Gagnon, Québec G1S4M6","c":"QUEBEC","p":"4186920333","lat":46.7952916,"lon":-71.2502452},{"n":"RESTAURANT LE CLAN INC","a":"44 rue des Jardins, Québec G1R4L7","c":"QUEBEC","p":"4186949995","lat":46.8118127,"lon":-71.2076702},{"n":"RESTAURANT LE CONTINENTAL","a":"26 rue Saint-Louis, Québec G1R3Y9","c":"QUEBEC","p":"4185257812","lat":46.811907,"lon":-71.2069769},{"n":"RESTAURANT LE LOUIS HEBERT","a":"668 Grande Allée Est, Québec G1R2K5","c":"QUEBEC","p":"4185222225","lat":46.8068116,"lon":-71.2161996},{"n":"RESTAURANT OPHELIA","a":"634 Grande Allée Est, Québec G1R2K5","c":"QUEBEC","p":"8196767341","lat":46.8065585,"lon":-71.2166644},{"n":"RESTO TODDLAVOIE INC.","a":"1005 boulevard Pie-XI Nord, Québec G3K2S3","c":"QUEBEC","p":"(418)651-5220","lat":46.8550143,"lon":-71.4140032},{"n":"RTE #11190 BEAUPRE M.A.P","a":"3240 avenue Watt, Québec G1X4X7","c":"QUEBEC","p":"(418)651-5220","lat":46.7818778,"lon":-71.3313794},{"n":"RTE #11512 VIEUX QUEBEC","a":"3240 avenue Watt, Québec G1X4X7","c":"QUEBEC","p":"(418)651-5220","lat":46.7818778,"lon":-71.3313794},{"n":"RTE #11518","a":"3240 avenue Watt, Québec G1X4X7","c":"QUEBEC","p":"(418)651-5220","lat":46.7818778,"lon":-71.3313794},{"n":"RTE #11620 EMMANUEL COULOMBE","a":"373 rue des Entrepreneurs, Montmagny G5V4S9","c":"MONTMAGNY","p":"","lat":46.9664628,"lon":-70.5905009},{"n":"RTE #11712 VIEUX QUEBEC DONA","a":"3240 avenue Watt, Québec G1X4X7","c":"QUEBEC","p":"(418)651-5220","lat":46.7818778,"lon":-71.3313794},{"n":"RTE #11810 BEAPORT CHARLSEBO","a":"3240 avenue Watt, Québec G1X4X7","c":"QUEBEC","p":"(418)651-5220","lat":46.7818778,"lon":-71.3313794},{"n":"RTE #11812 VIEUX QUEBEC","a":"3240 avenue Watt, Québec G1X4X7","c":"QUEBEC","p":"(418)651-5220","lat":46.7818778,"lon":-71.3313794},{"n":"RTE #11813 DANY DESCHEMES","a":"3240 avenue Watt, Québec G1X4X7","c":"QUEBEC","p":"(418)651-5220","lat":46.7818778,"lon":-71.3313794},{"n":"RTE #11814 STE-FOY SILLERY","a":"3240 avenue Watt, Québec G1X4X7","c":"QUEBEC","p":"(418)651-5220","lat":46.7818778,"lon":-71.3313794},{"n":"RTE #11815 LEVIS STE FOY PNE","a":"3240 avenue Watt, Québec G1X4X7","c":"QUEBEC","p":"(418)651-5220","lat":46.7818778,"lon":-71.3313794},{"n":"RTE #11818","a":"3240 avenue Watt, Québec G1X4X7","c":"QUEBEC","p":"(418)651-5220","lat":46.7818778,"lon":-71.3313794},{"n":"RTE #11827","a":"3240 avenue Watt, Québec G1X4X7","c":"QUEBEC","p":"","lat":46.7818778,"lon":-71.3313794},{"n":"RTE #11839 CLAVEAU-DESCHENES","a":"3240 avenue Watt, Québec G1X4X7","c":"QUEBEC","p":"","lat":46.7818778,"lon":-71.3313794},{"n":"RTE #11840 CLAVEAU-DESCHENES","a":"3240 avenue Watt, Québec G1X4X7","c":"QUEBEC","p":"","lat":46.7818778,"lon":-71.3313794},{"n":"RTE #11844 CLAVEAU-DESCHENES","a":"3240 avenue Watt, Québec G1X4X7","c":"QUEBEC","p":"8196927011","lat":46.7818778,"lon":-71.3313794},{"n":"RTE #31236 DIST DOUCET BECAN","a":"2255 rue Gagnon, Trois-Rivières G8Z4P2","c":"TROIS-RIVIERES","p":"","lat":46.3312831,"lon":-72.591295},{"n":"RTE #31802 MAP","a":"3402 boulevard Gene-H.-Kruger, Trois-Rivières G9A4M3","c":"TROIS-RIVIERES","p":"","lat":46.3304525,"lon":-72.5557393},{"n":"RTE #31804 CENTRE DU QUEBEC","a":"3402 boulevard Gene-H.-Kruger, Trois-Rivières G9A4M3","c":"TROIS-RIVIERES","p":"","lat":46.3304525,"lon":-72.5557393},{"n":"RTE #31806 MAP","a":"3402 boulevard Gene-H.-Kruger, Trois-Rivières G9A4M3","c":"TROIS-RIVIERES","p":"","lat":46.3304525,"lon":-72.5557393},{"n":"RTE #31817 MAP","a":"3402 boulevard Gene-H.-Kruger, Trois-Rivières G9A4M3","c":"TROIS-RIVIERES","p":"","lat":46.3304525,"lon":-72.5557393},{"n":"RTE #31823 MAP","a":"3402 boulevard Gene-H.-Kruger, Trois-Rivières G9A4M3","c":"TROIS-RIVIERES","p":"","lat":46.3304525,"lon":-72.5557393},{"n":"RTE #31841 MAP","a":"3402 boulevard Gene-H.-Kruger, Trois-Rivières G9A4M3","c":"TROIS-RIVIERES","p":"","lat":46.3304525,"lon":-72.5557393},{"n":"RTE #31842 MAP","a":"3402 boulevard Gene-H.-Kruger, Trois-Rivières G9A4M3","c":"TROIS-RIVIERES","p":"","lat":46.3304525,"lon":-72.5557393},{"n":"RTE #31940 MAP LA PERADE","a":"3402 boulevard Gene-H.-Kruger, Trois-Rivières G9A4M3","c":"QUEBEC CITY","p":"(418)651-5220","lat":46.3304525,"lon":-72.5557393,"w":1},{"n":"RTE #45025","a":"279 rue Georges, Saint-Paul J0K3E0","c":"GEORGETOWN","p":"(647)895-4555","lat":45.9384705,"lon":-73.3651427},{"n":"RTE #45026","a":"279 rue Georges, Saint-Paul J0K3E0","c":"GEORGETOWN","p":"","lat":45.9384705,"lon":-73.3651427},{"n":"RTE #45085","a":"2 O 1re Avenue, Windsor J1S1Z9","c":"WINDSOR","p":"(613)264-8384","lat":45.5683512,"lon":-71.9991248},{"n":"RTE #45089","a":"2 O 1re Avenue, Windsor J1S1Z9","c":"WINDSOR","p":"","lat":45.5683512,"lon":-71.9991248},{"n":"RTE #45091","a":"2 O 1re Avenue, Windsor J1S1Z9","c":"WINDSOR","p":"","lat":45.5683512,"lon":-71.9991248}]</script>
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ */
+/* Utilitaires                                                         */
+/* ------------------------------------------------------------------ */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s)
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+const uid = () => (crypto.randomUUID ? crypto.randomUUID()
+  : "id-" + Date.now() + "-" + Math.random().toString(36).slice(2));
+
+function haversineKm(a, b) {
+  const R = 6371, toRad = (d) => d * Math.PI / 180;
+  const dLat = toRad(b.lat - a.lat), dLon = toRad(b.lon - a.lon);
+  const s = Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+const fmtKm = (km) => km < 1 ? Math.round(km * 1000) + " m" : km.toFixed(1) + " km";
+const noAcc = (s) => String(s == null ? "" : s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/* ------------------------------------------------------------------ */
+/* État                                                                */
+/* ------------------------------------------------------------------ */
+let locations = [];      // { id, name, address, lat, lon, selected, delivered, note }
+let addressHistory = []; // { name, address, lat, lon }
+let myPosition = null;   // { lat, lon }
+let filter = "all";
+let lastDeleted = null;
+let undoTimer = null;
+let debounceTimer = null;
+let currentController = null;
+let activeSuggestion = -1;
+let suggestionItems = [];
+
+const STORAGE_KEY_LOCATIONS = "saved-locations";
+const STORAGE_KEY_HISTORY = "address-history";
+const HISTORY_LIMIT = 30;
+const GMAPS_MAX_POINTS = 10; // origine + 8 étapes + destination
+const API_BASE = "https://geoegl.msp.gouv.qc.ca/apis/icherche/geocode";
+
+/* ------------------------------------------------------------------ */
+/* Carte                                                               */
+/* ------------------------------------------------------------------ */
+const map = L.map("map").setView([46.8139, -71.2080], 12);
+const osmLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
+const gRoad = L.tileLayer("https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+  { maxZoom: 20, subdomains: ["mt0","mt1","mt2","mt3"], attribution: "&copy; Google" });
+const gSat = L.tileLayer("https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+  { maxZoom: 20, subdomains: ["mt0","mt1","mt2","mt3"], attribution: "&copy; Google" });
+L.control.layers({ "OpenStreetMap": osmLayer, "Google (routes)": gRoad, "Google (satellite)": gSat },
+  {}, { position: "topright" }).addTo(map);
+
+const markersGroup = L.featureGroup().addTo(map);
+const routeLine = L.polyline([], { color: "#094699", weight: 3, opacity: 0.6, dashArray: "6 6" }).addTo(map);
+
+/* ------------------------------------------------------------------ */
+/* Stockage (IndexedDB)                                                */
+/* ------------------------------------------------------------------ */
+const DB_NAME = "carte-quebec-db", DB_VERSION = 1, STORE = "kv";
+let dbPromise = null;
+
+function openDb() {
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject) => {
+    if (!window.indexedDB) return reject(new Error("IndexedDB indisponible"));
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return dbPromise;
+}
+const idb = {
+  async get(key) {
+    const db = await openDb();
+    return new Promise((res, rej) => {
+      const r = db.transaction(STORE, "readonly").objectStore(STORE).get(key);
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  },
+  async set(key, value) {
+    const db = await openDb();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).put(value, key);
+      tx.oncomplete = () => res(true);
+      tx.onerror = () => rej(tx.error);
+    });
+  }
+};
+
+function toast(text, actionLabel, action) {
+  const el = $("toast");
+  $("toast-text").textContent = text;
+  el.querySelectorAll("button").forEach((b) => b.remove());
+  if (actionLabel) {
+    const b = document.createElement("button");
+    b.textContent = actionLabel;
+    b.onclick = () => { el.classList.remove("show"); action(); };
+    el.appendChild(b);
+  }
+  el.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove("show"), actionLabel ? 8000 : 1500);
+}
+
+function normalizeLoc(loc) {
+  return {
+    id: loc.id || uid(),
+    name: loc.name || loc.address || "Lieu",
+    address: loc.address || loc.name || "",
+    lat: Number(loc.lat), lon: Number(loc.lon),
+    selected: loc.selected !== false,
+    delivered: !!loc.delivered,
+    note: loc.note || ""
+  };
+}
+
+async function loadFromStorage() {
+  try {
+    const raw = await idb.get(STORAGE_KEY_LOCATIONS);
+    locations = raw ? JSON.parse(raw).map(normalizeLoc) : [];
+  } catch (e) { console.error(e); locations = []; }
+  try {
+    const raw = await idb.get(STORAGE_KEY_HISTORY);
+    addressHistory = raw ? JSON.parse(raw) : [];
+  } catch (e) { addressHistory = []; }
+  $("storage-status").textContent = locations.length ? locations.length + " lieu(x) restauré(s)" : "Prêt";
+  renderAll(true);
+  renderBook();
+}
+
+async function persist(silent) {
+  try {
+    await idb.set(STORAGE_KEY_LOCATIONS, JSON.stringify(locations));
+    if (!silent) toast("Sauvegardé");
+  } catch (e) {
+    console.error(e);
+    toast("Sauvegarde impossible");
+  }
+}
+async function persistHistory() {
+  try { await idb.set(STORAGE_KEY_HISTORY, JSON.stringify(addressHistory)); } catch (e) {}
+}
+
+/* ------------------------------------------------------------------ */
+/* Recherche                                                           */
+/* ------------------------------------------------------------------ */
+const searchInput = $("search-input");
+const suggestionsBox = $("suggestions");
+
+searchInput.addEventListener("input", () => {
+  clearTimeout(debounceTimer);
+  const q = searchInput.value.trim();
+  activeSuggestion = -1;
+  if (q.length < 2) { q.length === 0 ? showHistory() : hideSuggestions(); return; }
+  const local = localClientMatches(q);
+  if (local.length) renderSuggestions(local); else showMessage("Recherche en cours…", false);
+  debounceTimer = setTimeout(() => fetchSuggestions(q), 300);
+});
+
+searchInput.addEventListener("keydown", (e) => {
+  if (suggestionsBox.style.display !== "block" || suggestionItems.length === 0) return;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    const dir = e.key === "ArrowDown" ? 1 : -1;
+    activeSuggestion = (activeSuggestion + dir + suggestionItems.length) % suggestionItems.length;
+    highlightSuggestion();
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    pickSuggestion(suggestionItems[activeSuggestion >= 0 ? activeSuggestion : 0]);
+  } else if (e.key === "Escape") {
+    hideSuggestions();
+  }
+});
+
+searchInput.addEventListener("focus", () => {
+  if (!searchInput.value.trim()) showHistory();
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#search-wrap")) hideSuggestions();
+});
+
+function hideSuggestions() { suggestionsBox.style.display = "none"; suggestionItems = []; }
+function showMessage(text, isError) {
+  suggestionsBox.innerHTML = '<div class="suggestion-item msg ' + (isError ? "err" : "") + '">' + esc(text) + "</div>";
+  suggestionsBox.style.display = "block";
+  suggestionItems = [];
+}
+function showHistory() {
+  if (!addressHistory.length) return hideSuggestions();
+  renderSuggestions(addressHistory.slice(0, 8).map((h) => ({
+    title: h.name, sub: h.address, tag: "recent",
+    name: h.name, address: h.address, lat: h.lat, lon: h.lon
+  })));
+}
+
+/* Résultats instantanés issus du carnet de clients (hors ligne, 0 ms) */
+function localClientMatches(q, max) {
+  const t = noAcc(q).split(/\s+/).filter(Boolean);
+  if (!t.length) return [];
+  return CLIENTS.filter((c) => t.every((w) => c._s.includes(w)))
+    .slice(0, max || 6)
+    .map((c) => ({
+      title: c.n, sub: c.a + (c.p ? " · " + c.p : ""), tag: "client",
+      name: c.n, address: c.a, lat: c.lat, lon: c.lon, note: c.p ? "Tél. " + c.p : ""
+    }));
+}
+
+async function fetchSuggestions(q) {
+  const ql = q.toLowerCase();
+  const cli = localClientMatches(q, 5);
+  const hist = addressHistory
+    .filter((h) => (h.name + " " + h.address).toLowerCase().includes(ql))
+    .slice(0, 3)
+    .map((h) => ({ title: h.name, sub: h.address, tag: "recent",
+                   name: h.name, address: h.address, lat: h.lat, lon: h.lon }));
+  const head = cli.concat(hist);
+
+  if (!navigator.onLine) {
+    head.length ? renderSuggestions(head)
+                : showMessage("Hors ligne — aucun résultat dans le carnet ni l'historique.", true);
+    return;
+  }
+
+  if (currentController) currentController.abort();
+  currentController = new AbortController();
+  const url = API_BASE + "?type=adresses,entreprises&q=" + encodeURIComponent(q) + "&limit=10&geometry=true";
+
+  try {
+    const res = await fetch(url, { signal: currentController.signal });
+    if (!res.ok) {
+      head.length ? renderSuggestions(head) : showMessage("Erreur serveur (" + res.status + "). Réessayez.", true);
+      return;
+    }
+    const data = await res.json();
+    const live = (data.features || []).map(normalizeFeature).filter(Boolean)
+      .filter((f) => !head.some((h) => h.name === f.name && h.address === f.address));
+    const all = head.concat(live);
+    all.length ? renderSuggestions(all) : showMessage("Aucun résultat trouvé.", false);
+  } catch (e) {
+    if (e.name === "AbortError") return;
+    head.length ? renderSuggestions(head)
+                : showMessage("Recherche impossible : vérifiez votre connexion.", true);
+  }
+}
+
+function normalizeFeature(feature) {
+  const p = feature.properties || {};
+  const geom = feature.geometry;
+  if (!geom || !geom.coordinates) return null;
+  const [lon, lat] = geom.coordinates;
+  if (feature.index === "entreprises") {
+    const name = p.nom || "Commerce";
+    const street = [p.noCivique, p.route].filter(Boolean).join(" ");
+    const address = [street, p.municipalite, p.codePostal].filter(Boolean).join(", ");
+    return { title: name, sub: address + (p.categorie ? " — " + p.categorie : ""),
+             tag: "entreprise", name, address, lat, lon };
+  }
+  const name = p.nom || "Adresse";
+  return { title: name, sub: "Adresse civique", tag: "adresse", name, address: name, lat, lon };
+}
+
+function renderSuggestions(items) {
+  suggestionItems = items;
+  const tags = { recent: ["tag-recent", "Récent"], entreprise: ["tag-entreprise", "Commerce"],
+                 adresse: ["tag-adresse", "Adresse"], client: ["tag-client", "Client"] };
+  suggestionsBox.innerHTML = items.map((it, i) => {
+    const [cls, label] = tags[it.tag] || tags.adresse;
+    const dist = myPosition ? ' · ' + fmtKm(haversineKm(myPosition, it)) : "";
+    return '<div class="suggestion-item" data-idx="' + i + '">' +
+      '<div class="sugg-title">' + esc(it.title) +
+      '<span class="sugg-tag ' + cls + '">' + label + "</span></div>" +
+      '<div class="sugg-sub">' + esc(it.sub) + esc(dist) + "</div></div>";
+  }).join("");
+  suggestionsBox.style.display = "block";
+}
+function highlightSuggestion() {
+  suggestionsBox.querySelectorAll(".suggestion-item").forEach((el, i) => {
+    el.classList.toggle("active", i === activeSuggestion);
+    if (i === activeSuggestion) el.scrollIntoView({ block: "nearest" });
+  });
+}
+suggestionsBox.addEventListener("click", (e) => {
+  const el = e.target.closest(".suggestion-item[data-idx]");
+  if (el) pickSuggestion(suggestionItems[+el.dataset.idx]);
+});
+
+function pickSuggestion(item) {
+  if (!item) return;
+  addLocation(item.name, item.address, item.lat, item.lon, item.note);
+  addressHistory = addressHistory.filter((h) => !(h.name === item.name && h.address === item.address));
+  addressHistory.unshift({ name: item.name, address: item.address, lat: item.lat, lon: item.lon });
+  addressHistory = addressHistory.slice(0, HISTORY_LIMIT);
+  persistHistory();
+  searchInput.value = "";
+  hideSuggestions();
+}
+
+/* ------------------------------------------------------------------ */
+/* Carnet de clients — ajout rapide en lot                             */
+/* ------------------------------------------------------------------ */
+const CLIENTS = (function () {
+  try { return JSON.parse($("clients-data").textContent) || []; }
+  catch (e) { console.error("Carnet illisible", e); return []; }
+})().map((c, i) => {
+  c.id = "c" + i;
+  c._s = noAcc([c.n, c.a, c.c, c.p].join(" "));
+  return c;
+});
+
+const picked = new Set();
+let bookFiltered = CLIENTS;
+
+function isClientAdded(c) {
+  return locations.some((l) => Math.abs(l.lat - c.lat) < 1e-7 && Math.abs(l.lon - c.lon) < 1e-7 && l.name === c.n);
+}
+
+function initBook() {
+  $("book-total").textContent = CLIENTS.length;
+  const cities = Array.from(new Set(CLIENTS.map((c) => c.c).filter(Boolean))).sort();
+  $("book-city").innerHTML = '<option value="">Toutes les villes (' + CLIENTS.length + ")</option>" +
+    cities.map((v) => {
+      const n = CLIENTS.filter((c) => c.c === v).length;
+      return '<option value="' + esc(v) + '">' + esc(v) + " (" + n + ")</option>";
+    }).join("");
+}
+
+function filterBook() {
+  const q = noAcc($("book-search").value.trim()).split(/\s+/).filter(Boolean);
+  const city = $("book-city").value;
+  bookFiltered = CLIENTS.filter((c) =>
+    (!city || c.c === city) && q.every((w) => c._s.includes(w)));
+  renderBook();
+}
+
+function renderBook() {
+  const el = $("book-list");
+  if (!bookFiltered.length) {
+    el.innerHTML = '<div class="book-empty">Aucun client ne correspond à ce filtre.</div>';
+  } else {
+    el.innerHTML = bookFiltered.slice(0, 400).map((c) => {
+      const added = isClientAdded(c);
+      const dist = myPosition ? " · " + fmtKm(haversineKm(myPosition, c)) : "";
+      return '<div class="cli ' + (picked.has(c.id) ? "picked " : "") + (added ? "added" : "") + '" data-id="' + c.id + '">' +
+        '<input type="checkbox" class="cli-check" ' + (picked.has(c.id) ? "checked" : "") + ">" +
+        '<div class="cli-info">' +
+          '<div class="cli-name">' + esc(c.n) + (c.w ? '<span class="warnv">à vérifier</span>' : "") + "</div>" +
+          '<div class="cli-sub">' + esc(c.a) + esc(dist) +
+            (c.p ? ' · <span class="cli-tel">' + esc(c.p) + "</span>" : "") + "</div>" +
+        "</div>" +
+        '<button class="cli-add ' + (added ? "is-added" : "") + '" data-add="' + c.id + '">' +
+          (added ? "✓ ajouté" : "+ ajouter") + "</button></div>";
+    }).join("") +
+    (bookFiltered.length > 400 ? '<div class="book-empty">… ' + (bookFiltered.length - 400) +
+      " autres — affinez le filtre.</div>" : "");
+  }
+  $("book-count").textContent = bookFiltered.length + " client(s) affiché(s) · " +
+    picked.size + " coché(s)";
+  $("book-add").textContent = "Ajouter (" + picked.size + ")";
+  $("book-add").disabled = picked.size === 0;
+}
+
+$("book-toggle").addEventListener("click", () => {
+  const open = $("book-body").classList.toggle("open");
+  $("book-chev").textContent = open ? "▲" : "▼";
+  if (open) { filterBook(); $("book-search").focus(); }
+});
+$("book-search").addEventListener("input", filterBook);
+$("book-city").addEventListener("change", filterBook);
+
+$("book-list").addEventListener("click", (e) => {
+  const addBtn = e.target.closest("[data-add]");
+  if (addBtn) {
+    const c = CLIENTS.find((x) => x.id === addBtn.dataset.add);
+    if (c) addClient(c, false);
+    return;
+  }
+  const row = e.target.closest(".cli");
+  if (!row) return;
+  const id = row.dataset.id;
+  picked.has(id) ? picked.delete(id) : picked.add(id);
+  renderBook();
+});
+
+$("book-select-all").addEventListener("click", () => {
+  bookFiltered.slice(0, 400).forEach((c) => picked.add(c.id));
+  renderBook();
+});
+$("book-clear").addEventListener("click", () => { picked.clear(); renderBook(); });
+
+function addClient(c, silent) {
+  if (isClientAdded(c)) { if (!silent) toast("« " + c.n + " » est déjà dans la liste"); return false; }
+  locations.push(normalizeLoc({
+    name: c.n, address: c.a, lat: c.lat, lon: c.lon, selected: true,
+    note: c.p ? "Tél. " + c.p : ""
+  }));
+  if (!silent) { renderAll(false); renderBook(); persist(true); toast("« " + c.n + " » ajouté"); map.setView([c.lat, c.lon], 15); }
+  return true;
+}
+
+$("book-add").addEventListener("click", () => {
+  const list = CLIENTS.filter((c) => picked.has(c.id));
+  let n = 0;
+  list.forEach((c) => { if (addClient(c, true)) n++; });
+  picked.clear();
+  renderAll(true);
+  renderBook();
+  persist(true);
+  toast(n + " lieu(x) ajouté(s)" + (list.length - n ? " · " + (list.length - n) + " déjà présent(s)" : ""));
+});
+
+/* ------------------------------------------------------------------ */
+/* Gestion des lieux                                                   */
+/* ------------------------------------------------------------------ */
+function addLocation(name, address, lat, lon, note) {
+  const dup = locations.find((l) => l.lat === lat && l.lon === lon && l.name === name);
+  if (dup) { toast("Ce lieu est déjà dans la liste"); map.setView([lat, lon], 15); return; }
+  locations.push(normalizeLoc({ name, address, lat, lon, selected: true, note: note || "" }));
+  renderAll(false);
+  renderBook();
+  map.setView([lat, lon], 15);
+  persist(true);
+}
+
+const byId = (id) => locations.findIndex((l) => l.id === id);
+
+function removeLocation(id) {
+  const i = byId(id);
+  if (i < 0) return;
+  lastDeleted = { item: locations[i], index: i };
+  locations.splice(i, 1);
+  renderAll(false);
+  renderBook();
+  persist(true);
+  clearTimeout(undoTimer);
+  toast("Lieu supprimé", "Annuler", () => {
+    locations.splice(lastDeleted.index, 0, lastDeleted.item);
+    lastDeleted = null;
+    renderAll(false);
+    renderBook();
+    persist(true);
+  });
+}
+
+function moveLocation(id, dir) {
+  const i = byId(id), j = i + dir;
+  if (i < 0 || j < 0 || j >= locations.length) return;
+  [locations[i], locations[j]] = [locations[j], locations[i]];
+  renderAll(false);
+  persist(true);
+}
+
+function editNote(id) {
+  const loc = locations[byId(id)];
+  if (!loc) return;
+  const note = prompt("Note pour « " + loc.name + " » (code de porte, nº de commande…) :", loc.note || "");
+  if (note === null) return;
+  loc.note = note.trim();
+  renderAll(false);
+  persist(true);
+}
+
+function openInGoogleMaps(id) {
+  const loc = locations[byId(id)];
+  if (loc) window.open("https://www.google.com/maps/search/?api=1&query=" + loc.lat + "," + loc.lon, "_blank", "noopener");
+}
+
+function callLocation(id) {
+  const loc = locations[byId(id)];
+  if (!loc) return;
+  const m = String(loc.note || "").match(/\d[\d\s().-]{7,}/);
+  if (!m) return toast("Aucun numéro de téléphone pour ce lieu");
+  window.location.href = "tel:" + m[0].replace(/[^\d+]/g, "");
+}
+
+/* ------------------------------------------------------------------ */
+/* Optimisation du trajet (plus proche voisin + 2-opt)                 */
+/* ------------------------------------------------------------------ */
+function optimizeSelected() {
+  const selected = locations.filter((l) => l.selected && !l.delivered);
+  if (selected.length < 3) { toast("Au moins 3 arrêts sont nécessaires"); return; }
+
+  const start = myPosition || selected[0];
+  const remaining = selected.slice();
+  const ordered = [];
+  let current = start;
+  while (remaining.length) {
+    let best = 0, bestD = Infinity;
+    remaining.forEach((loc, i) => {
+      const d = haversineKm(current, loc);
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    current = remaining[best];
+    ordered.push(remaining.splice(best, 1)[0]);
+  }
+
+  // Amélioration 2-opt
+  const dist = (a, b) => haversineKm(a, b);
+  let improved = true, guard = 0;
+  while (improved && guard++ < 200) {
+    improved = false;
+    for (let i = 0; i < ordered.length - 1; i++) {
+      for (let k = i + 1; k < ordered.length; k++) {
+        const a = i === 0 ? start : ordered[i - 1];
+        const b = ordered[i], c = ordered[k], d = ordered[k + 1];
+        const before = dist(a, b) + (d ? dist(c, d) : 0);
+        const after = dist(a, c) + (d ? dist(b, d) : 0);
+        if (after + 1e-9 < before) {
+          const seg = ordered.slice(i, k + 1).reverse();
+          ordered.splice(i, seg.length, ...seg);
+          improved = true;
+        }
+      }
+    }
+  }
+
+  // Réinsère dans la liste globale en gardant les autres lieux à leur place
+  const optIds = ordered.map((l) => l.id);
+  const others = locations.filter((l) => !optIds.includes(l.id));
+  locations = ordered.concat(others);
+  renderAll(false);
+  persist(true);
+  toast("Ordre optimisé — " + fmtKm(routeLengthKm(ordered, start)) + " à vol d'oiseau");
+}
+
+function routeLengthKm(list, start) {
+  let total = 0, prev = start || list[0];
+  list.forEach((loc) => { total += haversineKm(prev, loc); prev = loc; });
+  return total;
+}
+
+function buildRouteLinks() {
+  const selected = locations.filter((l) => l.selected);
+  const box = $("route-links");
+  if (selected.length < 2) { box.style.display = "none"; return []; }
+
+  const points = (myPosition ? [{ lat: myPosition.lat, lon: myPosition.lon, name: "Ma position" }] : []).concat(selected);
+  const links = [];
+  for (let i = 0; i < points.length - 1; i += GMAPS_MAX_POINTS - 1) {
+    const chunk = points.slice(i, i + GMAPS_MAX_POINTS);
+    if (chunk.length < 2) break;
+    const c = (p) => p.lat + "," + p.lon;
+    let url = "https://www.google.com/maps/dir/?api=1&travelmode=driving" +
+      "&origin=" + encodeURIComponent(c(chunk[0])) +
+      "&destination=" + encodeURIComponent(c(chunk[chunk.length - 1]));
+    const mid = chunk.slice(1, -1).map(c);
+    if (mid.length) url += "&waypoints=" + encodeURIComponent(mid.join("|"));
+    links.push(url);
+  }
+
+  if (links.length > 1) {
+    box.style.display = "block";
+    box.innerHTML = "<b>Trajet découpé en " + links.length + " segments</b> (Google Maps limite à " +
+      GMAPS_MAX_POINTS + " points par itinéraire) : " +
+      links.map((u, i) => '<a href="' + u + '" target="_blank" rel="noopener">Segment ' + (i + 1) + "</a>").join("");
+  } else {
+    box.style.display = "none";
+  }
+  return links;
+}
+
+function openRoute() {
+  const links = buildRouteLinks();
+  if (!links.length) return;
+  window.open(links[0], "_blank", "noopener");
+}
+
+/* ------------------------------------------------------------------ */
+/* Rendu                                                               */
+/* ------------------------------------------------------------------ */
+function visibleLocations() {
+  if (filter === "todo") return locations.filter((l) => !l.delivered);
+  if (filter === "done") return locations.filter((l) => l.delivered);
+  return locations;
+}
+
+function renderMarkers(fit) {
+  markersGroup.clearLayers();
+  locations.forEach((loc, i) => {
+    const bg = loc.delivered ? "#0f9d58" : "#094699";
+    const label = loc.delivered ? "✔" : (i + 1);
+    const icon = L.divIcon({
+      className: "",
+      html: '<div style="background:' + bg + ';color:white;width:28px;height:28px;border-radius:50%;' +
+        'border:2px solid white;display:flex;align-items:center;justify-content:center;font-weight:bold;' +
+        'font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,0.4);opacity:' + (loc.delivered ? "0.75" : "1") + ';">' + label + "</div>",
+      iconSize: [28, 28], iconAnchor: [14, 14]
+    });
+    const g = "https://www.google.com/maps/search/?api=1&query=" + loc.lat + "," + loc.lon;
+    L.marker([loc.lat, loc.lon], { icon })
+      .bindPopup("<b>" + esc(loc.name) + "</b><br>" + esc(loc.address) +
+        (loc.note ? "<br><i>" + esc(loc.note) + "</i>" : "") +
+        (loc.delivered ? '<br><b style="color:#0f9d58">✔ Livré</b>' : "") +
+        '<br><a href="' + g + '" target="_blank" rel="noopener">Ouvrir dans Google Maps</a>')
+      .addTo(markersGroup);
+  });
+
+  routeLine.setLatLngs(locations.filter((l) => l.selected).map((l) => [l.lat, l.lon]));
+
+  if (fit && locations.length) {
+    map.fitBounds(markersGroup.getBounds(), { padding: [40, 40], maxZoom: 16 });
+  }
+}
+
+function renderList() {
+  const listEl = $("loc-list");
+  const visible = visibleLocations();
+  $("loc-count").textContent = locations.length;
+
+  const done = locations.filter((l) => l.delivered).length;
+  const pct = locations.length ? Math.round(done / locations.length * 100) : 0;
+  $("progress-fill").style.width = pct + "%";
+  $("progress-info").textContent = locations.length
+    ? done + " livré(s) sur " + locations.length + " (" + pct + " %)" : "";
+  $("filter-info").textContent = visible.length + " affiché(s)";
+
+  if (!visible.length) {
+    listEl.innerHTML = '<div id="empty-msg">' +
+      (locations.length ? "Aucun lieu pour ce filtre." : "Aucun lieu ajouté pour l'instant.") + "</div>";
+    updateBars();
+    return;
+  }
+
+  listEl.innerHTML = visible.map((loc) => {
+    const i = byId(loc.id);
+    const d = myPosition ? fmtKm(haversineKm(myPosition, loc)) + " de vous" : "";
+    const hasTel = /\d[\d\s().-]{7,}/.test(loc.note || "");
+    return '<div class="loc-item ' + (loc.delivered ? "delivered" : "") + '" draggable="true" data-id="' + loc.id + '">' +
+      '<span class="drag-handle" title="Glisser pour réordonner">⠿</span>' +
+      '<input type="checkbox" class="loc-check" data-act="select" ' + (loc.selected ? "checked" : "") + ">" +
+      '<div class="loc-num">' + (loc.delivered ? "✔" : i + 1) + "</div>" +
+      '<div class="loc-info">' +
+        '<div class="loc-name">' + esc(loc.name) + "</div>" +
+        '<div class="loc-addr">' + esc(loc.address) + "</div>" +
+        (d ? '<div class="loc-meta">' + d + "</div>" : "") +
+        (loc.note ? '<div class="loc-note">' + esc(loc.note) + "</div>" : "") +
+      "</div>" +
+      '<div class="loc-actions">' +
+        '<button class="mini mini-move" data-act="up" title="Monter">↑</button>' +
+        '<button class="mini mini-move" data-act="down" title="Descendre">↓</button>' +
+        '<button class="mini mini-deliver ' + (loc.delivered ? "active" : "") + '" data-act="deliver">' +
+          (loc.delivered ? "✔ Livré" : "Livrer") + "</button>" +
+        (hasTel ? '<button class="mini mini-tel" data-act="tel" title="Appeler">☎</button>' : "") +
+        '<button class="mini mini-note" data-act="note" title="Note">Note</button>' +
+        '<button class="mini mini-gmap" data-act="gmap">Maps</button>' +
+        '<button class="mini mini-del" data-act="del">Suppr.</button>' +
+      "</div></div>";
+  }).join("");
+
+  updateBars();
+}
+
+function updateBars() {
+  const sel = locations.filter((l) => l.selected);
+  $("route-btn").disabled = sel.length < 2;
+  $("optimize-btn").disabled = sel.filter((l) => !l.delivered).length < 3;
+  $("select-all").checked = locations.length > 0 && sel.length === locations.length;
+
+  const info = $("route-info");
+  const hint = $("hint");
+  if (sel.length < 2) {
+    info.textContent = "Sélectionnez 2 lieux ou plus pour créer un itinéraire.";
+    hint.style.display = "none";
+  } else {
+    const km = routeLengthKm(sel, myPosition || sel[0]);
+    info.textContent = sel.length + " arrêt(s) · ≈ " + fmtKm(km) + " à vol d'oiseau" +
+      (myPosition ? " depuis votre position" : "");
+    hint.style.display = "block";
+    hint.innerHTML = myPosition
+      ? "L'itinéraire partira de <b>votre position actuelle</b>. Utilisez « Optimiser l'ordre » avant d'ouvrir Google Maps."
+      : "Activez la localisation (bouton ◎ sur la carte) pour partir de votre position et optimiser depuis là.";
+  }
+  buildRouteLinks();
+}
+
+function renderAll(fit) { renderMarkers(fit); renderList(); }
+
+/* ------------------------------------------------------------------ */
+/* Interactions de la liste (délégation d'événements + glisser-déposer) */
+/* ------------------------------------------------------------------ */
+const listEl = $("loc-list");
+
+listEl.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-act]");
+  if (!btn || btn.type === "checkbox") return;
+  const id = btn.closest(".loc-item").dataset.id;
+  const act = btn.dataset.act;
+  if (act === "del") removeLocation(id);
+  else if (act === "up") moveLocation(id, -1);
+  else if (act === "down") moveLocation(id, 1);
+  else if (act === "note") editNote(id);
+  else if (act === "gmap") openInGoogleMaps(id);
+  else if (act === "tel") callLocation(id);
+  else if (act === "deliver") {
+    const loc = locations[byId(id)];
+    loc.delivered = !loc.delivered;
+    renderAll(false);
+    persist(true);
+  }
+});
+
+listEl.addEventListener("change", (e) => {
+  if (e.target.dataset.act !== "select") return;
+  const id = e.target.closest(".loc-item").dataset.id;
+  locations[byId(id)].selected = e.target.checked;
+  renderAll(false);
+  persist(true);
+});
+
+let dragId = null;
+listEl.addEventListener("dragstart", (e) => {
+  const item = e.target.closest(".loc-item");
+  if (!item) return;
+  dragId = item.dataset.id;
+  item.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+});
+listEl.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  const item = e.target.closest(".loc-item");
+  listEl.querySelectorAll(".drop-target").forEach((el) => el.classList.remove("drop-target"));
+  if (item && item.dataset.id !== dragId) item.classList.add("drop-target");
+});
+listEl.addEventListener("drop", (e) => {
+  e.preventDefault();
+  const item = e.target.closest(".loc-item");
+  if (!item || !dragId) return;
+  const from = byId(dragId), to = byId(item.dataset.id);
+  if (from < 0 || to < 0 || from === to) return;
+  const [moved] = locations.splice(from, 1);
+  locations.splice(to, 0, moved);
+  dragId = null;
+  renderAll(false);
+  persist(true);
+});
+listEl.addEventListener("dragend", () => {
+  dragId = null;
+  listEl.querySelectorAll(".dragging,.drop-target").forEach((el) => el.classList.remove("dragging", "drop-target"));
+});
+
+/* ------------------------------------------------------------------ */
+/* Barres d'outils                                                     */
+/* ------------------------------------------------------------------ */
+$("select-all").addEventListener("change", (e) => {
+  locations.forEach((l) => (l.selected = e.target.checked));
+  renderAll(false);
+  persist(true);
+});
+$("route-btn").addEventListener("click", openRoute);
+$("optimize-btn").addEventListener("click", optimizeSelected);
+
+document.querySelectorAll(".filter-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    filter = btn.dataset.filter;
+    document.querySelectorAll(".filter-btn").forEach((b) => b.classList.toggle("active", b === btn));
+    renderList();
+  });
+});
+
+$("reset-btn").addEventListener("click", async () => {
+  if (!locations.length) return;
+  if (!confirm("Effacer tous les lieux ? Cette action est irréversible.")) return;
+  locations = [];
+  await persist(true);
+  renderAll(false);
+  renderBook();
+  toast("Liste réinitialisée");
+});
+
+$("clear-done").addEventListener("click", async () => {
+  const done = locations.filter((l) => l.delivered).length;
+  if (!done) return toast("Aucun lieu livré");
+  if (!confirm("Retirer les " + done + " lieu(x) déjà livré(s) ?")) return;
+  locations = locations.filter((l) => !l.delivered);
+  await persist(true);
+  renderAll(false);
+  renderBook();
+  toast(done + " lieu(x) retiré(s)");
+});
+
+function download(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+const stamp = () => new Date().toISOString().slice(0, 10);
+
+$("export-json").addEventListener("click", () => {
+  if (!locations.length) return toast("Aucun lieu à exporter");
+  const data = locations.map(({ name, address, lat, lon, delivered, note }) =>
+    ({ name, address, lat, lon, delivered, note }));
+  download("lieux-quebec-" + stamp() + ".json", JSON.stringify(data, null, 2), "application/json");
+  toast(data.length + " lieu(x) exporté(s)");
+});
+
+$("export-csv").addEventListener("click", () => {
+  if (!locations.length) return toast("Aucun lieu à exporter");
+  const q = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+  const rows = [["ordre","nom","adresse","latitude","longitude","livre","note"].join(",")]
+    .concat(locations.map((l, i) => [i + 1, l.name, l.address, l.lat, l.lon, l.delivered ? "oui" : "non", l.note].map(q).join(",")));
+  download("lieux-quebec-" + stamp() + ".csv", "\uFEFF" + rows.join("\n"), "text/csv");
+  toast(locations.length + " lieu(x) exporté(s) en CSV");
+});
+
+$("import-btn").addEventListener("click", () => $("import-file").click());
+$("import-file").addEventListener("change", async (event) => {
+  const file = event.target.files && event.target.files[0];
+  event.target.value = "";
+  if (!file) return;
+  let parsed;
+  try { parsed = JSON.parse(await file.text()); }
+  catch (e) { return alert("Ce fichier n'est pas un JSON valide."); }
+
+  const items = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.locations) ? parsed.locations : null);
+  if (!items) return alert("Format inattendu : le fichier doit contenir une liste de lieux.");
+
+  const valid = items
+    .filter((it) => it && Number.isFinite(Number(it.lat)) && Number.isFinite(Number(it.lon)) && (it.name || it.address))
+    .map(normalizeLoc);
+  if (!valid.length) return alert("Aucun lieu valide trouvé dans ce fichier.");
+
+  const isDup = (a, b) => a.name === b.name && a.lat === b.lat && a.lon === b.lon;
+  const toAdd = valid.filter((v) => !locations.some((l) => isDup(l, v)));
+  const skipped = valid.length - toAdd.length;
+
+  if (locations.length) {
+    const mode = prompt(
+      "Importer " + valid.length + " lieu(x)" + (skipped ? " (" + skipped + " doublon(s))" : "") +
+      "\n\nTapez A pour AJOUTER à la liste actuelle, ou R pour REMPLACER la liste.", "A");
+    if (mode === null) return;
+    if (mode.trim().toUpperCase() === "R") locations = valid;
+    else if (!toAdd.length) return alert("Tous ces lieux sont déjà présents.");
+    else locations = locations.concat(toAdd);
+  } else {
+    locations = valid;
+  }
+  renderAll(true);
+  renderBook();
+  await persist(true);
+  toast("Import terminé");
+});
+
+/* ------------------------------------------------------------------ */
+/* Localisation en direct                                              */
+/* ------------------------------------------------------------------ */
+let liveWatchId = null, liveMarker = null, liveCircle = null;
+const locateBtn = $("locate-btn");
+
+locateBtn.addEventListener("click", () => {
+  if (liveWatchId !== null) return stopLiveLocation();
+  if (!navigator.geolocation) return alert("La géolocalisation n'est pas disponible sur cet appareil.");
+  locateBtn.classList.add("active");
+  let first = true;
+  liveWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const { latitude, longitude, accuracy } = pos.coords;
+      myPosition = { lat: latitude, lon: longitude };
+      updateLiveMarker(latitude, longitude, accuracy);
+      if (first) { map.setView([latitude, longitude], 15); first = false; }
+      renderList();
+      if ($("book-body").classList.contains("open")) renderBook();
+    },
+    (err) => { alert("Position indisponible : " + err.message); stopLiveLocation(); },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+  );
+});
+
+function stopLiveLocation() {
+  if (liveWatchId !== null) navigator.geolocation.clearWatch(liveWatchId);
+  liveWatchId = null;
+  myPosition = null;
+  locateBtn.classList.remove("active");
+  if (liveMarker) { map.removeLayer(liveMarker); liveMarker = null; }
+  if (liveCircle) { map.removeLayer(liveCircle); liveCircle = null; }
+  renderList();
+  if ($("book-body").classList.contains("open")) renderBook();
+}
+
+function updateLiveMarker(lat, lon, accuracy) {
+  const icon = L.divIcon({
+    className: "",
+    html: '<div style="width:16px;height:16px;border-radius:50%;background:#1a73e8;border:3px solid white;' +
+          'box-shadow:0 0 0 2px rgba(26,115,232,0.5);"></div>',
+    iconSize: [16, 16], iconAnchor: [8, 8]
+  });
+  if (!liveMarker) {
+    liveMarker = L.marker([lat, lon], { icon, zIndexOffset: 1000 }).addTo(map).bindPopup("Vous êtes ici");
+    liveCircle = L.circle([lat, lon], { radius: accuracy, color: "#1a73e8", weight: 1, fillOpacity: 0.1 }).addTo(map);
+  } else {
+    liveMarker.setLatLng([lat, lon]);
+    liveCircle.setLatLng([lat, lon]).setRadius(accuracy);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Réseau + démarrage                                                  */
+/* ------------------------------------------------------------------ */
+function updateOnline() { $("offline-bar").classList.toggle("show", !navigator.onLine); }
+window.addEventListener("online", updateOnline);
+window.addEventListener("offline", updateOnline);
+updateOnline();
+
+initBook();
+loadFromStorage();
+</script>
+</body>
+</html>
