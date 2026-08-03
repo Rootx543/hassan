@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Antigravity</title>
+<script src="https://js.puter.com/v2/"></script>
+<style>
+  :root{
+    --bg:#ffffff; --surface:#f8f9fc; --surface2:#f1f3f9; --card:#ffffff;
+    --line:#e3e6ef; --line2:#eef0f6;
+    --txt:#1f2330; --muted:#5f6470; --faint:#8b90a0;
+    --g1:#4285f4; --g2:#9b72f5; --g3:#e0619b; --g4:#f6a723;
+    --accent:#4285f4; --accent-soft:#eaf1ff;
+    --user:#eef2ff; --user-line:#dbe3fb;
+    --ok:#1a9c6b; --ok-soft:#e6f6ef; --warn:#c77700; --warn-soft:#fdf2e0;
+    --run:#3a6ff0; --run-soft:#e9f0ff; --danger:#d93a4a;
+    --shadow:0 1px 2px rgba(20,25,40,.05),0 4px 16px rgba(20,25,40,.06);
+    --radius:16px;
+  }
+  html[data-theme="dark"]{
+    --bg:#0f1115; --surface:#15181f; --surface2:#1b1f28; --card:#171b23;
+    --line:#282d3a; --line2:#20242e;
+    --txt:#e8ebf2; --muted:#9aa1b2; --faint:#6d7484;
+    --accent:#6f9bff; --accent-soft:#1a2540;
+    --user:#1c2740; --user-line:#2b3a5e;
+    --ok:#37d39a; --ok-soft:#12281f; --warn:#e0a53a; --warn-soft:#2a2110;
+    --run:#6f9bff; --run-soft:#182236; --danger:#ff6072;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--bg);color:var(--txt);
+    font-family:"Google Sans","Product Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+  /* ---------- Header ---------- */
+  header{
+    display:flex;align-items:center;gap:10px;padding:12px 14px;
+    padding-top:calc(12px + env(safe-area-inset-top));
+    background:var(--bg);border-bottom:1px solid var(--line);position:relative;z-index:20;
+  }
+  .logo{
+    width:32px;height:32px;border-radius:9px;flex:none;position:relative;
+    background:conic-gradient(from 140deg,var(--g1),var(--g2),var(--g3),var(--g4),var(--g1));
+    display:grid;place-items:center;
+  }
+  .logo::after{content:"";width:11px;height:11px;border-radius:50%;background:var(--bg)}
+  .brand{display:flex;flex-direction:column}
+  .title{font-weight:600;font-size:16px;line-height:1.1;letter-spacing:-.2px}
+  .subtitle{font-size:11px;color:var(--muted);margin-top:2px}
+  .hspace{flex:1}
+  .icon-btn{
+    background:var(--surface);border:1px solid var(--line);color:var(--txt);
+    width:38px;height:38px;border-radius:10px;font-size:16px;cursor:pointer;
+    display:grid;place-items:center;transition:background .15s,transform .1s;
+  }
+  .icon-btn:active{transform:scale(.93)}
+  .icon-btn:hover{background:var(--surface2)}
+  /* ---------- Segmented view switch ---------- */
+  .viewswitch{
+    display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);
+    border-radius:11px;padding:3px;
+  }
+  .viewswitch button{
+    border:none;background:none;color:var(--muted);font:inherit;font-size:12.5px;
+    font-weight:500;padding:6px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;
+  }
+  .viewswitch button.active{background:var(--card);color:var(--txt);box-shadow:var(--shadow)}
+  /* ---------- Mode + model bar ---------- */
+  .modelbar{
+    display:flex;gap:8px;align-items:center;padding:8px 14px;
+    background:var(--bg);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;
+  }
+  .modelbar::-webkit-scrollbar{display:none}
+  select{
+    background:var(--surface);color:var(--txt);border:1px solid var(--line);
+    border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;max-width:52%;font-weight:500;
+  }
+  .chip{
+    flex:none;background:var(--surface);border:1px solid var(--line);color:var(--muted);
+    border-radius:20px;padding:7px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap;font-weight:500;
+  }
+  .chip.active{
+    background:var(--accent-soft);color:var(--accent);border-color:transparent;
+  }
+  html[data-theme="dark"] .chip.active{color:#cfe0ff}
+  /* ---------- Panels ---------- */
+  .panel{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;flex-direction:column}
+  .panel.show{display:flex}
+  /* ---------- Chat ---------- */
+  #chat{padding:16px 14px 8px;display:flex;flex-direction:column;gap:14px}
+  .msg{max-width:90%;display:flex;gap:9px;animation:pop .18s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .msg.user{align-self:flex-end;flex-direction:row-reverse}
+  .avatar{width:28px;height:28px;border-radius:8px;flex:none;display:grid;place-items:center;font-size:12px;font-weight:600}
+  .avatar.assistant{background:conic-gradient(from 140deg,var(--g1),var(--g2),var(--g3),var(--g4),var(--g1));color:#fff;position:relative}
+  .avatar.assistant::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--bg);position:absolute}
+  .avatar.user{background:var(--user);color:var(--accent);border:1px solid var(--user-line)}
+  .bubble{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:11px 14px;font-size:15px;line-height:1.55;word-wrap:break-word;overflow-wrap:anywhere;
+    box-shadow:var(--shadow);
+  }
+  .msg.user .bubble{background:var(--user);border-color:var(--user-line);box-shadow:none}
+  .bubble img{max-width:100%;border-radius:10px;margin-top:8px;display:block}
+  .bubble audio{margin-top:8px;width:230px;max-width:100%}
+  .bubble pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:11px;overflow-x:auto;font-size:13px;margin:8px 0}
+  .bubble code{font-family:ui-monospace,Menlo,Consolas,monospace}
+  .bubble p{margin:6px 0}.bubble p:first-child{margin-top:0}.bubble p:last-child{margin-bottom:0}
+  .bubble a{color:var(--accent)}
+  .bubble b{font-weight:600}
+  .tools{display:flex;gap:6px;margin-top:7px}
+  .tools button{background:none;border:none;color:var(--faint);font:inherit;font-size:12px;cursor:pointer;padding:3px 6px;border-radius:6px}
+  .tools button:hover{background:var(--surface);color:var(--muted)}
+  .typing{display:flex;gap:4px;padding:4px 2px}
+  .typing span{width:7px;height:7px;border-radius:50%;background:var(--faint);animation:blink 1.2s infinite}
+  .typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,60%,100%{opacity:.3}30%{opacity:1}}
+  /* ---------- Artifact card (Plan / Result) ---------- */
+  .artifact{
+    margin-top:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;
+  }
+  .artifact-head{
+    display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line);
+    font-size:12.5px;font-weight:600;color:var(--txt);background:var(--card);
+  }
+  .artifact-head .tag{font-size:10.5px;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:20px}
+  .artifact-body{padding:10px 12px}
+  .step{display:flex;gap:9px;align-items:flex-start;padding:6px 0;font-size:13.5px;line-height:1.45}
+  .step .box{
+    width:18px;height:18px;border-radius:6px;border:1.5px solid var(--line);flex:none;margin-top:1px;
+    display:grid;place-items:center;font-size:11px;color:#fff;transition:.2s;
+  }
+  .step.done .box{background:var(--ok);border-color:var(--ok)}
+  .step.run .box{background:var(--run);border-color:var(--run);animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .step.done .label{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint)}
+  /* ---------- Welcome ---------- */
+  .welcome{text-align:center;color:var(--muted);margin:auto;padding:24px;max-width:360px}
+  .welcome .logo{margin:0 auto 14px;width:52px;height:52px;border-radius:15px}
+  .welcome .logo::after{width:18px;height:18px}
+  .welcome h2{color:var(--txt);margin:6px 0;font-size:22px;font-weight:600;letter-spacing:-.3px}
+  .welcome p{font-size:13.5px;line-height:1.5}
+  .suggest{display:grid;gap:9px;margin-top:20px}
+  .suggest div{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 13px;
+    font-size:13.5px;color:var(--txt);cursor:pointer;text-align:left;box-shadow:var(--shadow);transition:transform .1s;
+  }
+  .suggest div:active{transform:scale(.98)}
+  /* ---------- Agent Manager ---------- */
+  #agents{padding:16px 14px}
+  .am-head{font-size:13px;color:var(--muted);font-weight:600;margin:2px 4px 12px;display:flex;align-items:center;gap:8px}
+  .am-empty{text-align:center;color:var(--faint);padding:50px 20px;font-size:14px}
+  .agentcard{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:11px;
+    box-shadow:var(--shadow);cursor:pointer;transition:transform .1s;
+  }
+  .agentcard:active{transform:scale(.99)}
+  .agentcard .top{display:flex;align-items:center;gap:9px}
+  .agentcard .task{font-size:14px;font-weight:500;flex:1;line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .status{font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;flex:none}
+  .status.plan{color:var(--warn);background:var(--warn-soft)}
+  .status.work{color:var(--run);background:var(--run-soft)}
+  .status.done{color:var(--ok);background:var(--ok-soft)}
+  .agentcard .bar{height:5px;border-radius:20px;background:var(--surface2);margin-top:11px;overflow:hidden}
+  .agentcard .bar i{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,var(--g1),var(--g2));transition:width .4s}
+  .agentcard .sub{font-size:11.5px;color:var(--faint);margin-top:8px;display:flex;justify-content:space-between}
+  /* ---------- Composer ---------- */
+  .composer{padding:9px 12px;padding-bottom:calc(9px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line)}
+  .preview{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+  .preview .thumb{position:relative}
+  .preview img{width:56px;height:56px;object-fit:cover;border-radius:9px;border:1px solid var(--line)}
+  .preview .x{position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;border:none;width:20px;height:20px;border-radius:50%;font-size:12px;cursor:pointer}
+  .inrow{display:flex;align-items:flex-end;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:5px 6px 5px 8px}
+  .inrow:focus-within{border-color:var(--accent)}
+  .inrow .icon-btn{background:transparent;border:none;width:36px;height:36px}
+  .inrow textarea{flex:1;background:transparent;border:none;color:var(--txt);font:inherit;font-size:15px;resize:none;max-height:120px;line-height:1.4;padding:8px 2px}
+  .inrow textarea:focus{outline:none}
+  .send{width:40px;height:40px;flex:none;border-radius:50%;border:none;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));font-size:16px;display:grid;place-items:center}
+  .send:disabled{opacity:.45}
+  .send:active{transform:scale(.92)}
+  /* ---------- Drawer ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(15,20,35,.4);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+  .overlay.open{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;left:0;bottom:0;width:82%;max-width:330px;background:var(--bg);border-right:1px solid var(--line);z-index:41;transform:translateX(-100%);transition:transform .25s;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+  .drawer.open{transform:none}
+  .drawer h3{padding:16px 16px 8px;margin:0;font-size:12px;color:var(--faint);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .newchat{margin:14px 14px 6px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--txt);cursor:pointer;font-size:14px;font-weight:500;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px}
+  .hist{flex:1;overflow-y:auto;padding:0 8px 12px}
+  .hist .item{padding:11px 12px;border-radius:10px;font-size:14px;cursor:pointer;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:9px}
+  .hist .item.active{background:var(--surface)}
+  .hist .item .del{margin-left:auto;color:var(--faint);background:none;border:none;cursor:pointer;font-size:14px}
+  .toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:var(--txt);color:var(--bg);padding:9px 17px;border-radius:20px;font-size:13px;z-index:60;opacity:0;transition:opacity .3s;pointer-events:none;font-weight:500}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="icon-btn" onclick="toggleDrawer(true)">☰</button>
+  <div class="logo"></div>
+  <div class="brand">
+    <div class="title">Antigravity</div>
+    <div class="subtitle" id="statusLine">Agentic workspace</div>
+  </div>
+  <div class="hspace"></div>
+  <div class="viewswitch">
+    <button id="vChat" class="active" onclick="setView('chat')">Editor</button>
+    <button id="vAgents" onclick="setView('agents')">Agents</button>
+  </div>
+  <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Theme">◐</button>
+  <button class="icon-btn" id="loginBtn" onclick="doAuth()" title="Account">◔</button>
+</header>
+
+<div class="modelbar" id="modelbar">
+  <select id="model">
+    <optgroup label="Gemini">
+      <option value="google/gemini-2.5-flash" selected>Gemini 2.5 Flash</option>
+      <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
+      <option value="google/gemini-2.0-flash">Gemini 2.0 Flash</option>
+    </optgroup>
+    <optgroup label="Other models">
+      <option value="gpt-4o">GPT-4o</option>
+      <option value="gpt-4o-mini">GPT-4o mini</option>
+      <option value="claude-sonnet-4">Claude Sonnet 4</option>
+    </optgroup>
+  </select>
+  <div class="chip active" id="chipChat" onclick="setMode('chat')">💬 Chat</div>
+  <div class="chip" id="chipAgent" onclick="setMode('agent')">⚡ Agent</div>
+  <div class="chip" id="chipWeb" onclick="setMode('web')">🌐 Web</div>
+  <div class="chip" id="chipImage" onclick="setMode('image')">🎨 Image</div>
+</div>
+
+<!-- EDITOR / CHAT PANEL -->
+<div class="panel show" id="panelChat"><div id="chat"></div></div>
+
+<!-- AGENT MANAGER PANEL -->
+<div class="panel" id="panelAgents"><div id="agents"></div></div>
+
+<div class="composer">
+  <div class="preview" id="preview"></div>
+  <div class="inrow">
+    <button class="icon-btn" onclick="document.getElementById('file').click()" title="Attach image">📎</button>
+    <input type="file" id="file" accept="image/*" hidden onchange="onFile(event)">
+    <button class="icon-btn" id="micBtn" onclick="toggleMic()" title="Voice">🎤</button>
+    <textarea id="input" rows="1" placeholder="Message Antigravity…" oninput="autoGrow(this)" onkeydown="onKey(event)"></textarea>
+    <button class="send" id="sendBtn" onclick="send()">➤</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleDrawer(false)"></div>
+<div class="drawer" id="drawer">
+  <div class="newchat" onclick="newChat()">＋ New workspace</div>
+  <h3>History</h3>
+  <div class="hist" id="hist"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ======================================================================
+   Antigravity — agentic workspace (Puter-powered)
+   Modes: chat · agent (plan→execute→artifact) · web · image  + vision
+   ====================================================================== */
+
+/* ---------- State ---------- */
+let mode = 'chat';                 // chat | agent | web | image
+let view = 'chat';                 // chat | agents
+let attachedImage = null;
+let isStreaming = false;
+let convos = load('ag_convos', {});      // {id:{title,messages:[]}}
+let agents = load('ag_agents', []);      // [{id,task,status,steps:[{label,done}],created}]
+let currentId = null;
+
+/* ---------- Storage ---------- */
+function load(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}}
+function save(){localStorage.setItem('ag_convos', JSON.stringify(convos))}
+function saveAgents(){localStorage.setItem('ag_agents', JSON.stringify(agents))}
+
+/* ---------- Theme ---------- */
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',cur);
+  localStorage.setItem('ag_theme',cur);
+  document.getElementById('themeBtn').textContent = cur==='dark'?'◑':'◐';
+}
+(function initTheme(){
+  const t=localStorage.getItem('ag_theme')||'light';
+  document.documentElement.setAttribute('data-theme',t);
+  window.addEventListener('DOMContentLoaded',()=>{document.getElementById('themeBtn').textContent=t==='dark'?'◑':'◐'});
+})();
+
+/* ---------- Convos ---------- */
+function newChat(){
+  currentId='c'+Date.now();
+  convos[currentId]={title:'New workspace',messages:[]};
+  save();renderHist();renderChat();setView('chat');toggleDrawer(false);
+}
+function switchChat(id){currentId=id;renderHist();renderChat();setView('chat');toggleDrawer(false)}
+function delChat(id,e){
+  e.stopPropagation();delete convos[id];save();
+  if(currentId===id){const k=Object.keys(convos);currentId=k[0]||null;if(!currentId)newChat()}
+  renderHist();renderChat();
+}
+function curMsgs(){return convos[currentId]?convos[currentId].messages:[]}
+
+/* ---------- View switch (Editor / Agents) ---------- */
+function setView(v){
+  view=v;
+  document.getElementById('vChat').classList.toggle('active',v==='chat');
+  document.getElementById('vAgents').classList.toggle('active',v==='agents');
+  document.getElementById('panelChat').classList.toggle('show',v==='chat');
+  document.getElementById('panelAgents').classList.toggle('show',v==='agents');
+  document.getElementById('modelbar').style.display = v==='chat'?'flex':'none';
+  if(v==='agents') renderAgents();
+}
+
+/* ---------- Rendering: history ---------- */
+function renderHist(){
+  const h=document.getElementById('hist');h.innerHTML='';
+  Object.keys(convos).reverse().forEach(id=>{
+    const c=convos[id];const el=document.createElement('div');
+    el.className='item'+(id===currentId?' active':'');
+    el.onclick=()=>switchChat(id);
+    el.innerHTML=`<span>◇</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(c.title)}</span>
+      <button class="del" onclick="delChat('${id}',event)">🗑</button>`;
+    h.appendChild(el);
+  });
+}
+
+/* ---------- Rendering: chat ---------- */
+function renderChat(){
+  const box=document.getElementById('chat');box.innerHTML='';
+  const msgs=curMsgs();
+  if(msgs.length===0){showWelcome(box);return}
+  msgs.forEach(m=>addBubble(m.role,m.content,m.image,m.audio,false,m.artifact));
+  scrollDown();
+}
+function showWelcome(box){
+  box.innerHTML=`<div class="welcome">
+    <div class="logo"></div>
+    <h2>Welcome to Antigravity</h2>
+    <p>Chat, or switch to <b>⚡ Agent</b> mode to dispatch a task — the agent plans, executes step by step, and delivers a verifiable artifact.</p>
+    <div class="suggest">
+      <div onclick="setMode('agent');quick('Plan a 3-day trip to Kyoto with a daily budget')">⚡ Plan a Kyoto trip (agent)</div>
+      <div onclick="setMode('agent');quick('Research and compare 3 note-taking apps')">⚡ Research note apps (agent)</div>
+      <div onclick="quick('Explain quantum computing simply')">💬 Explain quantum computing</div>
+      <div onclick="setMode('image');quick('A serene zero-gravity garden, soft light, digital art')">🎨 Generate an image</div>
+    </div>
+  </div>`;
+}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+/* ---------- Minimal markdown ---------- */
+function md(t){
+  t=esc(t);
+  t=t.replace(/```([\s\S]*?)```/g,(m,c)=>`<pre><code>${c.replace(/^\n/,'')}</code></pre>`);
+  t=t.replace(/`([^`]+)`/g,'<code>$1</code>');
+  t=t.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');
+  t=t.replace(/\*([^*]+)\*/g,'<i>$1</i>');
+  t=t.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  t=t.replace(/^#{1,3} (.*)$/gm,'<b>$1</b>');
+  t=t.split(/\n{2,}/).map(p=>p.trim()?`<p>${p.replace(/\n/g,'<br>')}</p>`:'').join('');
+  return t;
+}
+
+/* ---------- Add a bubble (optionally with artifact card) ---------- */
+function addBubble(role,text,image,audio,animate=true,artifact=null){
+  const box=document.getElementById('chat');
+  if(box.querySelector('.welcome'))box.innerHTML='';
+  const wrap=document.createElement('div');
+  wrap.className='msg '+role;
+  if(!animate)wrap.style.animation='none';
+  let inner=role==='assistant'?md(text||''):esc(text||'').replace(/\n/g,'<br>');
+  let media='';
+  if(image)media+=`<img src="${image}">`;
+  if(audio)media+=`<audio controls src="${audio}"></audio>`;
+  let art = artifact?artifactHTML(artifact):'';
+  const tools=(role==='assistant'&&text)?
+    `<div class="tools"><button onclick="copyText(this)">📋 Copy</button><button onclick="speak(this)">🔊 Read</button></div>`:'';
+  wrap.innerHTML=`
+    <div class="avatar ${role}">${role==='assistant'?'':'You'.slice(0,1)}</div>
+    <div><div class="bubble">${inner}${media}${art}</div>${tools}</div>`;
+  wrap.dataset.raw=text||'';
+  box.appendChild(wrap);scrollDown();
+  return wrap;
+}
+function artifactHTML(a){
+  const steps=a.steps.map(s=>`
+    <div class="step ${s.done?'done':(s.run?'run':'')}">
+      <div class="box">${s.done?'✓':''}</div><div class="label">${esc(s.label)}</div>
+    </div>`).join('');
+  return `<div class="artifact">
+    <div class="artifact-head"><span class="tag">${a.tag||'PLAN'}</span> ${esc(a.title||'Agent plan')}</div>
+    <div class="artifact-body">${steps}</div></div>`;
+}
+function scrollDown(){const b=document.getElementById('chat');b.scrollTop=b.scrollHeight}
+
+/* ---------- Agent Manager panel ---------- */
+function renderAgents(){
+  const box=document.getElementById('agents');
+  if(agents.length===0){
+    box.innerHTML=`<div class="am-empty">No agents yet.<br>Switch to <b>⚡ Agent</b> mode and dispatch a task.</div>`;
+    return;
+  }
+  box.innerHTML=`<div class="am-head">◈ Agent Manager · ${agents.length} agent${agents.length>1?'s':''}</div>`;
+  agents.slice().reverse().forEach(a=>{
+    const done=a.steps.filter(s=>s.done).length;
+    const pct=a.steps.length?Math.round(done/a.steps.length*100):0;
+    const sc={plan:['plan','Planning'],work:['work','Working'],done:['done','Completed']}[a.status]||['work','Working'];
+    const el=document.createElement('div');
+    el.className='agentcard';
+    el.onclick=()=>{ if(a.convo && convos[a.convo]){switchChat(a.convo)} };
+    el.innerHTML=`
+      <div class="top">
+        <div class="task">${esc(a.task)}</div>
+        <div class="status ${sc[0]}">${sc[1]}</div>
+      </div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="sub"><span>${done}/${a.steps.length} steps</span><span>${timeAgo(a.created)}</span></div>`;
+    box.appendChild(el);
+  });
+}
+function timeAgo(t){
+  const s=Math.floor((Date.now()-t)/1000);
+  if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';
+  if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';
+}
+
+/* ---------- UI helpers ---------- */
+function autoGrow(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px'}
+function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}}
+function setMode(m){
+  mode=m;
+  ['Chat','Agent','Web','Image'].forEach(x=>document.getElementById('chip'+x).classList.toggle('active',m===x.toLowerCase()));
+  const ph={chat:'Message Antigravity…',agent:'Describe a task to dispatch…',web:'Search the web…',image:'Describe an image to create…'};
+  document.getElementById('input').placeholder=ph[m];
+  if(view!=='chat')setView('chat');
+}
+function quick(t){document.getElementById('input').value=t;send()}
+function toggleDrawer(open){
+  document.getElementById('drawer').classList.toggle('open',open);
+  document.getElementById('overlay').classList.toggle('open',open);
+}
+function toast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);
+}
+function copyText(btn){navigator.clipboard.writeText(btn.closest('.msg').dataset.raw).then(()=>toast('Copied'))}
+
+/* ---------- File attach ---------- */
+function onFile(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=()=>{attachedImage={dataUrl:r.result};renderPreview()};
+  r.readAsDataURL(f);e.target.value='';
+}
+function renderPreview(){
+  const p=document.getElementById('preview');
+  p.innerHTML=attachedImage?`<div class="thumb"><img src="${attachedImage.dataUrl}"><button class="x" onclick="clearImg()">×</button></div>`:'';
+}
+function clearImg(){attachedImage=null;renderPreview()}
+
+/* ---------- TTS ---------- */
+async function speak(btn){
+  const raw=btn.closest('.msg').dataset.raw;
+  const clean=raw.replace(/```[\s\S]*?```/g,' code block ').slice(0,1000);
+  btn.textContent='⏳';
+  try{const audio=await puter.ai.txt2speech(clean,{provider:'openai'});audio.play();btn.textContent='🔊 Read';}
+  catch(err){toast('TTS failed');btn.textContent='🔊 Read';}
+}
+
+/* ---------- Voice input ---------- */
+let recog=null,listening=false;
+function toggleMic(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast('Voice not supported here');return}
+  if(listening){recog.stop();return}
+  recog=new SR();recog.lang='en-US';recog.interimResults=true;
+  document.getElementById('micBtn').style.color='var(--danger)';listening=true;
+  recog.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;
+    document.getElementById('input').value=t;autoGrow(document.getElementById('input'))};
+  recog.onend=()=>{listening=false;document.getElementById('micBtn').style.color=''};
+  recog.onerror=()=>{listening=false;document.getElementById('micBtn').style.color=''};
+  recog.start();
+}
+
+/* ---------- Auth ---------- */
+async function doAuth(){
+  try{
+    if(puter.auth.isSignedIn()){
+      const u=await puter.auth.getUser();
+      if(confirm(`Signed in as ${u.username}. Sign out?`)){puter.auth.signOut();updateAuth()}
+    }else{await puter.auth.signIn();updateAuth()}
+  }catch(e){}
+}
+async function updateAuth(){
+  try{
+    if(puter.auth.isSignedIn()){
+      const u=await puter.auth.getUser();
+      document.getElementById('loginBtn').textContent='●';
+      document.getElementById('statusLine').textContent='Signed in · '+u.username;
+    }else{document.getElementById('loginBtn').textContent='◔'}
+  }catch(e){}
+}
+
+/* ======================================================================
+   SEND — routes to chat / agent / web / image / vision
+   ====================================================================== */
+async function send(){
+  if(isStreaming)return;
+  const input=document.getElementById('input');
+  const text=input.value.trim();
+  if(!text&&!attachedImage)return;
+  if(!currentId)newChat();
+  if(view!=='chat')setView('chat');
+
+  const model=document.getElementById('model').value;
+  const imgData=attachedImage?attachedImage.dataUrl:null;
+
+  addBubble('user',text,imgData);
+  curMsgs().push({role:'user',content:text,image:imgData});
+  if(convos[currentId].title==='New workspace'&&text)convos[currentId].title=text.slice(0,42);
+  save();renderHist();
+
+  input.value='';autoGrow(input);
+  const sendImg=attachedImage;clearImg();
+
+  if(mode==='image')  return runImage(text,model);
+  if(mode==='agent')  return runAgent(text,model);
+  return runChat(text,model,sendImg);
+}
+
+/* ---------- IMAGE ---------- */
+async function runImage(text,model){
+  const w=addBubble('assistant','');
+  w.querySelector('.bubble').innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
+  isStreaming=true;document.getElementById('sendBtn').disabled=true;
+  try{
+    const imgEl=await puter.ai.txt2img(text,{model:'gpt-image-2'});
+    const url=imgEl.src;
+    w.querySelector('.bubble').innerHTML=`Here's your image:<img src="${url}">`;
+    w.dataset.raw='[Generated image]';
+    curMsgs().push({role:'assistant',content:"Here's your image:",image:url});save();
+  }catch(err){w.querySelector('.bubble').textContent='⚠️ '+(err.message||'Image generation failed. Sign in with ◔.')}
+  isStreaming=false;document.getElementById('sendBtn').disabled=false;scrollDown();
+}
+
+/* ---------- CHAT / WEB / VISION (streaming) ---------- */
+async function runChat(text,model,sendImg){
+  const w=addBubble('assistant','');
+  const bubble=w.querySelector('.bubble');
+  bubble.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
+  isStreaming=true;document.getElementById('sendBtn').disabled=true;
+  try{
+    let response,full='';
+    const opts={model,stream:true};
+    if(mode==='web')opts.tools=[{type:'web_search'}];
+    if(sendImg){
+      response=await puter.ai.chat(text||'What is in this image?',sendImg.dataUrl,opts);
+    }else{
+      const history=curMsgs().filter(m=>!m.image).map(m=>({role:m.role,content:m.content}));
+      response=await puter.ai.chat(history,opts);
+    }
+    if(response&&typeof response[Symbol.asyncIterator]==='function'){
+      bubble.innerHTML='';
+      for await(const part of response){const chunk=part?.text||'';if(chunk){full+=chunk;bubble.innerHTML=md(full);scrollDown()}}
+    }else{
+      full=response?.message?.content||response?.text||String(response);bubble.innerHTML=md(full);
+    }
+    if(!full)full='(no response)';
+    w.dataset.raw=full;
+    if(!w.querySelector('.tools')){
+      const t=document.createElement('div');t.className='tools';
+      t.innerHTML=`<button onclick="copyText(this)">📋 Copy</button><button onclick="speak(this)">🔊 Read</button>`;
+      bubble.parentElement.appendChild(t);
+    }
+    curMsgs().push({role:'assistant',content:full});save();
+  }catch(err){bubble.innerHTML='⚠️ '+esc(err.message||'Request failed. Sign in with ◔.')}
+  isStreaming=false;document.getElementById('sendBtn').disabled=false;scrollDown();
+}
+
+/* ======================================================================
+   AGENT MODE — plan → execute step-by-step → deliver artifact
+   Mirrors Antigravity's Agent Manager + Plan + Artifact workflow.
+   ====================================================================== */
+async function runAgent(task,model){
+  isStreaming=true;document.getElementById('sendBtn').disabled=true;
+
+  // register agent in the manager
+  const agent={id:'a'+Date.now(),task,status:'plan',steps:[],created:Date.now(),convo:currentId};
+  agents.push(agent);saveAgents();
+
+  // 1) PLANNING — show artifact card being built
+  const w=addBubble('assistant','⚡ **Agent dispatched.** Generating a plan…');
+  const bubble=w.querySelector('.bubble');
+
+  let steps=[];
+  try{
+    const planResp=await puter.ai.chat([
+      {role:'system',content:'You are an autonomous planning agent. Given a task, output ONLY a numbered list of 3 to 5 short, concrete execution steps. No preamble, no explanations — just the steps, one per line.'},
+      {role:'user',content:task}
+    ],{model});
+    const planText=planResp?.message?.content||planResp?.text||String(planResp);
+    steps=planText.split('\n').map(l=>l.replace(/^\s*\d+[\.\)]\s*/,'').replace(/^[-*]\s*/,'').trim()).filter(Boolean).slice(0,5);
+  }catch(e){}
+  if(steps.length===0)steps=['Analyze the request','Gather relevant information','Produce the result'];
+
+  agent.steps=steps.map(s=>({label:s,done:false,run:false}));
+  agent.status='work';saveAgents();
+
+  const artifact={tag:'PLAN',title:'Execution plan',steps:agent.steps};
+  bubble.innerHTML=md(`⚡ **Agent dispatched.** Here's the plan — executing now:`)+artifactHTML(artifact);
+  w.dataset.raw='Agent plan for: '+task;
+  scrollDown();
+
+  // 2) EXECUTE — mark each step running then done (visual), simulate work pacing
+  const artEl=bubble.querySelector('.artifact-body');
+  for(let i=0;i<agent.steps.length;i++){
+    agent.steps[i].run=true;refreshArtifact(artEl,agent.steps);
+    await sleep(700+Math.random()*500);
+    agent.steps[i].run=false;agent.steps[i].done=true;
+    refreshArtifact(artEl,agent.steps);saveAgents();
+    if(view==='agents')renderAgents();
+  }
+
+  // 3) DELIVER — one real synthesis call, rendered as a result artifact
+  const rw=addBubble('assistant','');
+  const rb=rw.querySelector('.bubble');
+  rb.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
+  let full='';
+  try{
+    const resp=await puter.ai.chat([
+      {role:'system',content:'You are an execution agent. You have completed these steps: '+steps.join('; ')+'. Now deliver a thorough, well-structured final result for the user\'s task. Use markdown headings and lists.'},
+      {role:'user',content:task}
+    ],{model,stream:true});
+    if(resp&&typeof resp[Symbol.asyncIterator]==='function'){
+      rb.innerHTML='';
+      for await(const part of resp){const c=part?.text||'';if(c){full+=c;rb.innerHTML=md(full);scrollDown()}}
+    }else{full=resp?.message?.content||resp?.text||String(resp);rb.innerHTML=md(full)}
+  }catch(err){full='⚠️ '+(err.message||'Execution failed. Sign in with ◔.');rb.innerHTML=esc(full)}
+
+  rw.dataset.raw=full;
+  const t=document.createElement('div');t.className='tools';
+  t.innerHTML=`<button onclick="copyText(this)">📋 Copy</button><button onclick="speak(this)">🔊 Read</button>`;
+  rb.parentElement.appendChild(t);
+
+  agent.status='done';saveAgents();
+  // persist plan + result to convo
+  curMsgs().push({role:'assistant',content:'Agent plan for: '+task,artifact:{tag:'DONE',title:'Execution plan',steps:agent.steps}});
+  curMsgs().push({role:'assistant',content:full});save();
+
+  isStreaming=false;document.getElementById('sendBtn').disabled=false;scrollDown();
+  toast('Agent completed · see Agents tab');
+}
+function refreshArtifact(el,steps){
+  el.innerHTML=steps.map(s=>`
+    <div class="step ${s.done?'done':(s.run?'run':'')}">
+      <div class="box">${s.done?'✓':''}</div><div class="label">${esc(s.label)}</div>
+    </div>`).join('');
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+/* ---------- Init ---------- */
+(function init(){
+  const keys=Object.keys(convos);
+  currentId=keys.length?keys[keys.length-1]:null;
+  if(!currentId)newChat();
+  renderHist();renderChat();updateAuth();
+})();
+</script>
+</body>
+</html>
