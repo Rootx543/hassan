@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Antigravity</title>
+<script src="https://js.puter.com/v2/"></script>
+<style>
+  :root{
+    --bg:#ffffff; --surface:#f8f9fc; --surface2:#f1f3f9; --card:#ffffff;
+    --line:#e3e6ef; --line2:#eef0f6;
+    --txt:#1f2330; --muted:#5f6470; --faint:#8b90a0;
+    --g1:#4285f4; --g2:#9b72f5; --g3:#e0619b; --g4:#f6a723;
+    --accent:#4285f4; --accent-soft:#eaf1ff;
+    --user:#eef2ff; --user-line:#dbe3fb;
+    --ok:#1a9c6b; --ok-soft:#e6f6ef; --warn:#c77700; --warn-soft:#fdf2e0;
+    --run:#3a6ff0; --run-soft:#e9f0ff; --danger:#d93a4a;
+    --shadow:0 1px 2px rgba(20,25,40,.05),0 4px 16px rgba(20,25,40,.06);
+    --radius:16px;
+  }
+  html[data-theme="dark"]{
+    --bg:#0f1115; --surface:#15181f; --surface2:#1b1f28; --card:#171b23;
+    --line:#282d3a; --line2:#20242e;
+    --txt:#e8ebf2; --muted:#9aa1b2; --faint:#6d7484;
+    --accent:#6f9bff; --accent-soft:#1a2540;
+    --user:#1c2740; --user-line:#2b3a5e;
+    --ok:#37d39a; --ok-soft:#12281f; --warn:#e0a53a; --warn-soft:#2a2110;
+    --run:#6f9bff; --run-soft:#182236; --danger:#ff6072;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--bg);color:var(--txt);
+    font-family:"Google Sans","Product Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+  /* ---------- Header ---------- */
+  header{
+    display:flex;align-items:center;gap:10px;padding:12px 14px;
+    padding-top:calc(12px + env(safe-area-inset-top));
+    background:var(--bg);border-bottom:1px solid var(--line);position:relative;z-index:20;
+  }
+  .logo{
+    width:32px;height:32px;border-radius:9px;flex:none;position:relative;
+    background:conic-gradient(from 140deg,var(--g1),var(--g2),var(--g3),var(--g4),var(--g1));
+    display:grid;place-items:center;
+  }
+  .logo::after{content:"";width:11px;height:11px;border-radius:50%;background:var(--bg)}
+  .brand{display:flex;flex-direction:column}
+  .title{font-weight:600;font-size:16px;line-height:1.1;letter-spacing:-.2px}
+  .subtitle{font-size:11px;color:var(--muted);margin-top:2px}
+  .hspace{flex:1}
+  .icon-btn{
+    background:var(--surface);border:1px solid var(--line);color:var(--txt);
+    width:38px;height:38px;border-radius:10px;font-size:16px;cursor:pointer;
+    display:grid;place-items:center;transition:background .15s,transform .1s;
+  }
+  .icon-btn:active{transform:scale(.93)}
+  .icon-btn:hover{background:var(--surface2)}
+  /* ---------- Segmented view switch ---------- */
+  .viewswitch{
+    display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);
+    border-radius:11px;padding:3px;
+  }
+  .viewswitch button{
+    border:none;background:none;color:var(--muted);font:inherit;font-size:12.5px;
+    font-weight:500;padding:6px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;
+  }
+  .viewswitch button.active{background:var(--card);color:var(--txt);box-shadow:var(--shadow)}
+  /* ---------- Mode + model bar ---------- */
+  .modelbar{
+    display:flex;gap:8px;align-items:center;padding:8px 14px;
+    background:var(--bg);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;
+  }
+  .modelbar::-webkit-scrollbar{display:none}
+  select{
+    background:var(--surface);color:var(--txt);border:1px solid var(--line);
+    border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;max-width:52%;font-weight:500;
+  }
+  .chip{
+    flex:none;background:var(--surface);border:1px solid var(--line);color:var(--muted);
+    border-radius:20px;padding:7px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap;font-weight:500;
+  }
+  .chip.active{
+    background:var(--accent-soft);color:var(--accent);border-color:transparent;
+  }
+  html[data-theme="dark"] .chip.active{color:#cfe0ff}
+  /* ---------- Panels ---------- */
+  .panel{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;flex-direction:column}
+  .panel.show{display:flex}
+  /* ---------- Chat ---------- */
+  #chat{padding:16px 14px 8px;display:flex;flex-direction:column;gap:14px}
+  .msg{max-width:90%;display:flex;gap:9px;animation:pop .18s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .msg.user{align-self:flex-end;flex-direction:row-reverse}
+  .avatar{width:28px;height:28px;border-radius:8px;flex:none;display:grid;place-items:center;font-size:12px;font-weight:600}
+  .avatar.assistant{background:conic-gradient(from 140deg,var(--g1),var(--g2),var(--g3),var(--g4),var(--g1));color:#fff;position:relative}
+  .avatar.assistant::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--bg);position:absolute}
+  .avatar.user{background:var(--user);color:var(--accent);border:1px solid var(--user-line)}
+  .bubble{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:11px 14px;font-size:15px;line-height:1.55;word-wrap:break-word;overflow-wrap:anywhere;
+    box-shadow:var(--shadow);
+  }
+  .msg.user .bubble{background:var(--user);border-color:var(--user-line);box-shadow:none}
+  .bubble img{max-width:100%;border-radius:10px;margin-top:8px;display:block}
+  .bubble audio{margin-top:8px;width:230px;max-width:100%}
+  .bubble pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:11px;overflow-x:auto;font-size:13px;margin:8px 0}
+  .bubble code{font-family:ui-monospace,Menlo,Consolas,monospace}
+  .bubble p{margin:6px 0}.bubble p:first-child{margin-top:0}.bubble p:last-child{margin-bottom:0}
+  .bubble a{color:var(--accent)}
+  .bubble b{font-weight:600}
+  .tools{display:flex;gap:6px;margin-top:7px}
+  .tools button{background:none;border:none;color:var(--faint);font:inherit;font-size:12px;cursor:pointer;padding:3px 6px;border-radius:6px}
+  .tools button:hover{background:var(--surface);color:var(--muted)}
+  .typing{display:flex;gap:4px;padding:4px 2px}
+  .typing span{width:7px;height:7px;border-radius:50%;background:var(--faint);animation:blink 1.2s infinite}
+  .typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,60%,100%{opacity:.3}30%{opacity:1}}
+  /* ---------- Artifact card (Plan / Result) ---------- */
+  .artifact{
+    margin-top:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;
+  }
+  .artifact-head{
+    display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line);
+    font-size:12.5px;font-weight:600;color:var(--txt);background:var(--card);
+  }
+  .artifact-head .tag{font-size:10.5px;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:20px}
+  .artifact-body{padding:10px 12px}
+  .step{display:flex;gap:9px;align-items:flex-start;padding:6px 0;font-size:13.5px;line-height:1.45}
+  .step .box{
+    width:18px;height:18px;border-radius:6px;border:1.5px solid var(--line);flex:none;margin-top:1px;
+    display:grid;place-items:center;font-size:11px;color:#fff;transition:.2s;
+  }
+  .step.done .box{background:var(--ok);border-color:var(--ok)}
+  .step.run .box{background:var(--run);border-color:var(--run);animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .step.done .label{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint)}
+  /* ---------- Welcome ---------- */
+  .welcome{text-align:center;color:var(--muted);margin:auto;padding:24px;max-width:360px}
+  .welcome .logo{margin:0 auto 14px;width:52px;height:52px;border-radius:15px}
+  .welcome .logo::after{width:18px;height:18px}
+  .welcome h2{color:var(--txt);margin:6px 0;font-size:22px;font-weight:600;letter-spacing:-.3px}
+  .welcome p{font-size:13.5px;line-height:1.5}
+  .suggest{display:grid;gap:9px;margin-top:20px}
+  .suggest div{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 13px;
+    font-size:13.5px;color:var(--txt);cursor:pointer;text-align:left;box-shadow:var(--shadow);transition:transform .1s;
+  }
+  .suggest div:active{transform:scale(.98)}
+  /* ---------- Agent Manager ---------- */
+  #agents{padding:16px 14px}
+  .am-head{font-size:13px;color:var(--muted);font-weight:600;margin:2px 4px 12px;display:flex;align-items:center;gap:8px}
+  .am-empty{text-align:center;color:var(--faint);padding:50px 20px;font-size:14px}
+  .agentcard{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:11px;
+    box-shadow:var(--shadow);cursor:pointer;transition:transform .1s;
+  }
+  .agentcard:active{transform:scale(.99)}
+  .agentcard .top{display:flex;align-items:center;gap:9px}
+  .agentcard .task{font-size:14px;font-weight:500;flex:1;line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .status{font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;flex:none}
+  .status.plan{color:var(--warn);background:var(--warn-soft)}
+  .status.work{color:var(--run);background:var(--run-soft)}
+  .status.done{color:var(--ok);background:var(--ok-soft)}
+  .agentcard .bar{height:5px;border-radius:20px;background:var(--surface2);margin-top:11px;overflow:hidden}
+  .agentcard .bar i{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,var(--g1),var(--g2));transition:width .4s}
+  .agentcard .sub{font-size:11.5px;color:var(--faint);margin-top:8px;display:flex;justify-content:space-between}
+  /* ---------- Composer ---------- */
+  .composer{padding:9px 12px;padding-bottom:calc(9px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line)}
+  .preview{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+  .preview .thumb{position:relative}
+  .preview img{width:56px;height:56px;object-fit:cover;border-radius:9px;border:1px solid var(--line)}
+  .preview .x{position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;border:none;width:20px;height:20px;border-radius:50%;font-size:12px;cursor:pointer}
+  .inrow{display:flex;align-items:flex-end;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:5px 6px 5px 8px}
+  .inrow:focus-within{border-color:var(--accent)}
+  .inrow .icon-btn{background:transparent;border:none;width:36px;height:36px}
+  .inrow textarea{flex:1;background:transparent;border:none;color:var(--txt);font:inherit;font-size:15px;resize:none;max-height:120px;line-height:1.4;padding:8px 2px}
+  .inrow textarea:focus{outline:none}
+  .send{width:40px;height:40px;flex:none;border-radius:50%;border:none;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));font-size:16px;display:grid;place-items:center}
+  .send:disabled{opacity:.45}
+  .send:active{transform:scale(.92)}
+  /* ---------- Drawer ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(15,20,35,.4);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+  .overlay.open{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;left:0;bottom:0;width:82%;max-width:330px;background:var(--bg);border-right:1px solid var(--line);z-index:41;transform:translateX(-100%);transition:transform .25s;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+  .drawer.open{transform:none}
+  .drawer h3{padding:16px 16px 8px;margin:0;font-size:12px;color:var(--faint);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .newchat{margin:14px 14px 6px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--txt);cursor:pointer;font-size:14px;font-weight:500;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px}
+  .hist{flex:1;overflow-y:auto;padding:0 8px 12px}
+  .hist .item{padding:11px 12px;border-radius:10px;font-size:14px;cursor:pointer;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:9px}
+  .hist .item.active{background:var(--surface)}
+  .hist .item .del{margin-left:auto;color:var(--faint);background:none;border:none;cursor:pointer;font-size:14px}
+  .toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:var(--txt);color:var(--bg);padding:9px 17px;border-radius:20px;font-size:13px;z-index:60;opacity:0;transition:opacity .3s;pointer-events:none;font-weight:500}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="icon-btn" onclick="toggleDrawer(true)">☰</button>
+  <div class="logo"></div>
+  <div class="brand">
+    <div class="title">Antigravity</div>
+    <div class="subtitle" id="statusLine">Agentic workspace</div>
+  </div>
+  <div class="hspace"></div>
+  <div class="viewswitch">
+    <button id="vChat" class="active" onclick="setView('chat')">Editor</button>
+    <button id="vAgents" onclick="setView('agents')">Agents</button>
+  </div>
+  <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Theme">◐</button>
+  <button class="icon-btn" id="loginBtn" onclick="doAuth()" title="Account">◔</button>
+</header>
+
+<div class="modelbar" id="modelbar">
+  <select id="model">
+    <optgroup label="Gemini">
+      <option value="google/gemini-2.5-flash" selected>Gemini 2.5 Flash</option>
+      <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
+      <option value="google/gemini-2.0-flash">Gemini 2.0 Flash</option>
+    </optgroup>
+    <optgroup label="Other models">
+      <option value="gpt-4o">GPT-4o</option>
+      <option value="gpt-4o-mini">GPT-4o mini</option>
+      <option value="claude-sonnet-4">Claude Sonnet 4</option>
+    </optgroup>
+  </select>
+  <div class="chip active" id="chipChat" onclick="setMode('chat')">💬 Chat</div>
+  <div class="chip" id="chipAgent" onclick="setMode('agent')">⚡ Agent</div>
+  <div class="chip" id="chipWeb" onclick="setMode('web')">🌐 Web</div>
+  <div class="chip" id="chipImage" onclick="setMode('image')">🎨 Image</div>
+</div>
+
+<!-- EDITOR / CHAT PANEL -->
+<div class="panel show" id="panelChat"><div id="chat"></div></div>
+
+<!-- AGENT MANAGER PANEL -->
+<div class="panel" id="panelAgents"><div id="agents"></div></div>
+
+<div class="composer">
+  <div class="preview" id="preview"></div>
+  <div class="inrow">
+    <button class="icon-btn" onclick="document.getElementById('file').click()" title="Attach image">📎</button>
+    <input type="file" id="file" accept="image/*" hidden onchange="onFile(event)">
+    <button class="icon-btn" id="micBtn" onclick="toggleMic()" title="Voice">🎤</button>
+    <textarea id="input" rows="1" placeholder="Message Antigravity…" oninput="autoGrow(this)" onkeydown="onKey(event)"></textarea>
+    <button class="send" id="sendBtn" onclick="send()">➤</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleDrawer(false)"></div>
+<div class="drawer" id="drawer">
+  <div class="newchat" onclick="newChat()">＋ New workspace</div>
+  <h3>History</h3>
+  <div class="hist" id="hist"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
