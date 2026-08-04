@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Invoice → Product Photos</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2a2f3a;--txt:#e6e9ef;--dim:#98a1b3;--acc:#4f8cff;--ok:#2fbf71;--warn:#f0a83c;--bad:#e5544b}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--panel)}
+h1{font-size:16px;margin:0;font-weight:600}
+.badge{font-size:12px;color:var(--dim);border:1px solid var(--line);padding:3px 8px;border-radius:20px}
+main{display:grid;grid-template-columns:340px 1fr;gap:0;min-height:calc(100vh - 55px)}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+aside{border-right:1px solid var(--line);padding:16px;background:var(--panel);overflow:auto}
+section{padding:16px;overflow:auto}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px}
+.card h2{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);margin:0 0 10px}
+button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:9px 13px;font-size:13px;cursor:pointer;font-weight:500}
+button:hover{filter:brightness(1.1)}
+button.sec{background:#2b3140}
+button.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input[type=text],input[type=search]{background:#0e1117;border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:9px 10px;width:100%}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;color:var(--dim);cursor:pointer;font-size:13px}
+.drop.hot{border-color:var(--acc);color:var(--acc)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{background:#0e1117;border:1px solid var(--line);border-radius:16px;padding:4px 10px;font-size:12px;display:flex;gap:6px;align-items:center;font-variant-numeric:tabular-nums}
+.chip.on{border-color:var(--ok);color:#bff5d8}
+.chip.miss{border-color:var(--bad);color:#ffc9c5;opacity:.8}
+.chip.fuzzy{border-color:var(--warn);color:#ffe0b0}
+.chip b{cursor:pointer;color:var(--dim)}
+.chip b:hover{color:var(--bad)}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.thumbs img{width:62px;height:62px;object-fit:cover;border-radius:7px;border:2px solid transparent;cursor:pointer}
+.thumbs img.sel{border-color:var(--acc)}
+#stage{position:relative;display:inline-block;max-width:100%;line-height:0}
+#stageImg{max-width:100%;border-radius:8px;user-select:none;-webkit-user-drag:none}
+#sel{position:absolute;border:2px solid var(--acc);background:rgba(79,140,255,.15);display:none;pointer-events:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden;position:relative}
+.item.done{opacity:.45}
+.item img{width:100%;aspect-ratio:1;object-fit:cover;background:#000;cursor:zoom-in;display:block}
+.item .meta{padding:8px 9px}
+.item .code{font-weight:700;font-variant-numeric:tabular-nums;font-size:14px}
+.item .nm{font-size:11.5px;color:var(--dim);word-break:break-word;min-height:14px}
+.tick{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:rgba(0,0,0,.6);color:#fff;font-size:14px;display:grid;place-items:center;cursor:pointer}
+.item.done .tick{background:var(--ok);border-color:var(--ok)}
+.bar{height:6px;background:#0e1117;border-radius:4px;overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
+small.hint{color:var(--dim);font-size:11.5px;display:block;margin-top:6px}
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;place-items:center;z-index:50;padding:20px}
+#lightbox img{max-width:100%;max-height:90vh;border-radius:8px}
+.empty{color:var(--dim);text-align:center;padding:50px 10px}
+.tools label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Invoice → Product Photos</h1>
+  <span class="badge" id="libStat">no library loaded</span>
+  <span class="badge" id="matchStat">0 matches</span>
+  <span style="flex:1"></span>
+  <button class="ghost" onclick="window.print()">Print</button>
+</header>
+
+<main>
+<aside>
+
+  <div class="card">
+    <h2>1 · Product library (JSON)</h2>
+    <div class="drop" id="dropJson">Drop <b>photobook-backup…json</b><br>or click to choose</div>
+    <input type="file" id="fJson" accept=".json,application/json" hidden>
+    <div class="row" style="margin-top:10px">
+      <button class="sec" id="btnClearLib">Clear cache</button>
+    </div>
+    <small class="hint">Cached in your browser — you only load it once.</small>
+  </div>
+
+  <div class="card">
+    <h2>2 · Invoice photos</h2>
+    <div class="drop" id="dropImg">Drop photos or click</div>
+    <input type="file" id="fImg" accept="image/*" multiple hidden>
+    <div class="thumbs" id="thumbs"></div>
+  </div>
+
+  <div class="card">
+    <h2>3 · Codes found</h2>
+    <div class="row">
+      <input type="text" id="manual" placeholder="Type a code + Enter">
+    </div>
+    <div class="chips" id="chips"><span style="color:var(--dim);font-size:12px">none yet</span></div>
+    <div class="row" style="margin-top:10px">
+      <button class="sec" id="btnClearCodes">Clear codes</button>
+      <button class="ghost" id="btnCopy">Copy list</button>
+    </div>
+  </div>
+
+</aside>
+
+<section>
+  <div class="card" id="scanCard" style="display:none">
+    <h2>Scan area</h2>
+    <div class="row tools" style="margin-bottom:10px">
+      <button id="btnScan">Scan this photo</button>
+      <button class="sec" id="btnRot">Rotate 90°</button>
+      <button class="ghost" id="btnReset">Clear box</button>
+      <label><input type="checkbox" id="optDigits" checked> digits only</label>
+      <label><input type="checkbox" id="optBoost" checked> boost contrast</label>
+    </div>
+    <div id="stage"><img id="stageImg" alt=""><div id="sel"></div></div>
+    <div class="bar"><i id="prog"></i></div>
+    <small class="hint" id="ocrMsg">Tip: drag a rectangle around the ITEM # column only — much faster and far more accurate.</small>
+  </div>
+
+  <div class="row" style="margin-bottom:12px">
+    <input type="search" id="filter" placeholder="Filter results by code or name…" style="max-width:320px">
+    <label style="font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center">
+      <input type="checkbox" id="hideDone"> hide checked
+    </label>
+  </div>
+
+  <div class="grid" id="results"></div>
+  <div class="empty" id="emptyMsg">Load your JSON library, add an invoice photo, then Scan.</div>
+</section>
+</main>
+
+<div id="lightbox"><img id="lbImg" alt=""></div>
+
+<script>
+/* ---------------- state ---------------- */
+let LIB = [];                 // [{code,name,thumb,full,...}]
+let INDEX = new Map();        // normalized code -> [items]
+let CODES = [];               // [{code, status:'match'|'fuzzy'|'miss', matched:'realCode'}]
+let PHOTOS = [];              // {url, rot}
+let CUR = -1;
+const DONE = new Set();
+
+const $ = s => document.querySelector(s);
+const norm = s => String(s||'').replace(/\D/g,'').replace(/^0+(?=\d)/,'');
+
+/* ---------------- IndexedDB cache ---------------- */
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('pbMatcher',1);
+ r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function kvSet(k,v){const db=await idb();return new Promise(r=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=r})}
+async function kvGet(k){const db=await idb();return new Promise(r=>{const t=db.transaction('kv','readonly');const q=t.objectStore('kv').get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)})}
+async function kvDel(k){const db=await idb();return new Promise(r=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').delete(k);t.oncomplete=r})}
+
+/* ---------------- library ---------------- */
+function buildIndex(){
+  INDEX=new Map();
+  for(const it of LIB){
+    const k=norm(it.code); if(!k) continue;
+    if(!INDEX.has(k)) INDEX.set(k,[]);
+    INDEX.get(k).push(it);
+  }
+  $('#libStat').textContent = LIB.length+' products · '+INDEX.size+' codes';
+}
+async function loadJsonFile(file){
+  $('#libStat').textContent='reading…';
+  const txt = await file.text();
+  let data;
+  try{ data = JSON.parse(txt); }catch(e){ alert('Not valid JSON'); $('#libStat').textContent='error'; return; }
+  const items = Array.isArray(data) ? data : (data.items||data.photos||[]);
+  LIB = items.filter(i=>i && (i.code||i.name)).map(i=>({
+    id:i.id, code:i.code||'', name:i.name||'', note:i.note||'',
+    thumb:i.thumb||i.full||'', full:i.full||i.thumb||''
+  }));
+  buildIndex();
+  await kvSet('lib',LIB);
+  rematch();
+}
+async function restoreLib(){
+  const l = await kvGet('lib');
+  if(l && l.length){ LIB=l; buildIndex(); rematch(); }
+}
+
+/* ---------------- code handling ---------------- */
+function addCode(raw){
+  const c = norm(raw); if(!c) return;
+  if(CODES.some(x=>x.code===c)) return;
+  CODES.push(classify(c));
+  renderChips(); renderResults();
+}
+function classify(c){
+  if(INDEX.has(c)) return {code:c,status:'match',matched:c};
+  // fuzzy: same length, 1 char different (OCR slip)
+  for(const k of INDEX.keys()){
+    if(k.length!==c.length) continue;
+    let d=0; for(let i=0;i<k.length;i++){ if(k[i]!==c[i]&&++d>1) break; }
+    if(d===1) return {code:c,status:'fuzzy',matched:k};
+  }
+  return {code:c,status:'miss',matched:null};
+}
+function rematch(){ CODES=CODES.map(x=>classify(x.code)); renderChips(); renderResults(); }
+
+function renderChips(){
+  const box=$('#chips');
+  if(!CODES.length){ box.innerHTML='<span style="color:var(--dim);font-size:12px">none yet</span>'; return; }
+  box.innerHTML='';
+  CODES.forEach((c,i)=>{
+    const el=document.createElement('span');
+    el.className='chip '+(c.status==='match'?'on':c.status==='fuzzy'?'fuzzy':'miss');
+    el.innerHTML = c.code + (c.status==='fuzzy'?' → '+c.matched:'') + ' <b>&times;</b>';
+    el.querySelector('b').onclick=()=>{CODES.splice(i,1);renderChips();renderResults()};
+    box.appendChild(el);
+  });
+}
+
+/* ---------------- results ---------------- */
+function renderResults(){
+  const q = $('#filter').value.trim().toLowerCase();
+  const hide = $('#hideDone').checked;
+  const out=[];
+  for(const c of CODES){
+    if(!c.matched) continue;
+    for(const it of (INDEX.get(c.matched)||[])) out.push({it,scanned:c.code,fuzzy:c.status==='fuzzy'});
+  }
+  const grid=$('#results'); grid.innerHTML='';
+  let shown=0;
+  for(const r of out){
+    if(q && !((r.it.code||'').toLowerCase().includes(q) || (r.it.name||'').toLowerCase().includes(q))) continue;
+    const key=r.it.id||r.it.code;
+    if(hide && DONE.has(key)) continue;
+    shown++;
+    const d=document.createElement('div');
+    d.className='item'+(DONE.has(key)?' done':'');
+    d.innerHTML=`
+      <img src="${r.it.thumb}" loading="lazy" alt="">
+      <div class="tick">✓</div>
+      <div class="meta">
+        <div class="code">${r.it.code||'—'}${r.fuzzy?' <span style="color:var(--warn);font-size:11px">≈'+r.scanned+'</span>':''}</div>
+        <div class="nm">${(r.it.name||r.it.note||'').replace(/</g,'&lt;')}</div>
+      </div>`;
+    d.querySelector('img').onclick=()=>{ $('#lbImg').src=r.it.full; $('#lightbox').style.display='grid'; };
+    d.querySelector('.tick').onclick=()=>{ DONE.has(key)?DONE.delete(key):DONE.add(key); renderResults(); };
+    grid.appendChild(d);
+  }
+  $('#matchStat').textContent = out.length+' matches';
+  $('#emptyMsg').style.display = shown? 'none':'block';
+  $('#emptyMsg').textContent = CODES.length? 'No products in the library match these codes.' :
+    'Load your JSON library, add an invoice photo, then Scan.';
+}
+
+/* ---------------- photos + OCR ---------------- */
+function addPhotos(files){
+  [...files].forEach(f=>{ if(f.type.startsWith('image/')) PHOTOS.push({url:URL.createObjectURL(f),rot:0}); });
+  renderThumbs(); if(CUR<0 && PHOTOS.length) selectPhoto(0);
+}
+function renderThumbs(){
+  const t=$('#thumbs'); t.innerHTML='';
+  PHOTOS.forEach((p,i)=>{
+    const im=new Image(); im.src=p.url; im.className=i===CUR?'sel':'';
+    im.onclick=()=>selectPhoto(i); t.appendChild(im);
+  });
+}
+function selectPhoto(i){
+  CUR=i; renderThumbs();
+  $('#scanCard').style.display='block';
+  $('#stageImg').src=PHOTOS[i].url;
+  $('#stageImg').style.transform='rotate('+PHOTOS[i].rot+'deg)';
+  clearSel();
+}
+
+/* selection box */
+let sx,sy,drag=false, box=null;
+const stage=$('#stage'), selEl=$('#sel');
+function clearSel(){ box=null; selEl.style.display='none'; }
+stage.addEventListener('pointerdown',e=>{
+  if(e.target.id!=='stageImg') return;
+  const r=$('#stageImg').getBoundingClientRect();
+  drag=true; sx=e.clientX-r.left; sy=e.clientY-r.top;
+  selEl.style.display='block'; selEl.style.left=sx+'px'; selEl.style.top=sy+'px';
+  selEl.style.width='0px'; selEl.style.height='0px'; stage.setPointerCapture(e.pointerId);
+});
+stage.addEventListener('pointermove',e=>{
+  if(!drag) return;
+  const r=$('#stageImg').getBoundingClientRect();
+  const x=Math.max(0,Math.min(e.clientX-r.left,r.width)), y=Math.max(0,Math.min(e.clientY-r.top,r.height));
+  const l=Math.min(x,sx), t=Math.min(y,sy), w=Math.abs(x-sx), h=Math.abs(y-sy);
+  Object.assign(selEl.style,{left:l+'px',top:t+'px',width:w+'px',height:h+'px'});
+  box={l:l/r.width,t:t/r.height,w:w/r.width,h:h/r.height};
+});
+stage.addEventListener('pointerup',()=>{ drag=false; if(box&&(box.w<.02||box.h<.02)) clearSel(); });
+
+function prepCanvas(){
+  return new Promise(res=>{
+    const p=PHOTOS[CUR], img=new Image();
+    img.onload=()=>{
+      const rot=((p.rot%360)+360)%360, swap=rot===90||rot===270;
+      let c=document.createElement('canvas'), x=c.getContext('2d');
+      c.width= swap?img.height:img.width; c.height= swap?img.width:img.height;
+      x.translate(c.width/2,c.height/2); x.rotate(rot*Math.PI/180);
+      x.drawImage(img,-img.width/2,-img.height/2);
+      if(box){
+        const c2=document.createElement('canvas');
+        c2.width=Math.round(box.w*c.width); c2.height=Math.round(box.h*c.height);
+        c2.getContext('2d').drawImage(c,Math.round(box.l*c.width),Math.round(box.t*c.height),c2.width,c2.height,0,0,c2.width,c2.height);
+        c=c2; x=c.getContext('2d');
+      }
+      // upscale small crops so OCR sees bigger glyphs
+      const target=1600;
+      if(c.width<target){
+        const s=target/c.width, c3=document.createElement('canvas');
+        c3.width=Math.round(c.width*s); c3.height=Math.round(c.height*s);
+        const x3=c3.getContext('2d'); x3.imageSmoothingQuality='high';
+        x3.drawImage(c,0,0,c3.width,c3.height); c=c3; x=x3;
+      }
+      if($('#optBoost').checked){
+        const d=x.getImageData(0,0,c.width,c.height), a=d.data;
+        for(let i=0;i<a.length;i+=4){
+          let g=.299*a[i]+.587*a[i+1]+.114*a[i+2];
+          g = g<125 ? Math.max(0,g*.55) : Math.min(255,60+g*1.25);
+          a[i]=a[i+1]=a[i+2]=g;
+        }
+        x.putImageData(d,0,0);
+      }
+      res(c);
+    };
+    img.src=p.url;
+  });
+}
+
+$('#btnScan').onclick = async ()=>{
+  if(CUR<0) return;
+  if(typeof Tesseract==='undefined'){ alert('OCR library did not load (no internet?). You can still type codes manually.'); return; }
+  const btn=$('#btnScan'); btn.disabled=true; $('#ocrMsg').textContent='Loading OCR engine…';
+  try{
+    const canvas = await prepCanvas();
+    const worker = await Tesseract.createWorker('eng',1,{ logger:m=>{
+      if(m.status==='recognizing text'){ $('#prog').style.width=(m.progress*100)+'%'; $('#ocrMsg').textContent='Reading… '+Math.round(m.progress*100)+'%'; }
+      else $('#ocrMsg').textContent=m.status;
+    }});
+    const params={ preserve_interword_spaces:'1' };
+    if($('#optDigits').checked) params.tessedit_char_whitelist='0123456789';
+    await worker.setParameters(params);
+    const {data} = await worker.recognize(canvas);
+    await worker.terminate();
+
+    const nums = (data.text.match(/\d[\d\s]{2,}/g)||[])
+      .flatMap(s=>s.split(/\s+/)).map(norm)
+      .filter(c=>c.length>=3 && c.length<=14);
+
+    let added=0;
+    const seen=new Set();
+    for(const n of nums){ if(seen.has(n))continue; seen.add(n);
+      const before=CODES.length; addCode(n); if(CODES.length>before) added++; }
+
+    const hits=CODES.filter(c=>c.matched).length;
+    $('#ocrMsg').textContent = `Found ${added} new number(s) · ${hits} code(s) match your library.`;
+    $('#prog').style.width='100%';
+  }catch(e){ console.error(e); $('#ocrMsg').textContent='OCR failed: '+e.message; }
+  btn.disabled=false;
+};
+
+/* ---------------- wiring ---------------- */
+function hookDrop(dropEl,inputEl,handler){
+  dropEl.onclick=()=>inputEl.click();
+  inputEl.onchange=e=>{ handler(e.target.files); inputEl.value=''; };
+  ['dragenter','dragover'].forEach(ev=>dropEl.addEventListener(ev,e=>{e.preventDefault();dropEl.classList.add('hot')}));
+  ['dragleave','drop'].forEach(ev=>dropEl.addEventListener(ev,e=>{e.preventDefault();dropEl.classList.remove('hot')}));
+  dropEl.addEventListener('drop',e=>handler(e.dataTransfer.files));
+}
+hookDrop($('#dropJson'),$('#fJson'),f=>f[0]&&loadJsonFile(f[0]));
+hookDrop($('#dropImg'),$('#fImg'),addPhotos);
+
+$('#manual').onkeydown=e=>{ if(e.key==='Enter'){ addCode(e.target.value); e.target.value=''; } };
+$('#btnClearCodes').onclick=()=>{ CODES=[]; DONE.clear(); renderChips(); renderResults(); };
+$('#btnCopy').onclick=()=>{
+  const lines=CODES.filter(c=>c.matched).flatMap(c=>(INDEX.get(c.matched)||[]).map(i=>`${i.code}\t${i.name||''}`));
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>$('#btnCopy').textContent='Copied!').then(()=>setTimeout(()=>$('#btnCopy').textContent='Copy list',1200));
+};
+$('#btnClearLib').onclick=async()=>{ await kvDel('lib'); LIB=[]; INDEX=new Map(); $('#libStat').textContent='no library loaded'; rematch(); };
+$('#btnRot').onclick=()=>{ if(CUR<0)return; PHOTOS[CUR].rot=(PHOTOS[CUR].rot+90)%360; $('#stageImg').style.transform='rotate('+PHOTOS[CUR].rot+'deg)'; clearSel(); };
+$('#btnReset').onclick=clearSel;
+$('#filter').oninput=renderResults;
+$('#hideDone').onchange=renderResults;
+$('#lightbox').onclick=()=>$('#lightbox').style.display='none';
+
+restoreLib();
+</script>
+</body>
+</html>
