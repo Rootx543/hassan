@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Facture → Photobook</title>
+<script src="https://js.puter.com/v2/"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{
+  --bg:#0f1216; --panel:#171c22; --panel2:#1e242c; --line:#2a323c;
+  --txt:#e8edf3; --muted:#93a1b0; --accent:#3b82f6; --ok:#22c55e;
+  --warn:#f59e0b; --bad:#ef4444; --radius:14px;
+}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+header{position:sticky;top:0;z-index:50;background:#121820ee;backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+h1{font-size:18px;margin:0;font-weight:650}
+.sub{color:var(--muted);font-size:12px}
+.wrap{max-width:1400px;margin:0 auto;padding:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.card h2{margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);padding:9px 14px}
+button:hover{border-color:#3d4855}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.primary:disabled{opacity:.5;cursor:not-allowed}
+button.ghost{background:transparent}
+button.sm{padding:5px 9px;font-size:13px;border-radius:8px}
+input,select,textarea{font:inherit;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:8px 10px;width:100%}
+label.f{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+.drop{border:2px dashed #33404e;border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted);cursor:pointer;transition:.15s}
+.drop:hover,.drop.over{border-color:var(--accent);background:#1b2husky}
+.drop.over{background:#16202c;color:var(--txt)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{font-size:11px;padding:3px 8px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
+.pill.ok{color:#bbf7d0;border-color:#14532d;background:#052e16}
+.pill.warn{color:#fde68a;border-color:#78350f;background:#2b1d05}
+.pill.bad{color:#fecaca;border-color:#7f1d1d;background:#2b0a0a}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.thumbs img{height:74px;border-radius:8px;border:1px solid var(--line)}
+.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.item{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column}
+.item .ph{aspect-ratio:1/1;background:#0b0e12;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.item .ph img{width:100%;height:100%;object-fit:contain}
+.item .ph .none{color:#5c6b7a;font-size:12px;text-align:center;padding:10px}
+.item .bd{padding:10px;display:flex;flex-direction:column;gap:7px;flex:1}
+.nm{font-weight:600;font-size:14px;line-height:1.25}
+.cd{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted)}
+.qtybar{display:flex;gap:6px;align-items:center;margin-top:auto}
+.qtybar input{width:70px;text-align:center;font-weight:700;font-size:17px;padding:6px}
+.qtybar select{width:auto;padding:6px 8px;font-weight:600}
+.big{font-size:26px;font-weight:800}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+td img{height:44px;width:44px;object-fit:contain;border-radius:6px;background:#0b0e12}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.hide{display:none!important}
+.log{font-family:ui-monospace,monospace;font-size:12px;color:var(--muted);white-space:pre-wrap;max-height:150px;overflow:auto}
+.spin{width:15px;height:15px;border:2px solid #ffffff44;border-top-color:#fff;border-radius:50%;display:inline-block;animation:s .7s linear infinite;vertical-align:-2px}
+@keyframes s{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1f2937;border:1px solid var(--line);padding:11px 18px;border-radius:11px;z-index:200;box-shadow:0 8px 30px #0008}
+@media print{
+  body{background:#fff;color:#000}
+  header,.noprint,.tabs{display:none!important}
+  .card{border:none;padding:0;background:#fff}
+  .item{border:1px solid #bbb;break-inside:avoid}
+  .results{grid-template-columns:repeat(4,1fr)}
+  .nm,.cd{color:#000}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>📸 Facture → Photobook</h1>
+    <div class="sub" id="pbState">Aucun photobook chargé</div>
+  </div>
+  <div style="flex:1"></div>
+  <div class="row noprint">
+    <button class="ghost sm" onclick="window.print()">🖨️ Imprimer</button>
+    <button class="ghost sm" onclick="exportCSV()">⬇️ CSV</button>
+    <button class="ghost sm" onclick="toggleSettings()">⚙️</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- SETTINGS -->
+  <div class="card hide noprint" id="settings">
+    <h2>Paramètres IA</h2>
+    <div class="grid2">
+      <div>
+        <label class="f">Moteur</label>
+        <select id="engine" onchange="saveSettings()">
+          <option value="puter">Puter.js — gratuit, sans clé (recommandé)</option>
+          <option value="openai">OpenAI direct (clé exposée dans le navigateur ⚠️)</option>
+        </select>
+        <label class="f">Modèle</label>
+        <select id="model" onchange="saveSettings()">
+          <option value="gpt-4o-mini">gpt-4o-mini (rapide, recommandé)</option>
+          <option value="gpt-4o">gpt-4o (plus précis)</option>
+        </select>
+        <p class="sub" style="margin-top:6px">Les modèles gpt-5.6-* ont été retirés : ils provoquent une erreur 400 ("image_url") côté Puter.js avec l'analyse d'image.</p>
+        <button id="puterSignInBtn" type="button" style="margin-top:10px" onclick="doPuterSignIn()">Se connecter à Puter (accès illimité)</button>
+        <p class="sub" id="puterAuthStatus" style="margin-top:6px">Statut : vérification…</p>
+      </div>
+      <div>
+        <label class="f">Clé OpenAI (uniquement si moteur = OpenAI direct)</label>
+        <input id="apikey" type="password" placeholder="sk-..." onchange="saveSettings()">
+        <p class="sub" style="margin-top:8px">⚠️ Une clé placée dans une page web est visible par tous. Utilisez Puter.js en production et faites tourner (révoquer/recréer) toute clé déjà partagée.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="grid2">
+    <div class="card noprint">
+      <h2>1 · Photobook (JSON)</h2>
+      <div class="drop" id="dropJson">
+        <div style="font-size:26px">🗂️</div>
+        Déposez <b>photobook-backup-....json</b><br><span class="sub">ou cliquez pour choisir un fichier</span>
+      </div>
+      <input type="file" id="fileJson" accept=".json,application/json" class="hide">
+      <div class="row" style="margin-top:10px">
+        <input id="jsonUrl" placeholder="…ou collez une URL de JSON" style="flex:1;min-width:200px">
+        <button class="sm" onclick="loadFromUrl()">Charger</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <span class="pill" id="pbCount">0 items</span>
+        <span class="pill" id="pbCoded">0 avec code</span>
+        <button class="ghost sm" onclick="clearPhotobook()">Effacer</button>
+      </div>
+    </div>
+
+    <div class="card noprint">
+      <h2>2 · Facture</h2>
+      <div class="drop" id="dropInv">
+        <div style="font-size:26px">🧾</div>
+        Photo(s) ou PDF de la facture<br><span class="sub">glisser-déposer · plusieurs pages acceptées</span>
+      </div>
+      <input type="file" id="fileInv" accept="image/*,application/pdf" multiple capture="environment" class="hide">
+      <div class="thumbs" id="invThumbs"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="btnAI" onclick="runExtract()" disabled>✨ Extraire avec l'IA</button>
+        <button class="ghost sm" onclick="manualPaste()">⌨️ Saisie manuelle</button>
+      </div>
+      <div class="log" id="log" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="out" class="hide">
+    <div class="card noprint">
+      <div class="row">
+        <span class="pill ok" id="statMatch">0 trouvés</span>
+        <span class="pill warn" id="statNo">0 sans image</span>
+        <span class="pill" id="statCS">CS: 0</span>
+        <span class="pill" id="statUN">UN: 0</span>
+        <div style="flex:1"></div>
+        <input id="search" placeholder="Filtrer…" style="width:190px" oninput="render()">
+        <select id="qtySrc" onchange="render()" style="width:auto">
+          <option value="shipped">Quantité expédiée</option>
+          <option value="ordered">Quantité commandée</option>
+        </select>
+      </div>
+      <div class="tabs" style="margin-top:12px">
+        <button class="on" data-v="cards" onclick="setView('cards')">🖼️ Photos</button>
+        <button data-v="table" onclick="setView('table')">📋 Tableau</button>
+      </div>
+    </div>
+
+    <div id="viewCards"><div class="results" id="cards"></div></div>
+    <div id="viewTable" class="card hide"><table id="tbl"></table></div>
+  </div>
+
+</div>
+
+<script>
+/* ────────────────────────────── ÉTAT ────────────────────────────── */
+const S = {
+  photobook: [],      // {id,name,code,codes[],img,note,tags}
+  index: new Map(),   // code normalisé -> item photobook
+  lines: [],          // lignes de facture
+  invoiceImgs: [],    // data URLs
+  view: 'cards',
+  invoice: {}
+};
+
+const $ = id => document.getElementById(id);
+const log = m => { const l=$('log'); l.textContent = (m+'\n'+l.textContent).slice(0,4000); };
+function toast(m,ms=2600){ const t=document.createElement('div'); t.className='toast'; t.textContent=m;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),ms); }
+
+/* ─────────────────────────── PARAMÈTRES ─────────────────────────── */
+function saveSettings(){
+  localStorage.setItem('fp_set', JSON.stringify({
+    engine:$('engine').value, model:$('model').value, key:$('apikey').value
+  }));
+}
+(function loadSettings(){
+  try{ const s=JSON.parse(localStorage.getItem('fp_set')||'{}');
+    if(s.engine)$('engine').value=s.engine; if(s.model)$('model').value=s.model;
+    if(s.key)$('apikey').value=s.key;
+  }catch(e){}
+})();
+function toggleSettings(){ $('settings').classList.toggle('hide'); }
+
+/* ───────────────────── NORMALISATION DES CODES ───────────────────── */
+// "127-170", "#127170 ", "127170" → "127170"
+function norm(c){ return String(c??'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+// variante sans zéros de tête, pour rattraper 0930015 vs 930015
+function normLoose(c){ return norm(c).replace(/^0+/,''); }
+function tokens(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9%]+/g,' ').trim().split(' ').filter(t=>t.length>1); }
+
+/* ───────────────────────── PHOTOBOOK ───────────────────────── */
+function pickImage(o){
+  const keys=['full','thumb','image','img','photo','picture','data','src','dataUrl','base64'];
+  for(const k of keys){
+    const v=o[k];
+    if(typeof v==='string' && v.length>80){
+      return v.startsWith('data:')||v.startsWith('http') ? v : 'data:image/jpeg;base64,'+v;
+    }
+  }
+  return null;
+}
+function loadPhotobook(raw){
+  let data;
+  try{ data = typeof raw==='string' ? JSON.parse(raw) : raw; }
+  catch(e){ return toast('JSON invalide : '+e.message); }
+
+  let arr = Array.isArray(data) ? data
+          : data.items || data.photos || data.products || data.entries || data.list || [];
+  if(!Array.isArray(arr)) return toast('Structure JSON non reconnue');
+
+  S.photobook = arr.map((o,i)=>{
+    const codeRaw = o.code ?? o.itemCode ?? o.sku ?? o.item ?? o.number ?? '';
+    const codes = String(codeRaw).split(/[,;/|\s]+/).filter(Boolean);
+    return {
+      id: o.id || 'i'+i,
+      name: o.name || o.title || o.label || '(sans nom)',
+      code: String(codeRaw).trim(),
+      codes,
+      note: o.note || '',
+      tags: o.tags || [],
+      img: pickImage(o)
+    };
+  });
+
+  // index multi-clés : code exact, code souple, note, tags, et nom
+  S.index = new Map();
+  const put=(k,it)=>{ if(k && !S.index.has(k)) S.index.set(k,it); };
+  for(const it of S.photobook){
+    for(const c of it.codes){ put(norm(c),it); put(normLoose(c),it); }
+    // certains utilisateurs mettent le code dans la note ou les tags
+    for(const t of [it.note,...(it.tags||[])]){
+      String(t).match(/\b\d{5,14}\b/g)?.forEach(m=>{ put(norm(m),it); put(normLoose(m),it); });
+    }
+  }
+
+  const coded = S.photobook.filter(i=>i.codes.length).length;
+  $('pbCount').textContent = S.photobook.length+' items';
+  $('pbCoded').textContent = coded+' avec code';
+  $('pbState').textContent = `Photobook : ${S.photobook.length} photos · ${coded} avec code d'article`;
+  try{ localStorage.setItem('fp_pb', JSON.stringify({items:arr})); }
+  catch(e){ log('⚠️ Trop volumineux pour la sauvegarde locale (rechargez le fichier à chaque session).'); }
+  toast(`Photobook chargé : ${S.photobook.length} photos`);
+  if(S.lines.length) matchAll();
+}
+function clearPhotobook(){
+  S.photobook=[]; S.index=new Map(); localStorage.removeItem('fp_pb');
+  $('pbCount').textContent='0 items'; $('pbCoded').textContent='0 avec code';
+  $('pbState').textContent='Aucun photobook chargé'; render();
+}
+async function loadFromUrl(){
+  const u=$('jsonUrl').value.trim(); if(!u) return;
+  try{ log('Téléchargement du JSON…'); const r=await fetch(u); loadPhotobook(await r.text()); }
+  catch(e){ toast('Échec du téléchargement : '+e.message); }
+}
+(function restore(){
+  const s=localStorage.getItem('fp_pb'); if(s){ try{ loadPhotobook(s); }catch(e){} }
+})();
+
+/* ───────────────────── ZONES DE DÉPÔT ───────────────────── */
+function wireDrop(zone,input,handler,accept){
+  zone.onclick=()=>input.click();
+  input.onchange=e=>handler([...e.target.files]);
+  ['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.add('over')}));
+  ['dragleave','drop'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.remove('over')}));
+  zone.addEventListener('drop',e=>handler([...e.dataTransfer.files]));
+}
+wireDrop($('dropJson'),$('fileJson'),files=>{
+  const f=files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=()=>loadPhotobook(r.result); r.readAsText(f);
+});
+wireDrop($('dropInv'),$('fileInv'),addInvoiceFiles);
+
+async function addInvoiceFiles(files){
+  for(const f of files){
+    if(f.type==='application/pdf'){ await pdfToImages(f); }
+    else if(f.type.startsWith('image/')){ S.invoiceImgs.push(await downscale(f)); }
+  }
+  renderThumbs();
+}
+function renderThumbs(){
+  $('invThumbs').innerHTML = S.invoiceImgs.map((d,i)=>
+    `<div style="position:relative"><img src="${d}">
+     <button class="sm" style="position:absolute;top:2px;right:2px;padding:1px 6px" onclick="S.invoiceImgs.splice(${i},1);renderThumbs()">✕</button></div>`).join('');
+  $('btnAI').disabled = S.invoiceImgs.length===0;
+}
+// réduit l'image (max 1900px) — meilleure lecture OCR, requête plus légère
+function downscale(file,max=1900){
+  return new Promise(res=>{
+    const fr=new FileReader();
+    fr.onload=()=>{ const im=new Image(); im.onload=()=>{
+      const sc=Math.min(1,max/Math.max(im.width,im.height));
+      const c=document.createElement('canvas');
+      c.width=im.width*sc; c.height=im.height*sc;
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      res(c.toDataURL('image/jpeg',0.9));
+    }; im.src=fr.result; };
+    fr.readAsDataURL(file);
+  });
+}
+async function pdfToImages(file){
+  if(!window.pdfjsLib) return toast('Lecteur PDF indisponible');
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  for(let p=1;p<=pdf.numPages;p++){
+    const page=await pdf.getPage(p);
+    const vp=page.getViewport({scale:2});
+    const c=document.createElement('canvas'); c.width=vp.width; c.height=vp.height;
+    await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+    S.invoiceImgs.push(c.toDataURL('image/jpeg',0.9));
+  }
+  log(`PDF : ${pdf.numPages} page(s) converties`);
+}
+
+/* ─────────────────────── EXTRACTION IA ─────────────────────── */
+const PROMPT = `Tu lis une FACTURE de distributeur alimentaire (souvent en français, Québec).
+Extrais CHAQUE ligne de produit du tableau. Ignore les en-têtes, totaux, taxes et signatures.
+
+Colonnes typiques : ITEM # | DESCRIPTION/UPC | COMMANDÉ | EXPÉDIÉ | UM | PRIX
+
+Réponds UNIQUEMENT avec du JSON valide, sans texte ni balises markdown :
+{"supplier":"","invoice_no":"","date":"","items":[
+ {"code":"930015","description":"NTL 473ML LAIT 2%","upc":"066589100159","pack":"*28 NTL","ordered":6,"shipped":6,"unit":"UN"}
+]}
+
+Règles :
+- "code" = le numéro ITEM # (colonne de gauche), chiffres uniquement, tel qu'imprimé.
+- "upc" = le long code-barres sous la description (12-14 chiffres), "" si absent.
+- "unit" doit être exactement "CS" ou "UN" (ou "16L" etc. si imprimé tel quel).
+- "ordered"/"shipped" = nombres (6.0000 → 6). Si une seule colonne, mets la même valeur dans les deux.
+- Inclus les lignes de dépôt/palette (DEPOT, PALLET) telles quelles.
+- N'invente jamais de code : si illisible, mets "".`;
+
+function stripFence(t){
+  return String(t).replace(/^[\s\S]*?```(?:json)?/,'').replace(/```[\s\S]*$/,'').trim() || String(t).trim();
+}
+function parseJSON(t){
+  let s=String(t).trim();
+  if(s.includes('```')) s=stripFence(s);
+  const a=s.indexOf('{'), b=s.lastIndexOf('}');
+  if(a>=0&&b>a) s=s.slice(a,b+1);
+  return JSON.parse(s);
+}
+
+function refreshPuterAuthStatus(){
+  const el = $('puterAuthStatus');
+  const btn = $('puterSignInBtn');
+  if(!el||!btn) return;
+  try{
+    if(puter.auth.isSignedIn()){
+      el.textContent = 'Statut : ✅ connecté — accès illimité actif.';
+      btn.style.display = 'none';
+    } else {
+      el.textContent = 'Statut : ⚠️ non connecté — utilisation limitée (pool partagé). Cliquez sur le bouton pour débloquer.';
+      btn.style.display = '';
+    }
+  }catch(e){ el.textContent = 'Statut : indisponible ('+(e?.message||e)+')'; }
+}
+async function doPuterSignIn(){
+  // Doit être appelé directement par un clic utilisateur : la popup est bloquée sinon.
+  try{
+    await puter.auth.signIn();
+    log('✅ Connecté à Puter.');
+  }catch(e){
+    log('⚠️ Connexion Puter échouée : '+(e?.message||e)+' — vérifiez que les popups ne sont pas bloquées pour ce site.');
+  }
+  refreshPuterAuthStatus();
+}
+document.addEventListener('DOMContentLoaded', refreshPuterAuthStatus);
+
+async function callPuter(img){
+  let model = $('model').value;
+  // Repli : d'anciens réglages sauvegardés peuvent encore pointer vers un modèle cassé
+  if(!/^gpt-4o/.test(model)){
+    log(`⚠️ Modèle "${model}" non pris en charge pour l'image, repli sur gpt-4o-mini.`);
+    model = 'gpt-4o-mini';
+    $('model').value = model;
+    saveSettings();
+  }
+  try{
+    const r = await puter.ai.chat(PROMPT, img, { model, max_tokens:4096 });
+    return r?.message?.content ?? r?.text ?? String(r);
+  }catch(e){
+    const msg = e?.error?.message || e?.message || String(e);
+    if(/image_url/.test(msg) && model!=='gpt-4o-mini'){
+      log('⚠️ Échec avec '+model+', nouvel essai avec gpt-4o-mini…');
+      const r = await puter.ai.chat(PROMPT, img, { model:'gpt-4o-mini', max_tokens:4096 });
+      return r?.message?.content ?? r?.text ?? String(r);
+    }
+    if(/rate.?limit|too many requests|429/i.test(msg)){
+      throw new Error('Limite de requêtes Puter atteinte. Cliquez sur "Se connecter à Puter" dans les Paramètres IA pour un accès illimité, ou patientez quelques minutes.');
+    }
+    throw new Error(msg);
+  }
+}
+async function callOpenAI(img){
+  const key=$('apikey').value.trim();
+  if(!key) throw new Error('Aucune clé OpenAI saisie');
+  const r=await fetch('https://api.openai.com/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({
+      model:$('model').value.startsWith('gpt-4o')?$('model').value:'gpt-4o',
+      messages:[{role:'user',content:[
+        {type:'text',text:PROMPT},
+        {type:'image_url',image_url:{url:img,detail:'high'}}
+      ]}],
+      max_tokens:4096,
+      temperature:0
+    })
+  });
+  const j=await r.json();
+  if(j.error) throw new Error(j.error.message);
+  return j.choices[0].message.content;
+}
+
+async function runExtract(){
+  const btn=$('btnAI'); btn.disabled=true;
+  const old=btn.innerHTML; btn.innerHTML='<span class="spin"></span> Lecture…';
+  S.lines=[];
+  try{
+    for(let i=0;i<S.invoiceImgs.length;i++){
+      log(`Analyse de la page ${i+1}/${S.invoiceImgs.length}…`);
+      const txt = $('engine').value==='openai'
+        ? await callOpenAI(S.invoiceImgs[i])
+        : await callPuter(S.invoiceImgs[i]);
+      const data = parseJSON(txt);
+      if(data.supplier||data.invoice_no) S.invoice={...S.invoice,...data};
+      (data.items||[]).forEach(it=>S.lines.push({
+        code:String(it.code||'').trim(),
+        upc:String(it.upc||'').trim(),
+        desc:it.description||'',
+        pack:it.pack||'',
+        ordered:Number(it.ordered)||0,
+        shipped:Number(it.shipped ?? it.ordered)||0,
+        unit:(it.unit||'UN').toUpperCase(),
+        page:i+1
+      }));
+      log(`  → ${(data.items||[]).length} ligne(s)`);
+    }
+    if(!S.lines.length) log('Aucune ligne détectée. Essayez une photo plus nette / bien à plat.');
+    matchAll();
+  }catch(e){
+    log('❌ '+e.message);
+    toast('Erreur IA : '+e.message,5000);
+  }finally{ btn.disabled=false; btn.innerHTML=old; }
+}
+
+function manualPaste(){
+  const t=prompt('Collez une ligne par produit :  code[TAB ou ;]quantité[;]CS|UN\n\nEx.\n930015;6;UN\n127172;1;CS');
+  if(!t) return;
+  S.lines = t.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+    const p=l.split(/[\t;,]+/);
+    return {code:(p[0]||'').trim(), upc:'', desc:'', pack:'',
+      ordered:Number(p[1])||0, shipped:Number(p[1])||0,
+      unit:(p[2]||'UN').toUpperCase(), page:0};
+  });
+  matchAll();
+}
+
+/* ───────────────────────── APPARIEMENT ───────────────────────── */
+function matchAll(){
+  for(const L of S.lines){
+    let hit = S.index.get(norm(L.code)) || S.index.get(normLoose(L.code));
+    if(!hit && L.upc) hit = S.index.get(norm(L.upc)) || S.index.get(normLoose(L.upc));
+
+    // repli 1 : code contenu dans un code du photobook (ou l'inverse)
+    if(!hit && norm(L.code).length>=4){
+      const n=norm(L.code);
+      hit = S.photobook.find(p=>p.codes.some(c=>{const x=norm(c); return x&&(x.includes(n)||n.includes(x));}));
+    }
+    // repli 2 : similarité de nom (≥2 mots communs + score)
+    if(!hit && L.desc){
+      const dt=tokens(L.desc); let best=null,bs=0;
+      for(const p of S.photobook){
+        const pt=tokens(p.name+' '+p.note);
+        const common=dt.filter(t=>pt.includes(t)).length;
+        const score=common/Math.max(3,Math.min(dt.length,pt.length));
+        if(common>=2 && score>bs){ bs=score; best=p; }
+      }
+      if(bs>=0.5) { hit=best; L.fuzzy=true; }
+    }
+    L.match = hit || null;
+  }
+  $('out').classList.remove('hide');
+  render();
+}
+
+/* ────────────────────────── AFFICHAGE ────────────────────────── */
+function setView(v){
+  S.view=v;
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  $('viewCards').classList.toggle('hide',v!=='cards');
+  $('viewTable').classList.toggle('hide',v!=='table');
+}
+function qtyOf(L){ return $('qtySrc').value==='ordered' ? L.ordered : L.shipped; }
+
+function render(){
+  const q=($('search').value||'').toLowerCase();
+  const list=S.lines.filter(L=>!q||(L.code+' '+L.desc+' '+(L.match?.name||'')).toLowerCase().includes(q));
+
+  $('statMatch').textContent = S.lines.filter(l=>l.match).length+' trouvés';
+  $('statNo').textContent    = S.lines.filter(l=>!l.match).length+' sans image';
+  $('statCS').textContent    = 'CS: '+S.lines.filter(l=>l.unit==='CS').reduce((a,l)=>a+qtyOf(l),0);
+  $('statUN').textContent    = 'UN: '+S.lines.filter(l=>l.unit==='UN').reduce((a,l)=>a+qtyOf(l),0);
+
+  // cartes photos
+  $('cards').innerHTML = list.map((L,i)=>{
+    const idx=S.lines.indexOf(L);
+    const m=L.match;
+    const img = m?.img
+      ? `<img src="${m.img}" alt="">`
+      : `<div class="none">📷<br>Aucune photo<br><span style="font-size:11px">code ${L.code||'?'}</span></div>`;
+    return `<div class="item">
+      <div class="ph">${img}</div>
+      <div class="bd">
+        <div class="nm">${esc(m?.name || L.desc || 'Article '+L.code)}</div>
+        <div class="cd">#${esc(L.code||'—')}${L.pack?' · '+esc(L.pack):''}${L.fuzzy?' <span class="pill warn">approx.</span>':''}</div>
+        ${m&&L.desc&&m.name!==L.desc?`<div class="sub" style="font-size:11.5px">${esc(L.desc)}</div>`:''}
+        <div class="qtybar">
+          <input type="number" step="1" min="0" value="${qtyOf(L)}" onchange="setQty(${idx},this.value)">
+          <select onchange="setUnit(${idx},this.value)">
+            ${['CS','UN','16L','KG','SEA'].map(u=>`<option ${L.unit===u?'selected':''}>${u}</option>`).join('')}
+          </select>
+        </div>
+      </div></div>`;
+  }).join('') || '<p class="sub">Aucun résultat.</p>';
+
+  // tableau
+  $('tbl').innerHTML = `<thead><tr><th></th><th>Item #</th><th>Description</th>
+    <th>Photobook</th><th style="width:90px">Qté</th><th style="width:90px">UM</th><th>Cmd/Exp</th></tr></thead><tbody>`+
+    list.map(L=>{ const idx=S.lines.indexOf(L); const m=L.match; return `<tr>
+      <td>${m?.img?`<img src="${m.img}">`:'—'}</td>
+      <td class="cd">${esc(L.code||'—')}</td>
+      <td>${esc(L.desc)}</td>
+      <td>${m?esc(m.name):'<span class="pill bad">non trouvé</span>'}</td>
+      <td><input type="number" value="${qtyOf(L)}" onchange="setQty(${idx},this.value)"></td>
+      <td><select onchange="setUnit(${idx},this.value)">${['CS','UN','16L','KG','SEA'].map(u=>`<option ${L.unit===u?'selected':''}>${u}</option>`).join('')}</select></td>
+      <td class="sub">${L.ordered} / ${L.shipped}</td></tr>`;}).join('')+`</tbody>`;
+}
+function setQty(i,v){ const n=Number(v)||0;
+  if($('qtySrc').value==='ordered') S.lines[i].ordered=n; else S.lines[i].shipped=n; render(); }
+function setUnit(i,v){ S.lines[i].unit=v; render(); }
+function esc(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ───────────────────────── EXPORT ───────────────────────── */
+function exportCSV(){
+  const rows=[['Item#','UPC','Description facture','Nom photobook','Quantité','UM','Commandé','Expédié','Photo trouvée']];
+  S.lines.forEach(L=>rows.push([L.code,L.upc,L.desc,L.match?.name||'',qtyOf(L),L.unit,L.ordered,L.shipped,L.match?.img?'oui':'non']));
+  const csv='\uFEFF'+rows.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(';')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='facture-photobook.csv'; a.click();
+}
+setView('cards');
+</script>
+</body>
+</html>
